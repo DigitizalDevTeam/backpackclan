@@ -6,7 +6,7 @@ import {
 export default function HomepagePreviewPage() {
   return (
     <HomepagePreviewShell>
-      <HomepageRenderer />
+      <HomepageRenderer fetchOnClient />
     </HomepagePreviewShell>
   );
 }

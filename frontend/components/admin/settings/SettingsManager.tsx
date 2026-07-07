@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -146,17 +146,17 @@ function SettingsTabForm({
 }) {
   const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm({
-    resolver: zodResolver(schemaMap[group]),
-    defaultValues: data,
+  const form = useForm<FieldValues>({
+    resolver: zodResolver(schemaMap[group]) as never,
+    defaultValues: data as FieldValues,
   });
 
   const { register, handleSubmit, control, watch, formState: { isDirty } } = form;
 
   useUnsavedChanges(isDirty);
 
-  const primaryColor = watch("primaryColor" as never) as string | undefined;
-  const secondaryColor = watch("secondaryColor" as never) as string | undefined;
+  const primaryColor = watch("primaryColor" as never) as unknown as string | undefined;
+  const secondaryColor = watch("secondaryColor" as never) as unknown as string | undefined;
 
   async function onSubmit(formData: unknown) {
     setSubmitting(true);

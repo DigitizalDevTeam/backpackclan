@@ -1,11 +1,13 @@
 import { cookies } from "next/headers";
 import type { AuthSession, AuthUser } from "@/types/auth";
+import { getMePathForUser } from "@/lib/api/auth-laravel";
 import { getUserById } from "@/lib/mock/auth";
 import {
   laravelFetch,
   normalizeAuthUser,
   useLaravelApi,
 } from "@/lib/api/backend";
+import { isCustomerUser } from "@/lib/auth/user-kind";
 import {
   SESSION_COOKIE,
   buildSessionCookieValue,
@@ -24,10 +26,18 @@ async function resolveUser(
   payload: NonNullable<ReturnType<typeof decodeSessionPayload>>
 ): Promise<AuthUser | null> {
   if (useLaravelApi()) {
+    const cached = payload.user;
+    const mePath =
+      payload.authRealm === "customer" || (cached && isCustomerUser(cached))
+        ? "/v1/customer/me"
+        : cached
+          ? getMePathForUser(cached)
+          : "/v1/admin/me";
+
     const { res, data } = await laravelFetch<{
       success: boolean;
       data: Record<string, unknown>;
-    }>("/v1/admin/me", { token: payload.token });
+    }>(mePath, { token: payload.token });
 
     if (!res.ok || !data.success) return null;
     return normalizeAuthUser(data.data);

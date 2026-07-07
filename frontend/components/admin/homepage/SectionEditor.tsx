@@ -214,10 +214,7 @@ function HeroForm({ register, control, watch, setValue, readOnly }: FormProps) {
     control: control as Control<HomepageSectionContent & { ctas: unknown[] }>,
     name: "ctas" as "ctas",
   });
-  const mediaType = watch("mediaType" as keyof HomepageSectionContent) as
-    | "image"
-    | "video"
-    | undefined;
+  const mediaType = watch("mediaType" as never) as unknown as "image" | "video" | undefined;
 
   return (
     <>
@@ -243,7 +240,7 @@ function HeroForm({ register, control, watch, setValue, readOnly }: FormProps) {
           ))}
         </div>
         <MediaPicker
-          value={watch("mediaId" as never) as string | null}
+          value={watch("mediaId" as never) as unknown as string | null}
           onChange={(m) => setValue("mediaId" as never, (m?.id ?? null) as never)}
           accept={mediaType ?? "image"}
           disabled={readOnly}
@@ -325,7 +322,11 @@ function PopularTripsForm({ register, control, readOnly }: FormProps) {
           name={"filterTags" as never}
           render={({ field }) => (
             <Input
-              value={Array.isArray(field.value) ? field.value.join(", ") : ""}
+              value={
+                Array.isArray(field.value as unknown)
+                  ? (field.value as unknown as string[]).join(", ")
+                  : ""
+              }
               onChange={(e) =>
                 field.onChange(
                   e.target.value.split(",").map((t) => t.trim()).filter(Boolean)
@@ -389,7 +390,7 @@ function TestimonialsForm({ register, control, readOnly }: FormProps) {
 }
 
 function GalleryForm({ register, control, watch, setValue, readOnly }: FormProps) {
-  const imageIds = (watch("imageIds" as never) as string[]) ?? [];
+  const imageIds = (watch("imageIds" as never) as unknown as string[]) ?? [];
   return (
     <>
       <Field label="Section title" name="title" register={register} readOnly={readOnly} />

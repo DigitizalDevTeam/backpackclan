@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             AdminUserSeeder::class,
+            CustomerUserSeeder::class,
+            BookingSeeder::class,
             SettingsSeeder::class,
             CmsSeeder::class,
         ]);

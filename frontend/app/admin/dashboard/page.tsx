@@ -65,7 +65,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title={`Welcome back, ${user.name.split(" ")[0]}!`}
+        title={`Welcome back, ${user?.name}!`}
         description={`You're signed in as ${user.role}. Here's an overview of your travel portal CMS.`}
       />
 

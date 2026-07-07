@@ -39,6 +39,13 @@ class AuthController extends Controller
             ], 403);
         }
 
+        if ($user->isCustomer()) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Please use the customer login for traveler accounts'],
+            ], 403);
+        }
+
         $user->tokens()->where('name', 'admin')->delete();
         $token = $user->createToken('admin')->plainTextToken;
 

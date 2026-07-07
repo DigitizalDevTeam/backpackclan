@@ -10,11 +10,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { getAuthHomePath } from "@/lib/auth/user-kind";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
+import type { AuthUser } from "@/types/auth";
 
 export function LoginForm() {
   const router = useRouter();
@@ -49,8 +47,10 @@ export function LoginForm() {
         return;
       }
 
-      toast.success(`Welcome back, ${result.data.user.name}!`);
-      const redirect = searchParams.get("redirect") || "/admin/dashboard";
+      const user = result.data.user as AuthUser;
+      toast.success(`Welcome back, ${user.name}!`);
+      const redirect =
+        searchParams.get("redirect") || getAuthHomePath(user);
       router.push(redirect);
       router.refresh();
     } catch {
@@ -61,65 +61,61 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="admin@backpackclan.com"
-            autoComplete="email"
-            {...register("email")}
-          />
-          {errors.email && (
-            <p className="text-sm text-destructive">{errors.email.message}</p>
-          )}
-        </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="you@email.com"
+          autoComplete="email"
+          {...register("email")}
+        />
+        {errors.email ? (
+          <p className="text-sm text-destructive">{errors.email.message}</p>
+        ) : null}
+      </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            <Link
-              href="/forgot-password"
-              className="text-xs text-primary hover:underline"
-            >
-              Forgot password?
-            </Link>
-          </div>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            autoComplete="current-password"
-            {...register("password")}
-          />
-          {errors.password && (
-            <p className="text-sm text-destructive">
-              {errors.password.message}
-            </p>
-          )}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Password</Label>
+          <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+            Forgot password?
+          </Link>
         </div>
+        <Input
+          id="password"
+          type="password"
+          placeholder="••••••••"
+          autoComplete="current-password"
+          {...register("password")}
+        />
+        {errors.password ? (
+          <p className="text-sm text-destructive">{errors.password.message}</p>
+        ) : null}
+      </div>
 
-        <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-          <p className="font-medium text-foreground mb-1">Demo accounts:</p>
-          <p>admin@backpackclan.com / password</p>
-          <p>editor@backpackclan.com / password</p>
-          <p>viewer@backpackclan.com / password</p>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="animate-spin" />
-              Signing in...
-            </>
-          ) : (
-            "Sign in"
-          )}
-        </Button>
-      </CardFooter>
+      <div className="rounded-xl border border-dashed bg-slate-50 p-4 text-xs text-muted-foreground">
+        <p className="font-medium text-foreground">Demo customer</p>
+        <p>customer@demo.com / password</p>
+        <p className="mt-2 font-medium text-foreground">Demo staff (admin)</p>
+        <p>admin@backpackclan.com / password</p>
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full bg-orange-500 hover:bg-orange-600"
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="animate-spin" />
+            Signing in...
+          </>
+        ) : (
+          "Sign in"
+        )}
+      </Button>
     </form>
   );
 }

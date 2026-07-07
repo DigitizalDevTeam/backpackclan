@@ -41,15 +41,20 @@ export async function laravelFetch<T = unknown>(
 }
 
 export function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
+  const role = String(raw.role ?? "");
+  const userType =
+    raw.userType === "customer" || role === "customer" ? "customer" : "staff";
   return {
     id: String(raw.id),
     name: String(raw.name),
     email: String(raw.email),
-    role: String(raw.role ?? ""),
+    role,
     roleId: raw.roleId ? String(raw.roleId) : null,
     roleName: raw.roleName ? String(raw.roleName) : null,
     permissions: Array.isArray(raw.permissions)
       ? raw.permissions.map(String)
       : [],
+    userType,
+    phone: raw.phone ? String(raw.phone) : null,
   };
 }

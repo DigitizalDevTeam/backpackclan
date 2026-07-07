@@ -1,4 +1,4 @@
-import type { Banner, BannerInput } from "@/types/banner";
+import type { Banner, BannerInput, BannerPlacement } from "@/types/banner";
 import { logActivity } from "@/lib/mock/activity-store";
 import { createPersistedStore } from "@/lib/mock/persisted-store";
 
@@ -90,6 +90,19 @@ function generateId(): string {
 
 export function getAllBanners(): Banner[] {
   return [...bannerStore.get()].sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function isBannerScheduleActive(banner: Banner): boolean {
+  const now = Date.now();
+  if (banner.startsAt && new Date(banner.startsAt).getTime() > now) return false;
+  if (banner.endsAt && new Date(banner.endsAt).getTime() < now) return false;
+  return true;
+}
+
+export function getActiveBannersByPlacement(placement: BannerPlacement): Banner[] {
+  return getAllBanners().filter(
+    (b) => b.placement === placement && b.isActive && isBannerScheduleActive(b)
+  );
 }
 
 export function getBannerById(id: string): Banner | null {

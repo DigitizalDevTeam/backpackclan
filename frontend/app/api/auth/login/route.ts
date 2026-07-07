@@ -5,11 +5,18 @@ import {
   SESSION_COOKIE,
 } from "@/lib/auth/session";
 import { authenticateUser } from "@/lib/mock/auth";
-import {
-  laravelFetch,
-  normalizeAuthUser,
-  useLaravelApi,
-} from "@/lib/api/backend";
+import { laravelUnifiedLogin, useLaravelApi } from "@/lib/api/auth-laravel";
+
+function setSessionCookie(response: NextResponse, user: Parameters<typeof buildSessionCookieValue>[0], token: string) {
+  const cookieValue = buildSessionCookieValue(user, token);
+  response.cookies.set(SESSION_COOKIE, cookieValue, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -24,36 +31,16 @@ export async function POST(request: Request) {
     }
 
     if (useLaravelApi()) {
-      const { res, data } = await laravelFetch<{
-        success: boolean;
-        data?: { user: Record<string, unknown>; token: string };
-        errors?: Record<string, string>;
-      }>("/v1/admin/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok || !data.success || !data.data) {
+      const result = await laravelUnifiedLogin(email, password);
+      if (!result.ok) {
         return NextResponse.json(
-          {
-            success: false,
-            errors: data.errors ?? { form: "Invalid email or password" },
-          },
-          { status: res.status === 401 ? 401 : 400 }
+          { success: false, errors: result.errors },
+          { status: 401 }
         );
       }
 
-      const user = normalizeAuthUser(data.data.user);
-      const cookieValue = buildSessionCookieValue(user, data.data.token);
-
-      const response = NextResponse.json({ success: true, data: { user } });
-      response.cookies.set(SESSION_COOKIE, cookieValue, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7,
-      });
+      const response = NextResponse.json({ success: true, data: { user: result.user } });
+      setSessionCookie(response, result.user, result.token);
       return response;
     }
 
@@ -66,16 +53,8 @@ export async function POST(request: Request) {
     }
 
     const token = createSessionToken(user.id);
-    const cookieValue = buildSessionCookieValue(user, token);
-
     const response = NextResponse.json({ success: true, data: { user } });
-    response.cookies.set(SESSION_COOKIE, cookieValue, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    setSessionCookie(response, user, token);
     return response;
   } catch {
     return NextResponse.json(

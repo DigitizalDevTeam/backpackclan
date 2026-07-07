@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\SeoController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
+use App\Http\Controllers\Api\V1\Customer\AuthController as CustomerAuthController;
+use App\Http\Controllers\Api\V1\Customer\BookingController as CustomerBookingController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/admin')->group(function () {
@@ -86,5 +88,22 @@ Route::prefix('v1/admin')->group(function () {
             Route::put('homepage/sections/{slug}', [HomepageSectionController::class, 'update']);
             Route::patch('homepage/sections/{slug}', [HomepageSectionController::class, 'toggle']);
         });
+    });
+});
+
+Route::prefix('v1/customer')->group(function () {
+    Route::post('register', [CustomerAuthController::class, 'register']);
+    Route::post('login', [CustomerAuthController::class, 'login']);
+
+    Route::middleware(['auth:sanctum', 'customer'])->group(function () {
+        Route::post('logout', [CustomerAuthController::class, 'logout']);
+        Route::get('me', [CustomerAuthController::class, 'me']);
+
+        Route::get('bookings', [CustomerBookingController::class, 'index']);
+        Route::get('bookings/{booking}', [CustomerBookingController::class, 'show']);
+        Route::post('bookings/{booking}/pay', [CustomerBookingController::class, 'pay']);
+        Route::post('bookings/{booking}/documents', [CustomerBookingController::class, 'uploadDocument']);
+        Route::get('bookings/{booking}/invoice', [CustomerBookingController::class, 'invoice']);
+        Route::get('bookings/{booking}/voucher', [CustomerBookingController::class, 'voucher']);
     });
 });

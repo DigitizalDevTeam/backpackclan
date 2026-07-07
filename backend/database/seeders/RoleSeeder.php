@@ -56,6 +56,13 @@ class RoleSeeder extends Seeder
                 'is_system' => true,
                 'permissions' => $viewerPerms,
             ],
+            [
+                'name' => 'Customer',
+                'slug' => 'customer',
+                'description' => 'Traveler account for bookings and trip documents',
+                'is_system' => true,
+                'permissions' => [],
+            ],
         ];
 
         foreach ($roles as $roleData) {

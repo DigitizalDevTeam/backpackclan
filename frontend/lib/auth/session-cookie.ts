@@ -6,6 +6,7 @@ export interface SessionPayload {
   userId: string;
   token: string;
   user?: AuthUser;
+  authRealm?: "customer" | "admin";
 }
 
 function encodeSession(payload: SessionPayload): string {
@@ -29,9 +30,15 @@ export function createSessionToken(userId: string): string {
 
 export function buildSessionCookieValue(
   user: AuthUser,
-  token: string
+  token: string,
+  authRealm?: "customer" | "admin"
 ): string {
-  return encodeSession({ userId: user.id, token, user });
+  return encodeSession({
+    userId: user.id,
+    token,
+    user,
+    authRealm: authRealm ?? (user.userType === "customer" || user.role === "customer" ? "customer" : "admin"),
+  });
 }
 
 /** Lightweight parse for middleware — uses cached user from cookie only. */

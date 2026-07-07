@@ -9,6 +9,8 @@ const SEED_USERS: AdminUserWithPassword[] = [
     email: "admin@backpackclan.com",
     password: "password",
     role: "admin",
+    roleId: "2",
+    roleName: "Administrator",
     isActive: true,
     createdAt: "2026-01-15T10:00:00.000Z",
     updatedAt: "2026-01-15T10:00:00.000Z",
@@ -19,16 +21,20 @@ const SEED_USERS: AdminUserWithPassword[] = [
     email: "editor@backpackclan.com",
     password: "password",
     role: "editor",
+    roleId: "3",
+    roleName: "Editor",
     isActive: true,
     createdAt: "2026-02-01T10:00:00.000Z",
     updatedAt: "2026-02-01T10:00:00.000Z",
-    },
+  },
   {
     id: "3",
     name: "Viewer User",
     email: "viewer@backpackclan.com",
     password: "password",
     role: "viewer",
+    roleId: "4",
+    roleName: "Viewer",
     isActive: true,
     createdAt: "2026-02-10T10:00:00.000Z",
     updatedAt: "2026-02-10T10:00:00.000Z",
@@ -39,6 +45,8 @@ const SEED_USERS: AdminUserWithPassword[] = [
     email: "sarah@backpackclan.com",
     password: "password123",
     role: "editor",
+    roleId: "3",
+    roleName: "Editor",
     isActive: true,
     createdAt: "2026-03-05T10:00:00.000Z",
     updatedAt: "2026-03-05T10:00:00.000Z",
@@ -49,6 +57,8 @@ const SEED_USERS: AdminUserWithPassword[] = [
     email: "james@backpackclan.com",
     password: "password123",
     role: "viewer",
+    roleId: "4",
+    roleName: "Viewer",
     isActive: false,
     createdAt: "2026-03-12T10:00:00.000Z",
     updatedAt: "2026-03-20T10:00:00.000Z",
@@ -105,6 +115,15 @@ export function authenticateUser(
   return user ? toPublicUser(user) : null;
 }
 
+function roleMeta(role: UserRole): { roleId: string; roleName: string } {
+  const map: Record<UserRole, { roleId: string; roleName: string }> = {
+    admin: { roleId: "2", roleName: "Administrator" },
+    editor: { roleId: "3", roleName: "Editor" },
+    viewer: { roleId: "4", roleName: "Viewer" },
+  };
+  return map[role];
+}
+
 export function createUser(data: {
   name: string;
   email: string;
@@ -123,6 +142,7 @@ export function createUser(data: {
   const newUser: AdminUserWithPassword = {
     id: generateId(),
     ...data,
+    ...roleMeta(data.role),
     createdAt: now,
     updatedAt: now,
   };
@@ -157,6 +177,7 @@ export function updateUser(
     name: data.name,
     email: data.email,
     role: data.role,
+    ...roleMeta(data.role),
     isActive: data.isActive,
     updatedAt: new Date().toISOString(),
     ...(data.password ? { password: data.password } : {}),

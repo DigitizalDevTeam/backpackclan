@@ -13,6 +13,8 @@ export interface AdminUser {
   updatedAt: string;
 }
 
+export type AdminUserWithPassword = AdminUser & { password: string };
+
 export type UserFormData = {
   name: string;
   email: string;

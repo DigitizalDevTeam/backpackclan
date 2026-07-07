@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getSession, SESSION_COOKIE } from "@/lib/auth/session";
+import { getLogoutPathForUser } from "@/lib/api/auth-laravel";
 import { laravelFetch, useLaravelApi } from "@/lib/api/backend";
 
 export async function POST() {
   if (useLaravelApi()) {
     const session = await getSession();
     if (session?.token) {
-      await laravelFetch("/v1/admin/logout", {
+      await laravelFetch(getLogoutPathForUser(session.user), {
         method: "POST",
         token: session.token,
       });

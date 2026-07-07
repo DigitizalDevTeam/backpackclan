@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useFieldArray, useForm, Controller } from "react-hook-form";
+import { useFieldArray, useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -53,7 +53,7 @@ export function BannerForm({ bannerId, userRole }: BannerFormProps) {
     setValue,
     formState: { errors, isDirty },
   } = useForm<BannerFormValues>({
-    resolver: zodResolver(bannerFormSchema),
+    resolver: zodResolver(bannerFormSchema) as Resolver<BannerFormValues>,
     defaultValues: {
       title: "",
       placement: "homepage_hero",

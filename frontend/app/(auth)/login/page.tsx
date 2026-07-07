@@ -1,46 +1,45 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Mountain } from "lucide-react";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import Link from "next/link";
+import { AuthPageLayout } from "@/components/auth/AuthPageLayout";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { Skeleton } from "@/components/ui/skeleton";
 
+export const metadata: Metadata = {
+  title: "Sign In — Backpackclan",
+  description: "Sign in to your Backpackclan account to manage bookings and trip inquiries.",
+};
+
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-            <Mountain className="h-8 w-8 text-white" />
+    <AuthPageLayout
+      title="Welcome back"
+      subtitle="Sign in to access your account, saved trips, and booking history."
+      asideTitle="Your Himalayan adventure account"
+      asidePoints={[
+        "Track trip inquiries and booking status",
+        "Save favorite destinations and packages",
+        "Get early access to new batch announcements",
+        "Receive member-only offers and travel tips",
+      ]}
+    >
+      <Suspense
+        fallback={
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Backpackclan</h1>
-          <p className="mt-1 text-sm text-slate-400">Travel Portal Admin</p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-            <CardDescription>
-              Enter your credentials to access the admin panel
-            </CardDescription>
-          </CardHeader>
-          <Suspense
-            fallback={
-              <div className="space-y-4 p-6">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            }
-          >
-            <LoginForm />
-          </Suspense>
-        </Card>
-      </div>
-    </div>
+        }
+      >
+        <LoginForm />
+      </Suspense>
+      <p className="mt-6 border-t pt-6 text-center text-sm text-muted-foreground">
+        Don&apos;t have an account?{" "}
+        <Link href="/register" className="font-medium text-primary hover:underline">
+          Create one free
+        </Link>
+      </p>
+    </AuthPageLayout>
   );
 }

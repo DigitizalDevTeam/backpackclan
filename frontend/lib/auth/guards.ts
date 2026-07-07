@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
+import { isCustomerUser } from "@/lib/auth/user-kind";
 
 export async function requireAuth() {
   const session = await getSession();
@@ -89,4 +90,28 @@ export async function requireEditor() {
   }
 
   return result;
+}
+
+export async function requireCustomer() {
+  const session = await getSession();
+
+  if (!session) {
+    return {
+      error: NextResponse.json(
+        { success: false, errors: { form: "Unauthorized" } },
+        { status: 401 }
+      ),
+    };
+  }
+
+  if (session.user.userType !== "customer" && !isCustomerUser(session.user)) {
+    return {
+      error: NextResponse.json(
+        { success: false, errors: { form: "Forbidden" } },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { session };
 }

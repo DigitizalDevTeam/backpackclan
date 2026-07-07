@@ -67,3 +67,50 @@ body {
 button{
   cursor: pointer;
 }
+
+/* Homepage utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.homepage-pattern {
+  background-image: radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+@keyframes homepage-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes homepage-scroll-bounce {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(6px); opacity: 0.4; }
+}
+
+@keyframes homepage-ken-burns {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
+.homepage-fade-up {
+  animation: homepage-fade-up 0.8s ease-out both;
+}
+
+.homepage-scroll-dot {
+  animation: homepage-scroll-bounce 1.8s ease-in-out infinite;
+}
+
+.homepage-hero-bg {
+  animation: homepage-ken-burns 20s ease-in-out infinite alternate;
+}

@@ -34,6 +34,8 @@ Open [http://localhost:3000/admin](http://localhost:3000/admin)
 | admin@backpackclan.com | password | Administrator |
 | editor@backpackclan.com | password | Editor |
 | viewer@backpackclan.com | password | Viewer |
+| customer@demo.com | password | Customer |
+| priya@email.com | password123 | Customer |
 
 **Mock mode** (`USE_LARAVEL_API=false`): same emails/passwords; edits persist in `frontend/.mock-data/`.
 

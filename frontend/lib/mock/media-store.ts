@@ -35,7 +35,7 @@ const SEED_MEDIA: MediaItem[] = [
     id: "3",
     uuid: "c3d4e5f6-a7b8-9012-cdef-123456789012",
     filename: "kashmir-dal-lake.jpg",
-    url: "https://images.unsplash.com/photo-1593693397690-362cb1aeb21d?w=800&q=80",
+    url: "https://images.unsplash.com/photo-1588668008351-45825434fd4e?w=800&q=80",
     mimeType: "image/jpeg",
     mediaType: "image",
     size: 265000,

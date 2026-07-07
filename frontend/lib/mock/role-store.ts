@@ -51,6 +51,17 @@ const SEED_ROLES: AdminRole[] = [
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
   },
+  {
+    id: "5",
+    name: "Customer",
+    slug: "customer",
+    description: "Traveler account — bookings and trip documents",
+    isSystem: true,
+    permissions: [],
+    userCount: 2,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  },
 ];
 
 const roleStore = createPersistedStore("roles", SEED_ROLES);
