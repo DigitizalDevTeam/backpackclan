@@ -9,16 +9,14 @@ import {
 } from "lucide-react";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { PageHero } from "@/components/site/PageHero";
-import { getSeoByPageKey } from "@/lib/mock/seo-store";
+import { buildPageMetadata } from "@/lib/site/seo-metadata";
 import { getSiteLayoutData } from "@/lib/site/public-data";
 import { Button } from "@/components/ui/button";
 
-const seo = getSeoByPageKey("about");
-
-export const metadata: Metadata = {
-  title: seo?.metaTitle ?? "About Us — Backpackclan",
-  description: seo?.metaDescription,
-};
+export const metadata = buildPageMetadata("about", {
+  title: "About Us — Backpackclan",
+  description: "Learn about Backpackclan and our Himalayan adventure tours.",
+});
 
 const stats = [
   { value: "12,000+", label: "Happy travelers" },
@@ -61,7 +59,7 @@ export default function AboutPage() {
   const layout = getSiteLayoutData();
 
   return (
-    <SitePageShell>
+    <SitePageShell seoPageKey="about">
       <PageHero
         badge="Our story"
         title="Adventures crafted in the Himalayas"

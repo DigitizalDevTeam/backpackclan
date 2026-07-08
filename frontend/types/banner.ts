@@ -19,6 +19,8 @@ export interface Banner {
   id: string;
   title: string;
   placement: BannerPlacement;
+  /** Linked destination when placement is destination_page */
+  destinationId: string | null;
   mediaType: BannerMediaType;
   mediaId: string | null;
   headline: string;

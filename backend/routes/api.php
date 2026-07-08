@@ -2,11 +2,17 @@
 
 use App\Http\Controllers\Api\V1\Admin\AuthController;
 use App\Http\Controllers\Api\V1\Admin\BannerController;
+use App\Http\Controllers\Api\V1\Admin\BlogController;
+use App\Http\Controllers\Api\V1\Admin\CategoryController;
+use App\Http\Controllers\Api\V1\Admin\DestinationController;
+use App\Http\Controllers\Api\V1\Admin\DepartureController;
+use App\Http\Controllers\Api\V1\Admin\TripController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\HomepageSectionController;
 use App\Http\Controllers\Api\V1\Admin\MediaController;
 use App\Http\Controllers\Api\V1\Admin\MenuController;
-use App\Http\Controllers\Api\V1\Admin\PermissionController;
+use App\Http\Controllers\Api\V1\Admin\MenuSyncController;
+use App\Http\Controllers\Api\V1\Admin\PricingController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\SeoController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
@@ -25,6 +31,7 @@ Route::prefix('v1/admin')->group(function () {
         Route::post('profile/password', [AuthController::class, 'changePassword']);
 
         Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+        Route::get('dashboard/low-seat-alerts', [DashboardController::class, 'lowSeatAlerts']);
         Route::get('dashboard/activity', [DashboardController::class, 'activity']);
 
         Route::get('settings/maintenance-status', [SettingsController::class, 'maintenanceStatus']);
@@ -65,6 +72,53 @@ Route::prefix('v1/admin')->group(function () {
         });
         Route::middleware('permission:banners.delete')->delete('banners/{banner}', [BannerController::class, 'destroy']);
 
+        Route::middleware('permission:categories.view')->get('categories', [CategoryController::class, 'index']);
+        Route::middleware('permission:categories.view')->get('categories/{category}', [CategoryController::class, 'show']);
+        Route::middleware('permission:categories.create')->post('categories', [CategoryController::class, 'store']);
+        Route::middleware('permission:categories.update')->group(function () {
+            Route::put('categories/{category}', [CategoryController::class, 'update']);
+            Route::patch('categories/{category}', [CategoryController::class, 'patch']);
+        });
+        Route::middleware('permission:categories.delete')->delete('categories/{category}', [CategoryController::class, 'destroy']);
+
+        Route::middleware('permission:destinations.view')->get('destinations', [DestinationController::class, 'index']);
+        Route::middleware('permission:destinations.view')->get('destinations/{destination}', [DestinationController::class, 'show']);
+        Route::middleware('permission:destinations.create')->post('destinations', [DestinationController::class, 'store']);
+        Route::middleware('permission:destinations.update')->group(function () {
+            Route::put('destinations/{destination}', [DestinationController::class, 'update']);
+            Route::patch('destinations/{destination}', [DestinationController::class, 'patch']);
+        });
+        Route::middleware('permission:destinations.delete')->delete('destinations/{destination}', [DestinationController::class, 'destroy']);
+
+        Route::middleware('permission:trips.view')->get('trips', [TripController::class, 'index']);
+        Route::middleware('permission:trips.view')->get('trips/{trip}', [TripController::class, 'show']);
+        Route::middleware('permission:trips.create')->post('trips', [TripController::class, 'store']);
+        Route::middleware('permission:trips.update')->group(function () {
+            Route::put('trips/{trip}', [TripController::class, 'update']);
+            Route::patch('trips/{trip}', [TripController::class, 'patch']);
+        });
+        Route::middleware('permission:trips.delete')->delete('trips/{trip}', [TripController::class, 'destroy']);
+
+        Route::middleware('permission:departures.view')->get('departures/calendar', [DepartureController::class, 'calendar']);
+        Route::middleware('permission:departures.view')->get('departures', [DepartureController::class, 'index']);
+        Route::middleware('permission:departures.view')->get('departures/{departure}', [DepartureController::class, 'show']);
+        Route::middleware('permission:departures.create')->post('departures/bulk', [DepartureController::class, 'bulk']);
+        Route::middleware('permission:departures.create')->post('departures', [DepartureController::class, 'store']);
+        Route::middleware('permission:departures.update')->put('departures/{departure}', [DepartureController::class, 'update']);
+        Route::middleware('permission:departures.delete')->delete('departures/{departure}', [DepartureController::class, 'destroy']);
+
+        Route::middleware('permission:pricing.view')->get('pricing', [PricingController::class, 'index']);
+        Route::middleware('permission:pricing.update')->put('pricing/trips/{trip}', [PricingController::class, 'updateTrip']);
+
+        Route::middleware('permission:blogs.view')->get('blogs', [BlogController::class, 'index']);
+        Route::middleware('permission:blogs.view')->get('blogs/{blog}', [BlogController::class, 'show']);
+        Route::middleware('permission:blogs.create')->post('blogs', [BlogController::class, 'store']);
+        Route::middleware('permission:blogs.update')->group(function () {
+            Route::put('blogs/{blog}', [BlogController::class, 'update']);
+            Route::patch('blogs/{blog}', [BlogController::class, 'patch']);
+        });
+        Route::middleware('permission:blogs.delete')->delete('blogs/{blog}', [BlogController::class, 'destroy']);
+
         Route::middleware('permission:seo.view')->get('seo', [SeoController::class, 'index']);
         Route::middleware('permission:seo.view')->get('seo/{pageKey}', [SeoController::class, 'show']);
         Route::middleware('permission:seo.update')->put('seo/{pageKey}', [SeoController::class, 'update']);
@@ -73,6 +127,7 @@ Route::prefix('v1/admin')->group(function () {
         Route::middleware('permission:menus.view')->get('menus', [MenuController::class, 'index']);
         Route::middleware('permission:menus.view')->get('menus/{menu}', [MenuController::class, 'show']);
         Route::middleware('permission:menus.update')->group(function () {
+            Route::post('menus/{menu}/sync-destinations', [MenuSyncController::class, 'syncDestinations']);
             Route::post('menus/{menu}/items', [MenuController::class, 'storeItem']);
             Route::put('menus/{menu}/items', [MenuController::class, 'reorderItems']);
             Route::put('menus/{menu}/items/{item}', [MenuController::class, 'updateItem']);

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { getSettings } from "@/lib/mock/settings-store";
+import { getAllMedia } from "@/lib/mock/media-store";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,13 +15,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Backpackclan Admin",
-    template: "%s | Backpackclan Admin",
-  },
-  description: "Backpackclan Travel Portal — Admin CMS",
-};
+export function generateMetadata(): Metadata {
+  const settings = getSettings();
+  const mediaMap = Object.fromEntries(getAllMedia().map((m) => [m.id, m.url]));
+  const faviconUrl = settings.general.faviconId
+    ? mediaMap[settings.general.faviconId]
+    : undefined;
+
+  return {
+    title: {
+      default: settings.general.siteName,
+      template: `%s | ${settings.general.siteName}`,
+    },
+    description: settings.general.tagline,
+    ...(faviconUrl
+      ? {
+          icons: {
+            icon: faviconUrl,
+            shortcut: faviconUrl,
+            apple: faviconUrl,
+          },
+        }
+      : {}),
+  };
+}
 
 export default function RootLayout({
   children,

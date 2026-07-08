@@ -61,14 +61,21 @@ export function HomepageRenderer({
       try {
         const res = await fetch("/api/preview/homepage");
         const data = await res.json();
-        if (data.success) setSections(data.data);
+        if (data.success) {
+          const payload = data.data;
+          if (Array.isArray(payload)) {
+            setSections(payload);
+          } else {
+            setSections(payload.sections ?? []);
+            if (payload.trips) setTrips(payload.trips);
+            if (payload.secondaryBanner !== undefined) {
+              setSecondaryBanner(payload.secondaryBanner);
+            }
+          }
+        }
 
-        const [mediaRes, tripsRes] = await Promise.all([
-          fetch("/api/admin/media"),
-          fetch("/api/public/trips"),
-        ]);
+        const mediaRes = await fetch("/api/admin/media");
         const mediaData = await mediaRes.json();
-        const tripsData = await tripsRes.json();
 
         if (mediaData.success) {
           const map: Record<string, string> = {};
@@ -77,7 +84,6 @@ export function HomepageRenderer({
           });
           setMediaMap(map);
         }
-        if (tripsData.success) setTrips(tripsData.data);
       } finally {
         setLoading(false);
       }
@@ -749,11 +755,24 @@ export function HomepagePreviewShell({ children }: { children: React.ReactNode }
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-50 border-b bg-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <MapPin className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-lg font-bold">Backpackclan</span>
+          <div className="flex items-center gap-3">
+            <Link href="/preview/homepage" className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+                <MapPin className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-lg font-bold">Backpackclan</span>
+            </Link>
+            <nav className="hidden sm:flex items-center gap-3 text-sm text-muted-foreground">
+              <Link href="/preview/trips" className="hover:text-foreground">
+                Trips
+              </Link>
+              <Link href="/preview/destinations" className="hover:text-foreground">
+                Destinations
+              </Link>
+              <Link href="/preview/homepage" className="hover:text-foreground">
+                Homepage
+              </Link>
+            </nav>
           </div>
           <div className="flex items-center gap-3">
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">

@@ -31,17 +31,14 @@ const SEED_SECTIONS: HomepageSection[] = [
   }),
   section("2", "featured-destinations", "Featured Destinations", "featured_destinations", 1, true, {
     title: "Popular Destinations",
-    cards: [
-      { id: "d1", name: "Leh Ladakh", tripCount: 24, imageId: "1", link: "/destinations/leh-ladakh" },
-      { id: "d2", name: "Spiti Valley", tripCount: 18, imageId: "2", link: "/destinations/spiti" },
-      { id: "d3", name: "Kashmir", tripCount: 15, imageId: "3", link: "/destinations/kashmir" },
-      { id: "d4", name: "Bhutan", tripCount: 12, imageId: "4", link: "/destinations/bhutan" },
-      { id: "d5", name: "Nepal", tripCount: 20, imageId: "5", link: "/destinations/nepal" },
-    ],
+    destinationIds: ["1", "2", "3", "4", "5"],
+    cards: [],
   }),
   section("3", "popular-trips", "Popular Trips", "popular_trips", 2, true, {
     title: "Trending Adventures",
     layout: "carousel",
+    mode: "featured",
+    tripIds: [],
     filterTags: ["Bike Tour", "Trek", "Guaranteed Departures", "Weekend"],
   }),
   section("4", "why-choose-us", "Why Choose Us", "why_choose_us", 3, true, {
@@ -67,11 +64,9 @@ const SEED_SECTIONS: HomepageSection[] = [
   }),
   section("7", "blog-highlights", "Blog Highlights", "blog_highlights", 6, true, {
     title: "From Our Blog",
-    posts: [
-      { id: "b1", title: "Best Time to Visit Ladakh", excerpt: "Plan your Ladakh trip with our seasonal guide...", imageId: "1", link: "/blog/best-time-ladakh", date: "2026-03-01" },
-      { id: "b2", title: "Spiti Valley Road Trip Guide", excerpt: "Everything you need for an epic Spiti adventure...", imageId: "2", link: "/blog/spiti-guide", date: "2026-02-15" },
-      { id: "b3", title: "Packing for Himalayan Treks", excerpt: "Essential gear list for high-altitude trekking...", imageId: "7", link: "/blog/trek-packing", date: "2026-02-01" },
-    ],
+    mode: "latest",
+    postIds: [],
+    posts: [],
   }),
   section("8", "newsletter-cta", "Newsletter CTA", "newsletter_cta", 7, true, {
     headline: "Get Exclusive Trip Deals",

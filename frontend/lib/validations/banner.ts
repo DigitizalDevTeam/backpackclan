@@ -31,6 +31,7 @@ export const bannerFormSchema = z
     endsAt: z.string().nullable(),
     sortOrder: z.coerce.number().min(0),
     isActive: z.boolean(),
+    destinationId: z.string().nullable(),
   })
   .refine(
     (data) => {

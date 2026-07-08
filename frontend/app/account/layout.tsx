@@ -26,6 +26,9 @@ export default async function AccountLayout({
       settings={layout.settings}
       headerMenu={layout.headerMenu}
       footerMenu={layout.footerMenu}
+      mobileMenu={layout.mobileMenu}
+      mediaMap={layout.mediaMap}
+      destinationLinks={layout.destinationLinks}
     >
       {children}
     </AccountShell>

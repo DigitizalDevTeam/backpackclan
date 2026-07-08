@@ -3,10 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { TripDetailView } from "@/components/trips/TripDetailView";
-import { SiteFooter } from "@/components/site/SiteFooter";
-import { SiteHeader } from "@/components/site/SiteHeader";
-import { BackToTop } from "@/components/site/BackToTop";
-import { WhatsAppWidget } from "@/components/site/WhatsAppWidget";
+import { SitePageShell } from "@/components/site/SitePageShell";
 import { Button } from "@/components/ui/button";
 import { getTripDetail } from "@/lib/mock/trip-detail-store";
 import { getAllTrips, getTripBySlug } from "@/lib/mock/trip-store";
@@ -43,29 +40,23 @@ export default async function TripDetailPage({ params }: TripDetailPageProps) {
     .slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-white">
-      <SiteHeader settings={layout.settings} menu={layout.headerMenu} />
-      <main>
-        <div className="border-b bg-slate-50">
-          <div className="mx-auto max-w-7xl px-4 py-3">
-            <Button asChild variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
-              <Link href="/trips">
-                <ArrowLeft className="h-4 w-4" />
-                Back to all trips
-              </Link>
-            </Button>
-          </div>
+    <SitePageShell>
+      <div className="border-b bg-slate-50">
+        <div className="mx-auto max-w-7xl px-4 py-3">
+          <Button asChild variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
+            <Link href="/trips">
+              <ArrowLeft className="h-4 w-4" />
+              Back to all trips
+            </Link>
+          </Button>
         </div>
-        <TripDetailView
-          trip={trip}
-          detail={detail}
-          mediaMap={layout.mediaMap}
-          similarTrips={similarTrips}
-        />
-      </main>
-      <SiteFooter settings={layout.settings} menu={layout.footerMenu} />
-      <WhatsAppWidget phone={layout.settings.social.whatsapp} />
-      <BackToTop />
-    </div>
+      </div>
+      <TripDetailView
+        trip={trip}
+        detail={detail}
+        mediaMap={layout.mediaMap}
+        similarTrips={similarTrips}
+      />
+    </SitePageShell>
   );
 }

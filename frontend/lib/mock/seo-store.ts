@@ -11,13 +11,11 @@ export const SEO_PAGES: SeoPageDefinition[] = [
     pageKey: "trips",
     label: "Trip Listing",
     path: "/trips",
-    isPlaceholder: true,
   },
   {
     pageKey: "destinations",
     label: "Destinations",
     path: "/destinations",
-    isPlaceholder: true,
   },
 ];
 

@@ -4,10 +4,13 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import type { MenuItemNode } from "@/types/menu";
 import type { SiteSettings } from "@/types/settings";
+import type { FooterDestinationLink } from "@/lib/site/public-data";
 import { AccountSidebar } from "@/components/account/AccountSidebar";
 import { BackToTop } from "@/components/site/BackToTop";
+import { SiteBrandingStyles } from "@/components/site/SiteBrandingStyles";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteIntegrations } from "@/components/site/SiteIntegrations";
 import { WhatsAppWidget } from "@/components/site/WhatsAppWidget";
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +18,9 @@ interface AccountShellProps {
   settings: SiteSettings;
   headerMenu: MenuItemNode[];
   footerMenu: MenuItemNode[];
+  mobileMenu: MenuItemNode[];
+  mediaMap: Record<string, string>;
+  destinationLinks: FooterDestinationLink[];
   children: React.ReactNode;
 }
 
@@ -22,13 +28,21 @@ export function AccountShell({
   settings,
   headerMenu,
   footerMenu,
+  mobileMenu,
+  mediaMap,
+  destinationLinks,
   children,
 }: AccountShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <SiteHeader settings={settings} menu={headerMenu} />
+    <SiteBrandingStyles branding={settings.branding} className="flex min-h-screen flex-col bg-white">
+      <SiteHeader
+        settings={settings}
+        menu={headerMenu}
+        mobileMenu={mobileMenu}
+        mediaMap={mediaMap}
+      />
 
       <div className="flex flex-1 bg-slate-50">
         <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-slate-50 p-4 lg:block">
@@ -80,9 +94,17 @@ export function AccountShell({
         </div>
       </div>
 
-      <SiteFooter settings={settings} menu={footerMenu} />
-      <WhatsAppWidget phone={settings.social.whatsapp} />
+      <SiteFooter
+        settings={settings}
+        menu={footerMenu}
+        mediaMap={mediaMap}
+        destinationLinks={destinationLinks}
+      />
+      {settings.integrations.whatsappWidget && settings.social.whatsapp ? (
+        <WhatsAppWidget phone={settings.social.whatsapp} />
+      ) : null}
+      <SiteIntegrations integrations={settings.integrations} />
       <BackToTop />
-    </div>
+    </SiteBrandingStyles>
   );
 }

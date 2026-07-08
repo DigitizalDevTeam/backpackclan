@@ -35,12 +35,20 @@ export interface DestinationCard {
 
 export interface FeaturedDestinationsContent {
   title: string;
+  /** Published destination entity IDs — resolved to cards at render time */
+  destinationIds: string[];
+  /** Legacy manual cards — used when destinationIds is empty */
   cards: DestinationCard[];
 }
+
+export type PopularTripsMode = "featured" | "manual";
 
 export interface PopularTripsContent {
   title: string;
   layout: "grid" | "carousel";
+  mode: PopularTripsMode;
+  /** Manual trip picks when mode is "manual" */
+  tripIds: string[];
   filterTags: string[];
 }
 
@@ -86,6 +94,8 @@ export interface BlogPostCard {
 
 export interface BlogHighlightsContent {
   title: string;
+  mode?: "latest" | "manual";
+  postIds?: string[];
   posts: BlogPostCard[];
 }
 

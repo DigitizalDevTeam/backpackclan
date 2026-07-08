@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Clock, Tag, User } from "lucide-react";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { BlogCard } from "@/components/blog/BlogCard";
-import { getAllPosts, getPostBySlug, getRelatedPosts } from "@/lib/mock/blog-store";
+import { getPublishedPosts, getPublishedPostBySlug, getRelatedPosts } from "@/lib/mock/blog-store";
 import { getSiteLayoutData } from "@/lib/site/public-data";
 import { formatDate } from "@/lib/site/format";
 
@@ -13,12 +13,12 @@ interface BlogDetailPageProps {
 }
 
 export async function generateStaticParams() {
-  return getAllPosts().map((post) => ({ slug: post.slug }));
+  return getPublishedPosts().map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: BlogDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = getPublishedPostBySlug(slug);
   if (!post) return { title: "Article not found" };
   return {
     title: `${post.title} | Backpackclan Blog`,
@@ -28,11 +28,11 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = getPublishedPostBySlug(slug);
   if (!post) notFound();
 
   const layout = getSiteLayoutData();
-  const imageUrl = layout.mediaMap[post.imageId] ?? null;
+  const imageUrl = post.imageId ? layout.mediaMap[post.imageId] ?? null : null;
   const related = getRelatedPosts(slug, 3);
 
   return (
@@ -110,7 +110,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                 <BlogCard
                   key={r.id}
                   post={r}
-                  imageUrl={layout.mediaMap[r.imageId] ?? null}
+                  imageUrl={r.imageId ? layout.mediaMap[r.imageId] ?? null : null}
                 />
               ))}
             </div>

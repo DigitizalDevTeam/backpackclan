@@ -25,6 +25,28 @@ export const MOCK_PERMISSIONS: Permission[] = [
   { id: "22", slug: "homepage.update", name: "Update Homepage", group: "homepage", description: "Edit and reorder homepage sections" },
   { id: "23", slug: "settings.view", name: "View Settings", group: "settings", description: "View global site settings" },
   { id: "24", slug: "settings.update", name: "Update Settings", group: "settings", description: "Edit global site settings" },
+  { id: "25", slug: "categories.view", name: "View Categories", group: "categories", description: "View trip categories" },
+  { id: "26", slug: "categories.create", name: "Create Categories", group: "categories", description: "Create trip categories" },
+  { id: "27", slug: "categories.update", name: "Update Categories", group: "categories", description: "Edit trip categories" },
+  { id: "28", slug: "categories.delete", name: "Delete Categories", group: "categories", description: "Delete trip categories" },
+  { id: "29", slug: "destinations.view", name: "View Destinations", group: "destinations", description: "View destination hub pages" },
+  { id: "30", slug: "destinations.create", name: "Create Destinations", group: "destinations", description: "Create destination hub pages" },
+  { id: "31", slug: "destinations.update", name: "Update Destinations", group: "destinations", description: "Edit destination hub pages" },
+  { id: "32", slug: "destinations.delete", name: "Delete Destinations", group: "destinations", description: "Delete destination hub pages" },
+  { id: "33", slug: "trips.view", name: "View Trips", group: "trips", description: "View travel products" },
+  { id: "34", slug: "trips.create", name: "Create Trips", group: "trips", description: "Create travel products" },
+  { id: "35", slug: "trips.update", name: "Update Trips", group: "trips", description: "Edit travel products" },
+  { id: "36", slug: "trips.delete", name: "Delete Trips", group: "trips", description: "Delete travel products" },
+  { id: "37", slug: "departures.view", name: "View Departures", group: "departures", description: "View departure calendar and inventory" },
+  { id: "38", slug: "departures.create", name: "Create Departures", group: "departures", description: "Create departures and seat inventory" },
+  { id: "39", slug: "departures.update", name: "Update Departures", group: "departures", description: "Edit departures and seat counts" },
+  { id: "40", slug: "departures.delete", name: "Delete Departures", group: "departures", description: "Delete departures" },
+  { id: "41", slug: "pricing.view", name: "View Pricing", group: "pricing", description: "View trip and departure pricing" },
+  { id: "42", slug: "pricing.update", name: "Update Pricing", group: "pricing", description: "Edit trip and departure pricing" },
+  { id: "43", slug: "blogs.view", name: "View Blogs", group: "blogs", description: "View blog posts" },
+  { id: "44", slug: "blogs.create", name: "Create Blogs", group: "blogs", description: "Create blog posts" },
+  { id: "45", slug: "blogs.update", name: "Update Blogs", group: "blogs", description: "Edit blog posts and publish status" },
+  { id: "46", slug: "blogs.delete", name: "Delete Blogs", group: "blogs", description: "Delete blog posts" },
 ];
 
 const ALL_SLUGS = MOCK_PERMISSIONS.map((p) => p.slug);
@@ -33,7 +55,8 @@ const EDITOR_SLUGS = ALL_SLUGS.filter(
   (s) =>
     !s.startsWith("users.") &&
     !s.startsWith("roles.") &&
-    !s.startsWith("settings.")
+    !s.startsWith("settings.") &&
+    !s.endsWith(".delete")
 );
 
 const VIEWER_SLUGS = ALL_SLUGS.filter((s) => s.endsWith(".view"));

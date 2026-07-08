@@ -67,6 +67,7 @@ class BannerController extends Controller
             $copy = Banner::query()->create([
                 'title' => $banner->title.' (Copy)',
                 'placement' => $banner->placement,
+                'destination_id' => $banner->destination_id,
                 'media_type' => $banner->media_type,
                 'media_id' => $banner->media_id,
                 'headline' => $banner->headline,
@@ -97,6 +98,7 @@ class BannerController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'placement' => ['required', 'string'],
+            'destinationId' => ['nullable', 'string'],
             'mediaType' => ['required', 'string'],
             'mediaId' => ['nullable', 'string'],
             'headline' => ['nullable', 'string'],
@@ -112,6 +114,7 @@ class BannerController extends Controller
         return [
             'title' => $data['title'],
             'placement' => $data['placement'],
+            'destination_id' => $data['destinationId'] ?? null,
             'media_type' => $data['mediaType'],
             'media_id' => $data['mediaId'] ?? null,
             'headline' => $data['headline'] ?? '',

@@ -32,6 +32,30 @@ final class Permissions
     public const SETTINGS_VIEW = 'settings.view';
     public const SETTINGS_UPDATE = 'settings.update';
 
+    // Travel modules (Milestone 2)
+    public const CATEGORIES_VIEW = 'categories.view';
+    public const CATEGORIES_CREATE = 'categories.create';
+    public const CATEGORIES_UPDATE = 'categories.update';
+    public const CATEGORIES_DELETE = 'categories.delete';
+    public const DESTINATIONS_VIEW = 'destinations.view';
+    public const DESTINATIONS_CREATE = 'destinations.create';
+    public const DESTINATIONS_UPDATE = 'destinations.update';
+    public const DESTINATIONS_DELETE = 'destinations.delete';
+    public const TRIPS_VIEW = 'trips.view';
+    public const TRIPS_CREATE = 'trips.create';
+    public const TRIPS_UPDATE = 'trips.update';
+    public const TRIPS_DELETE = 'trips.delete';
+    public const DEPARTURES_VIEW = 'departures.view';
+    public const DEPARTURES_CREATE = 'departures.create';
+    public const DEPARTURES_UPDATE = 'departures.update';
+    public const DEPARTURES_DELETE = 'departures.delete';
+    public const PRICING_VIEW = 'pricing.view';
+    public const PRICING_UPDATE = 'pricing.update';
+    public const BLOGS_VIEW = 'blogs.view';
+    public const BLOGS_CREATE = 'blogs.create';
+    public const BLOGS_UPDATE = 'blogs.update';
+    public const BLOGS_DELETE = 'blogs.delete';
+
     /**
      * @return array<string, array{slug: string, name: string, group: string, description: string}>
      */
@@ -181,6 +205,138 @@ final class Permissions
                 'name' => 'Update Settings',
                 'group' => 'settings',
                 'description' => 'Edit global site settings',
+            ],
+            self::CATEGORIES_VIEW => [
+                'slug' => self::CATEGORIES_VIEW,
+                'name' => 'View Categories',
+                'group' => 'categories',
+                'description' => 'View trip categories',
+            ],
+            self::CATEGORIES_CREATE => [
+                'slug' => self::CATEGORIES_CREATE,
+                'name' => 'Create Categories',
+                'group' => 'categories',
+                'description' => 'Create trip categories',
+            ],
+            self::CATEGORIES_UPDATE => [
+                'slug' => self::CATEGORIES_UPDATE,
+                'name' => 'Update Categories',
+                'group' => 'categories',
+                'description' => 'Edit trip categories',
+            ],
+            self::CATEGORIES_DELETE => [
+                'slug' => self::CATEGORIES_DELETE,
+                'name' => 'Delete Categories',
+                'group' => 'categories',
+                'description' => 'Delete trip categories',
+            ],
+            self::DESTINATIONS_VIEW => [
+                'slug' => self::DESTINATIONS_VIEW,
+                'name' => 'View Destinations',
+                'group' => 'destinations',
+                'description' => 'View destination hub pages',
+            ],
+            self::DESTINATIONS_CREATE => [
+                'slug' => self::DESTINATIONS_CREATE,
+                'name' => 'Create Destinations',
+                'group' => 'destinations',
+                'description' => 'Create destination hub pages',
+            ],
+            self::DESTINATIONS_UPDATE => [
+                'slug' => self::DESTINATIONS_UPDATE,
+                'name' => 'Update Destinations',
+                'group' => 'destinations',
+                'description' => 'Edit destination hub pages',
+            ],
+            self::DESTINATIONS_DELETE => [
+                'slug' => self::DESTINATIONS_DELETE,
+                'name' => 'Delete Destinations',
+                'group' => 'destinations',
+                'description' => 'Delete destination hub pages',
+            ],
+            self::TRIPS_VIEW => [
+                'slug' => self::TRIPS_VIEW,
+                'name' => 'View Trips',
+                'group' => 'trips',
+                'description' => 'View travel products',
+            ],
+            self::TRIPS_CREATE => [
+                'slug' => self::TRIPS_CREATE,
+                'name' => 'Create Trips',
+                'group' => 'trips',
+                'description' => 'Create travel products',
+            ],
+            self::TRIPS_UPDATE => [
+                'slug' => self::TRIPS_UPDATE,
+                'name' => 'Update Trips',
+                'group' => 'trips',
+                'description' => 'Edit travel products',
+            ],
+            self::TRIPS_DELETE => [
+                'slug' => self::TRIPS_DELETE,
+                'name' => 'Delete Trips',
+                'group' => 'trips',
+                'description' => 'Delete travel products',
+            ],
+            self::DEPARTURES_VIEW => [
+                'slug' => self::DEPARTURES_VIEW,
+                'name' => 'View Departures',
+                'group' => 'departures',
+                'description' => 'View departure calendar and inventory',
+            ],
+            self::DEPARTURES_CREATE => [
+                'slug' => self::DEPARTURES_CREATE,
+                'name' => 'Create Departures',
+                'group' => 'departures',
+                'description' => 'Create departures and seat inventory',
+            ],
+            self::DEPARTURES_UPDATE => [
+                'slug' => self::DEPARTURES_UPDATE,
+                'name' => 'Update Departures',
+                'group' => 'departures',
+                'description' => 'Edit departures and seat counts',
+            ],
+            self::DEPARTURES_DELETE => [
+                'slug' => self::DEPARTURES_DELETE,
+                'name' => 'Delete Departures',
+                'group' => 'departures',
+                'description' => 'Delete departures',
+            ],
+            self::PRICING_VIEW => [
+                'slug' => self::PRICING_VIEW,
+                'name' => 'View Pricing',
+                'group' => 'pricing',
+                'description' => 'View trip and departure pricing',
+            ],
+            self::PRICING_UPDATE => [
+                'slug' => self::PRICING_UPDATE,
+                'name' => 'Update Pricing',
+                'group' => 'pricing',
+                'description' => 'Edit trip and departure pricing',
+            ],
+            self::BLOGS_VIEW => [
+                'slug' => self::BLOGS_VIEW,
+                'name' => 'View Blogs',
+                'group' => 'blogs',
+                'description' => 'View blog posts',
+            ],
+            self::BLOGS_CREATE => [
+                'slug' => self::BLOGS_CREATE,
+                'name' => 'Create Blogs',
+                'group' => 'blogs',
+                'description' => 'Create blog posts',
+            ],
+            self::BLOGS_UPDATE => [
+                'slug' => self::BLOGS_UPDATE,
+                'name' => 'Update Blogs',
+                'group' => 'blogs',
+                'description' => 'Edit blog posts and publish status',
+            ],
+            self::BLOGS_DELETE => [
+                'slug' => self::BLOGS_DELETE,
+                'name' => 'Delete Blogs',
+                'group' => 'blogs',
+                'description' => 'Delete blog posts',
             ],
         ];
     }

@@ -3,6 +3,12 @@ import { getAllSections } from "@/lib/mock/homepage-store";
 import { getAllMedia } from "@/lib/mock/media-store";
 import { getAllMenus } from "@/lib/mock/menu-store";
 import { getRecentActivity } from "@/lib/mock/activity-store";
+import {
+  getLowSeatAlerts,
+  getPublishedTripCount,
+  getUpcomingDeparturesCount,
+  type LowSeatAlert,
+} from "@/lib/travel/dashboard-stats";
 import { formatDistanceToNow } from "date-fns";
 import { getSession } from "@/lib/auth/session";
 import { laravelFetch, useLaravelApi } from "@/lib/api/backend";
@@ -13,6 +19,9 @@ export interface DashboardStats {
   enabledSections: number;
   totalSections: number;
   menuItemCount: number;
+  totalTrips: number;
+  upcomingDepartures: number;
+  lowSeatAlerts: number;
 }
 
 export interface DashboardActivity {
@@ -21,6 +30,8 @@ export interface DashboardActivity {
   module: string;
   timeAgo: string;
 }
+
+export type { LowSeatAlert };
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   if (useLaravelApi()) {
@@ -36,6 +47,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   const sections = getAllSections();
   const menus = getAllMenus();
+  const lowSeatAlerts = getLowSeatAlerts();
 
   return {
     mediaCount: getAllMedia().length,
@@ -43,7 +55,25 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     enabledSections: sections.filter((s) => s.isEnabled).length,
     totalSections: sections.length,
     menuItemCount: menus.reduce((sum, m) => sum + m.itemCount, 0),
+    totalTrips: getPublishedTripCount(),
+    upcomingDepartures: getUpcomingDeparturesCount(),
+    lowSeatAlerts: lowSeatAlerts.length,
   };
+}
+
+export async function getDashboardLowSeatAlerts(): Promise<LowSeatAlert[]> {
+  if (useLaravelApi()) {
+    const session = await getSession();
+    if (session) {
+      const { res, data } = await laravelFetch<{
+        success: boolean;
+        data: LowSeatAlert[];
+      }>("/v1/admin/dashboard/low-seat-alerts", { token: session.token });
+      if (res.ok && data.success) return data.data;
+    }
+  }
+
+  return getLowSeatAlerts();
 }
 
 export async function getDashboardActivity(): Promise<DashboardActivity[]> {

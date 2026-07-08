@@ -1,5 +1,9 @@
-import type { BlogPost } from "@/types/blog";
+import type { BlogPost, BlogPostInput } from "@/types/blog";
+import { logActivity } from "@/lib/mock/activity-store";
 import { createPersistedStore } from "@/lib/mock/persisted-store";
+import { slugify } from "@/lib/utils/slug";
+
+const NOW = "2026-01-10T10:00:00.000Z";
 
 const SEED_POSTS: BlogPost[] = [
   {
@@ -22,6 +26,9 @@ const SEED_POSTS: BlogPost[] = [
     publishedAt: "2026-03-01",
     readTime: 6,
     tags: ["Ladakh", "Season Guide", "Planning"],
+    status: "published",
+    createdAt: NOW,
+    updatedAt: NOW,
   },
   {
     id: "b2",
@@ -43,6 +50,9 @@ const SEED_POSTS: BlogPost[] = [
     publishedAt: "2026-02-15",
     readTime: 8,
     tags: ["Spiti", "Road Trip", "Guide"],
+    status: "published",
+    createdAt: NOW,
+    updatedAt: NOW,
   },
   {
     id: "b3",
@@ -64,6 +74,9 @@ const SEED_POSTS: BlogPost[] = [
     publishedAt: "2026-02-01",
     readTime: 5,
     tags: ["Trekking", "Packing", "Tips"],
+    status: "published",
+    createdAt: NOW,
+    updatedAt: NOW,
   },
   {
     id: "b4",
@@ -85,6 +98,9 @@ const SEED_POSTS: BlogPost[] = [
     publishedAt: "2026-01-20",
     readTime: 7,
     tags: ["Ladakh", "Bike Tour", "Tips"],
+    status: "published",
+    createdAt: NOW,
+    updatedAt: NOW,
   },
   {
     id: "b5",
@@ -106,6 +122,9 @@ const SEED_POSTS: BlogPost[] = [
     publishedAt: "2026-01-08",
     readTime: 6,
     tags: ["Kashmir", "Guide", "Travel"],
+    status: "published",
+    createdAt: NOW,
+    updatedAt: NOW,
   },
   {
     id: "b6",
@@ -127,33 +146,140 @@ const SEED_POSTS: BlogPost[] = [
     publishedAt: "2025-12-18",
     readTime: 5,
     tags: ["Bhutan", "International", "Culture"],
+    status: "published",
+    createdAt: NOW,
+    updatedAt: NOW,
   },
 ];
 
 const blogStore = createPersistedStore("blog-posts", SEED_POSTS);
 
-export function getAllPosts(): BlogPost[] {
-  return [...blogStore.get()].sort(
+function generateId(): string {
+  return String(Date.now() + Math.random()).replace(".", "");
+}
+
+function sortByPublishedAt(posts: BlogPost[]): BlogPost[] {
+  return [...posts].sort(
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   );
+}
+
+function estimateReadTime(content: string[]): number {
+  const words = content.join(" ").split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}
+
+function assertUniqueSlug(slug: string, excludeId?: string): void {
+  const existing = blogStore.get().find((p) => p.slug === slug && p.id !== excludeId);
+  if (existing) {
+    throw new Error(`Slug "${slug}" is already in use`);
+  }
+}
+
+export function getAllPosts(): BlogPost[] {
+  return sortByPublishedAt(blogStore.get());
+}
+
+export function getPublishedPosts(): BlogPost[] {
+  return sortByPublishedAt(blogStore.get().filter((p) => p.status === "published"));
+}
+
+export function getPostById(id: string): BlogPost | null {
+  return blogStore.get().find((p) => p.id === id) ?? null;
 }
 
 export function getPostBySlug(slug: string): BlogPost | null {
   return blogStore.get().find((p) => p.slug === slug) ?? null;
 }
 
+export function getPublishedPostBySlug(slug: string): BlogPost | null {
+  const post = getPostBySlug(slug);
+  return post?.status === "published" ? post : null;
+}
+
 export function getPostsByCategory(category: string): BlogPost[] {
-  return getAllPosts().filter((p) => p.category === category);
+  return getPublishedPosts().filter((p) => p.category === category);
 }
 
 export function getBlogCategories(): string[] {
-  return [...new Set(getAllPosts().map((p) => p.category))].sort();
+  return [...new Set(getPublishedPosts().map((p) => p.category))].sort();
 }
 
 export function getRelatedPosts(slug: string, limit = 3): BlogPost[] {
-  const post = getPostBySlug(slug);
-  if (!post) return getAllPosts().slice(0, limit);
-  return getAllPosts()
+  const post = getPublishedPostBySlug(slug);
+  if (!post) return getPublishedPosts().slice(0, limit);
+  return getPublishedPosts()
     .filter((p) => p.slug !== slug && p.category === post.category)
     .slice(0, limit);
+}
+
+export function createPost(data: BlogPostInput): BlogPost {
+  const slug = slugify(data.slug);
+  assertUniqueSlug(slug);
+
+  const now = new Date().toISOString();
+  const post: BlogPost = {
+    id: generateId(),
+    ...data,
+    slug,
+    imageId: data.imageId ?? null,
+    readTime: data.readTime ?? estimateReadTime(data.content),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  blogStore.set([...blogStore.get(), post]);
+  logActivity(`New blog post "${post.title}" added`, "blogs");
+  return post;
+}
+
+export function updatePost(id: string, data: BlogPostInput): BlogPost {
+  const posts = blogStore.get();
+  const index = posts.findIndex((p) => p.id === id);
+  if (index === -1) throw new Error("Blog post not found");
+
+  const slug = slugify(data.slug);
+  assertUniqueSlug(slug, id);
+
+  const updated: BlogPost = {
+    ...posts[index],
+    ...data,
+    slug,
+    imageId: data.imageId ?? null,
+    readTime: data.readTime ?? estimateReadTime(data.content),
+    updatedAt: new Date().toISOString(),
+  };
+
+  blogStore.set([...posts.slice(0, index), updated, ...posts.slice(index + 1)]);
+  logActivity(`Blog post "${updated.title}" updated`, "blogs");
+  return updated;
+}
+
+export function deletePost(id: string): void {
+  const posts = blogStore.get();
+  const post = posts.find((p) => p.id === id);
+  if (!post) throw new Error("Blog post not found");
+
+  blogStore.set(posts.filter((p) => p.id !== id));
+  logActivity(`Blog post "${post.title}" deleted`, "blogs");
+}
+
+export function togglePostStatus(id: string): BlogPost {
+  const post = getPostById(id);
+  if (!post) throw new Error("Blog post not found");
+
+  return updatePost(id, {
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    content: post.content,
+    imageId: post.imageId,
+    category: post.category,
+    author: post.author,
+    authorRole: post.authorRole,
+    publishedAt: post.publishedAt,
+    readTime: post.readTime,
+    tags: post.tags,
+    status: post.status === "published" ? "draft" : "published",
+  });
 }

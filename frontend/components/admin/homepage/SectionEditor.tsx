@@ -7,6 +7,7 @@ import {
   useFieldArray,
   useForm,
   Controller,
+  useWatch,
   type Control,
   type UseFormRegister,
   type UseFormSetValue,
@@ -67,7 +68,32 @@ export function SectionEditor({ slug, userRole }: SectionEditorProps) {
           return;
         }
         setSection(result.data);
-        reset(result.data.content);
+        const content = { ...result.data.content };
+        if (result.data.type === "featured_destinations") {
+          const c = content as import("@/types/homepage").FeaturedDestinationsContent;
+          reset({
+            ...c,
+            destinationIds: c.destinationIds ?? [],
+            cards: c.cards ?? [],
+          });
+        } else if (result.data.type === "popular_trips") {
+          const c = content as import("@/types/homepage").PopularTripsContent;
+          reset({
+            ...c,
+            mode: c.mode ?? "featured",
+            tripIds: c.tripIds ?? [],
+          });
+        } else if (result.data.type === "blog_highlights") {
+          const c = content as import("@/types/homepage").BlogHighlightsContent;
+          reset({
+            ...c,
+            mode: c.mode ?? "latest",
+            postIds: c.postIds ?? [],
+            posts: c.posts ?? [],
+          });
+        } else {
+          reset(content);
+        }
       } catch {
         toast.error("Failed to load section");
       } finally {
@@ -270,38 +296,143 @@ function HeroForm({ register, control, watch, setValue, readOnly }: FormProps) {
 }
 
 function FeaturedDestinationsForm({ register, control, readOnly }: FormProps) {
-  const { fields, append, remove } = useFieldArray({ control, name: "cards" as never });
+  const [destinations, setDestinations] = useState<
+    { id: string; name: string; slug: string; status: string }[]
+  >([]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/admin/destinations");
+        const result = await res.json();
+        if (result.success) {
+          setDestinations(
+            result.data.filter((d: { status: string }) => d.status === "published")
+          );
+        }
+      } catch {
+        // non-blocking
+      }
+    }
+    load();
+  }, []);
+
   return (
     <>
       <Field label="Section title" name="title" register={register} readOnly={readOnly} />
-      <RepeaterHeader
-        label="Destination cards"
-        readOnly={readOnly}
-        onAdd={() =>
-          append({ id: `d-${Date.now()}`, name: "", tripCount: 0, imageId: null, link: "" } as never)
-        }
-      />
-      {fields.map((field, i) => (
-        <div key={field.id} className="space-y-2 rounded-lg border p-4">
-          <Input {...register(`cards.${i}.name` as never)} placeholder="Name" disabled={readOnly} />
-          <Input type="number" {...register(`cards.${i}.tripCount` as never, { valueAsNumber: true })} placeholder="Trip count" disabled={readOnly} />
-          <Input {...register(`cards.${i}.link` as never)} placeholder="Link" disabled={readOnly} />
-          <MediaPickerController control={control} name={`cards.${i}.imageId`} readOnly={readOnly} />
-          {!readOnly && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}>
-              <Trash2 className="h-4 w-4 text-destructive" /> Remove
-            </Button>
-          )}
-        </div>
-      ))}
+      <div className="space-y-2">
+        <Label>Featured destinations</Label>
+        <p className="text-xs text-muted-foreground">
+          Pick published destinations — cards are built automatically from live data.
+        </p>
+        <Controller
+          control={control}
+          name={"destinationIds" as never}
+          render={({ field }) => {
+            const selected = (field.value as string[]) ?? [];
+            return (
+              <div className="space-y-2 rounded-lg border p-4 max-h-64 overflow-y-auto">
+                {destinations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No published destinations.</p>
+                ) : (
+                  destinations.map((dest) => (
+                    <label key={dest.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(dest.id)}
+                        disabled={readOnly}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...selected, dest.id]
+                            : selected.filter((id) => id !== dest.id);
+                          field.onChange(next);
+                        }}
+                        className="rounded border-input"
+                      />
+                      {dest.name}
+                      <span className="text-muted-foreground">/destinations/{dest.slug}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+            );
+          }}
+        />
+      </div>
     </>
   );
 }
 
-function PopularTripsForm({ register, control, readOnly }: FormProps) {
+function PopularTripsForm({ register, control, watch, readOnly }: FormProps) {
+  const [trips, setTrips] = useState<{ id: string; title: string; status: string }[]>([]);
+  const mode = (watch() as import("@/types/homepage").PopularTripsContent).mode ?? "featured";
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/admin/trips");
+        const result = await res.json();
+        if (result.success) {
+          setTrips(
+            result.data.filter((t: { status: string }) => t.status === "published")
+          );
+        }
+      } catch {
+        // non-blocking
+      }
+    }
+    load();
+  }, []);
+
   return (
     <>
       <Field label="Section title" name="title" register={register} readOnly={readOnly} />
+      <div className="space-y-2">
+        <Label>Trip selection</Label>
+        <Controller
+          control={control}
+          name={"mode" as never}
+          render={({ field }) => (
+            <Select value={(field.value as string) ?? "featured"} onChange={field.onChange} disabled={readOnly}>
+              <option value="featured">Auto — featured published trips</option>
+              <option value="manual">Manual — pick specific trips</option>
+            </Select>
+          )}
+        />
+      </div>
+      {mode === "manual" && (
+        <div className="space-y-2">
+          <Label>Trips to show</Label>
+          <Controller
+            control={control}
+            name={"tripIds" as never}
+            render={({ field }) => {
+              const selected = (field.value as string[]) ?? [];
+              return (
+                <div className="space-y-2 rounded-lg border p-4 max-h-64 overflow-y-auto">
+                  {trips.map((trip) => (
+                    <label key={trip.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(trip.id)}
+                        disabled={readOnly}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...selected, trip.id]
+                            : selected.filter((id) => id !== trip.id);
+                          field.onChange(next);
+                        }}
+                        className="rounded border-input"
+                      />
+                      {trip.title}
+                    </label>
+                  ))}
+                </div>
+              );
+            }}
+          />
+        </div>
+      )}
       <div className="space-y-2">
         <Label>Layout</Label>
         <Controller
@@ -337,6 +468,9 @@ function PopularTripsForm({ register, control, readOnly }: FormProps) {
             />
           )}
         />
+        <p className="text-xs text-muted-foreground">
+          Category filter chips shown on the homepage carousel.
+        </p>
       </div>
     </>
   );
@@ -418,20 +552,83 @@ function GalleryForm({ register, control, watch, setValue, readOnly }: FormProps
 }
 
 function BlogHighlightsForm({ register, control, readOnly }: FormProps) {
-  const { fields, append, remove } = useFieldArray({ control, name: "posts" as never });
+  const [posts, setPosts] = useState<
+    { id: string; title: string; slug: string; status: string }[]
+  >([]);
+  const mode = useWatch({ control, name: "mode" as never }) as string | undefined;
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/admin/blogs");
+        const result = await res.json();
+        if (result.success) {
+          setPosts(
+            result.data.filter((p: { status: string }) => p.status === "published")
+          );
+        }
+      } catch {
+        // non-blocking
+      }
+    }
+    load();
+  }, []);
+
   return (
     <>
       <Field label="Section title" name="title" register={register} readOnly={readOnly} />
-      <RepeaterHeader label="Blog posts" readOnly={readOnly} onAdd={() => append({ id: `b-${Date.now()}`, title: "", excerpt: "", imageId: null, link: "", date: "" } as never)} />
-      {fields.map((field, i) => (
-        <div key={field.id} className="space-y-2 rounded-lg border p-4">
-          <Input {...register(`posts.${i}.title` as never)} placeholder="Title" disabled={readOnly} />
-          <Input {...register(`posts.${i}.excerpt` as never)} placeholder="Excerpt" disabled={readOnly} />
-          <Input {...register(`posts.${i}.link` as never)} placeholder="Link" disabled={readOnly} />
-          <Input type="date" {...register(`posts.${i}.date` as never)} disabled={readOnly} />
-          {!readOnly && <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+      <div className="space-y-2">
+        <Label>Post selection</Label>
+        <Select {...register("mode" as never)} disabled={readOnly}>
+          <option value="latest">Latest published posts</option>
+          <option value="manual">Pick specific posts</option>
+        </Select>
+      </div>
+      {mode === "manual" ? (
+        <div className="space-y-2">
+          <Label>Featured posts (up to 3)</Label>
+          <p className="text-xs text-muted-foreground">
+            First selected post appears as the large featured card.
+          </p>
+          <Controller
+            control={control}
+            name={"postIds" as never}
+            render={({ field }) => {
+              const selected = (field.value as string[]) ?? [];
+              return (
+                <div className="space-y-2 rounded-lg border p-4 max-h-64 overflow-y-auto">
+                  {posts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No published posts.</p>
+                  ) : (
+                    posts.map((post) => (
+                      <label key={post.id} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(post.id)}
+                          disabled={readOnly}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                              ? [...selected, post.id]
+                              : selected.filter((id) => id !== post.id);
+                            field.onChange(next.slice(0, 3));
+                          }}
+                          className="rounded border-input"
+                        />
+                        {post.title}
+                        <span className="text-muted-foreground">/blog/{post.slug}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              );
+            }}
+          />
         </div>
-      ))}
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          The 3 most recently published blog posts are shown automatically.
+        </p>
+      )}
     </>
   );
 }

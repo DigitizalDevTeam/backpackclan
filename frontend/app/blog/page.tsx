@@ -2,24 +2,22 @@ import type { Metadata } from "next";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { PageHero } from "@/components/site/PageHero";
 import { BlogListing } from "@/components/blog/BlogListing";
-import { getAllPosts, getBlogCategories } from "@/lib/mock/blog-store";
-import { getSeoByPageKey } from "@/lib/mock/seo-store";
+import { getPublishedPosts, getBlogCategories } from "@/lib/mock/blog-store";
+import { buildPageMetadata } from "@/lib/site/seo-metadata";
 import { getSiteLayoutData } from "@/lib/site/public-data";
 
-const seo = getSeoByPageKey("blog");
-
-export const metadata: Metadata = {
-  title: seo?.metaTitle ?? "Travel Blog — Backpackclan",
-  description: seo?.metaDescription,
-};
+export const metadata = buildPageMetadata("blog", {
+  title: "Travel Blog — Backpackclan",
+  description: "Travel guides, tips, and stories from the Backpackclan team.",
+});
 
 export default function BlogPage() {
   const layout = getSiteLayoutData();
-  const posts = getAllPosts();
+  const posts = getPublishedPosts();
   const categories = getBlogCategories();
 
   return (
-    <SitePageShell>
+    <SitePageShell seoPageKey="blog">
       <PageHero
         badge="Travel blog"
         title="Guides, tips & stories from the trail"

@@ -22,6 +22,7 @@ const SEED_BANNERS: Banner[] = [
     isActive: true,
     createdAt: "2026-01-15T10:00:00.000Z",
     updatedAt: "2026-01-15T10:00:00.000Z",
+    destinationId: null,
   },
   {
     id: "2",
@@ -41,6 +42,7 @@ const SEED_BANNERS: Banner[] = [
     isActive: true,
     createdAt: "2026-02-01T10:00:00.000Z",
     updatedAt: "2026-02-01T10:00:00.000Z",
+    destinationId: null,
   },
   {
     id: "3",
@@ -60,11 +62,13 @@ const SEED_BANNERS: Banner[] = [
     isActive: false,
     createdAt: "2026-02-10T10:00:00.000Z",
     updatedAt: "2026-03-01T10:00:00.000Z",
+    destinationId: null,
   },
   {
     id: "4",
     title: "Kashmir Destination Banner",
     placement: "destination_page",
+    destinationId: "3",
     mediaType: "image",
     mediaId: "3",
     headline: "Paradise on Earth",
@@ -102,6 +106,16 @@ function isBannerScheduleActive(banner: Banner): boolean {
 export function getActiveBannersByPlacement(placement: BannerPlacement): Banner[] {
   return getAllBanners().filter(
     (b) => b.placement === placement && b.isActive && isBannerScheduleActive(b)
+  );
+}
+
+export function getActiveBannersForDestination(destinationId: string): Banner[] {
+  return getAllBanners().filter(
+    (b) =>
+      b.placement === "destination_page" &&
+      b.destinationId === destinationId &&
+      b.isActive &&
+      isBannerScheduleActive(b)
   );
 }
 
@@ -164,6 +178,7 @@ export function duplicateBanner(id: string): Banner {
   return createBanner({
     title: `${original.title} (Copy)`,
     placement: original.placement,
+    destinationId: original.destinationId,
     mediaType: original.mediaType,
     mediaId: original.mediaId,
     headline: original.headline,

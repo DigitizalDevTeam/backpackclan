@@ -16,6 +16,11 @@ class DatabaseSeeder extends Seeder
             BookingSeeder::class,
             SettingsSeeder::class,
             CmsSeeder::class,
+            CategorySeeder::class,
+            DestinationSeeder::class,
+            TripSeeder::class,
+            DepartureSeeder::class,
+            BlogSeeder::class,
         ]);
     }
 }

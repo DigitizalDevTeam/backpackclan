@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { BANNER_PLACEMENTS } from "@/types/banner";
+import type { Destination } from "@/types/destination";
 import { bannerFormSchema, type BannerFormValues } from "@/lib/validations/banner";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import type { UserRole } from "@/types/auth";
@@ -67,6 +68,7 @@ export function BannerForm({ bannerId, userRole }: BannerFormProps) {
       endsAt: null,
       sortOrder: 0,
       isActive: true,
+      destinationId: null,
     },
   });
 
@@ -76,6 +78,26 @@ export function BannerForm({ bannerId, userRole }: BannerFormProps) {
   });
 
   const mediaType = watch("mediaType");
+  const placement = watch("placement");
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+
+  useEffect(() => {
+    if (placement !== "destination_page") return;
+    async function load() {
+      try {
+        const res = await fetch("/api/admin/destinations");
+        const result = await res.json();
+        if (result.success) {
+          setDestinations(
+            result.data.filter((d: Destination) => d.status === "published")
+          );
+        }
+      } catch {
+        // non-blocking
+      }
+    }
+    load();
+  }, [placement]);
 
   useUnsavedChanges(isDirty && !readOnly);
 
@@ -105,6 +127,7 @@ export function BannerForm({ bannerId, userRole }: BannerFormProps) {
           endsAt: b.endsAt,
           sortOrder: b.sortOrder,
           isActive: b.isActive,
+          destinationId: b.destinationId ?? null,
         });
       } catch {
         toast.error("Failed to load banner");
@@ -188,6 +211,41 @@ export function BannerForm({ bannerId, userRole }: BannerFormProps) {
                   )}
                 />
               </div>
+
+              {placement === "destination_page" && (
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="destinationId">Linked destination</Label>
+                  <Controller
+                    name="destinationId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        id="destinationId"
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const destId = e.target.value || null;
+                          field.onChange(destId);
+                          const dest = destinations.find((d) => d.id === destId);
+                          if (dest) {
+                            setValue("linkUrl", `/destinations/${dest.slug}`);
+                          }
+                        }}
+                        disabled={readOnly}
+                      >
+                        <option value="">Select destination…</option>
+                        {destinations.map((dest) => (
+                          <option key={dest.id} value={dest.id}>
+                            {dest.name}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {BANNER_PLACEMENTS.destination_page.description}
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="sortOrder">Sort order</Label>

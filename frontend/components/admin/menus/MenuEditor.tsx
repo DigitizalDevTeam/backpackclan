@@ -312,6 +312,32 @@ export function MenuEditor({ menuId, userRole }: MenuEditorProps) {
     }
   }
 
+  async function handleSyncDestinations() {
+    const parent = items.find(
+      (i) => i.menuId === menuId && i.label === "Destinations" && i.parentId === null
+    );
+    if (!parent) {
+      toast.error('Add a top-level "Destinations" menu item first');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/menus/${menuId}/sync-destinations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_destinations", parentItemId: parent.id }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        toast.error(result.errors?.form ?? "Sync failed");
+        return;
+      }
+      toast.success("Destination links synced from published destinations");
+      await fetchMenu();
+    } catch {
+      toast.error("Sync failed");
+    }
+  }
+
   if (loading) return <LoadingSkeleton variant="table" />;
 
   const deleteChildCount = deleteTarget
@@ -326,15 +352,20 @@ export function MenuEditor({ menuId, userRole }: MenuEditorProps) {
         action={
           <div className="flex gap-2">
             {!readOnly && (
-              <Button
-                onClick={() => {
-                  setEditingItem(null);
-                  setDialogOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4" />
-                Add Item
-              </Button>
+              <>
+                <Button variant="outline" onClick={handleSyncDestinations}>
+                  Sync Destinations
+                </Button>
+                <Button
+                  onClick={() => {
+                    setEditingItem(null);
+                    setDialogOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Item
+                </Button>
+              </>
             )}
             <Button variant="outline" asChild>
               <Link href="/admin/menus">

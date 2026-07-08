@@ -20,6 +20,7 @@ class RoleSeeder extends Seeder
             fn (string $slug) => ! str_starts_with($slug, 'users.')
                 && ! str_starts_with($slug, 'roles.')
                 && ! str_starts_with($slug, 'settings.')
+                && ! str_ends_with($slug, '.delete')
         ));
 
         $viewerPerms = array_values(array_filter(

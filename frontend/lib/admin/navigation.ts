@@ -13,6 +13,13 @@ import {
   ExternalLink,
   Layers,
   Cog,
+  MapPin,
+  Luggage,
+  Calendar,
+  Tags,
+  IndianRupee,
+  Compass,
+  Newspaper,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -43,9 +50,41 @@ export const adminNavGroups: NavGroup[] = [
     items: [
       { title: "Homepage", href: "/admin/homepage", icon: Home, permission: "homepage.view" },
       { title: "Banners", href: "/admin/banners", icon: Flag, permission: "banners.view" },
+      { title: "Blog", href: "/admin/blogs", icon: Newspaper, permission: "blogs.view" },
       { title: "Media", href: "/admin/media", icon: Image, permission: "media.view" },
       { title: "Menus", href: "/admin/menus", icon: Menu, permission: "menus.view" },
       { title: "SEO", href: "/admin/seo", icon: Search, permission: "seo.view" },
+    ],
+  },
+  {
+    label: "Travel Management",
+    icon: Compass,
+    items: [
+      { title: "Trips", href: "/admin/trips", icon: Luggage, permission: "trips.view" },
+      {
+        title: "Destinations",
+        href: "/admin/destinations",
+        icon: MapPin,
+        permission: "destinations.view",
+      },
+      {
+        title: "Departures",
+        href: "/admin/departures",
+        icon: Calendar,
+        permission: "departures.view",
+      },
+      {
+        title: "Categories",
+        href: "/admin/categories",
+        icon: Tags,
+        permission: "categories.view",
+      },
+      {
+        title: "Pricing Rules",
+        href: "/admin/pricing",
+        icon: IndianRupee,
+        permission: "pricing.view",
+      },
     ],
   },
   {

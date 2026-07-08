@@ -2,21 +2,19 @@ import type { Metadata } from "next";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { PageHero } from "@/components/site/PageHero";
 import { ContactForm } from "@/components/contact/ContactForm";
-import { getSeoByPageKey } from "@/lib/mock/seo-store";
+import { buildPageMetadata } from "@/lib/site/seo-metadata";
 import { getSiteLayoutData } from "@/lib/site/public-data";
 
-const seo = getSeoByPageKey("contact");
-
-export const metadata: Metadata = {
-  title: seo?.metaTitle ?? "Contact — Backpackclan",
-  description: seo?.metaDescription,
-};
+export const metadata = buildPageMetadata("contact", {
+  title: "Contact — Backpackclan",
+  description: "Get in touch with Backpackclan to plan your next adventure.",
+});
 
 export default function ContactPage() {
   const layout = getSiteLayoutData();
 
   return (
-    <SitePageShell>
+    <SitePageShell seoPageKey="contact">
       <PageHero
         badge="Contact"
         title="Plan your next adventure"

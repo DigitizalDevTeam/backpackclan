@@ -10,6 +10,7 @@ class Banner extends Model
     protected $fillable = [
         'title',
         'placement',
+        'destination_id',
         'media_type',
         'media_id',
         'headline',
@@ -42,6 +43,7 @@ class Banner extends Model
             'id' => (string) $this->id,
             'title' => $this->title,
             'placement' => $this->placement,
+            'destination_id' => $this->destination_id,
             'media_type' => $this->media_type,
             'media_id' => $this->media_id,
             'headline' => $this->headline,

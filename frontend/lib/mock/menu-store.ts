@@ -7,6 +7,7 @@ import type {
   MenuWithStats,
 } from "@/types/menu";
 import { buildMenuTree, flattenMenuTree } from "@/lib/menu/tree";
+import { getPublishedDestinations } from "@/lib/mock/destination-store";
 import { logActivity } from "@/lib/mock/activity-store";
 import { createPersistedStore } from "@/lib/mock/persisted-store";
 
@@ -174,4 +175,43 @@ export function toggleMenuItemActive(itemId: string): MenuItem {
   const item = getMenuItemsState().find((i) => i.id === itemId);
   if (!item) throw new Error("Menu item not found");
   return updateMenuItem(itemId, { isActive: !item.isActive });
+}
+
+/**
+ * Replace children under a parent menu item with published destinations.
+ */
+export function syncDestinationMenuChildren(
+  menuId: string,
+  parentItemId: string
+): MenuItem[] {
+  const items = getMenuItemsState();
+  const parent = items.find((i) => i.id === parentItemId && i.menuId === menuId);
+  if (!parent) throw new Error("Parent menu item not found");
+
+  const destinations = getPublishedDestinations().sort(
+    (a, b) => a.sortOrder - b.sortOrder
+  );
+
+  const withoutChildren = items.filter(
+    (i) => !(i.menuId === menuId && i.parentId === parentItemId)
+  );
+
+  const children: MenuItem[] = destinations.map((dest, index) => ({
+    id: `dest-sync-${menuId}-${dest.id}`,
+    menuId,
+    parentId: parentItemId,
+    label: dest.name,
+    url: `/destinations/${dest.slug}`,
+    target: "_self",
+    icon: null,
+    sortOrder: index,
+    isActive: true,
+  }));
+
+  setMenuItemsState([...withoutChildren, ...children]);
+  logActivity(
+    `Synced ${children.length} destination links in menu`,
+    "menus"
+  );
+  return getMenuItems(menuId);
 }

@@ -48,7 +48,7 @@ export function BlogListing({ posts, categories, mediaMap }: BlogListingProps) {
           {featured ? (
             <BlogCard
               post={featured}
-              imageUrl={mediaMap[featured.imageId] ?? null}
+              imageUrl={featured.imageId ? mediaMap[featured.imageId] ?? null : null}
               featured
             />
           ) : null}
@@ -57,7 +57,7 @@ export function BlogListing({ posts, categories, mediaMap }: BlogListingProps) {
               <BlogCard
                 key={post.id}
                 post={post}
-                imageUrl={mediaMap[post.imageId] ?? null}
+                imageUrl={post.imageId ? mediaMap[post.imageId] ?? null : null}
               />
             ))}
           </div>

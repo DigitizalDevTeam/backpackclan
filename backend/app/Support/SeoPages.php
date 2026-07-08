@@ -14,8 +14,8 @@ class SeoPages
             ['pageKey' => 'about', 'label' => 'About Us', 'path' => '/about'],
             ['pageKey' => 'contact', 'label' => 'Contact', 'path' => '/contact'],
             ['pageKey' => 'blog', 'label' => 'Blog Index', 'path' => '/blog'],
-            ['pageKey' => 'trips', 'label' => 'Trip Listing', 'path' => '/trips', 'isPlaceholder' => true],
-            ['pageKey' => 'destinations', 'label' => 'Destinations', 'path' => '/destinations', 'isPlaceholder' => true],
+            ['pageKey' => 'trips', 'label' => 'Trip Listing', 'path' => '/trips'],
+            ['pageKey' => 'destinations', 'label' => 'Destinations', 'path' => '/destinations'],
         ];
     }
 
