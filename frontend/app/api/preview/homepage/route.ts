@@ -48,9 +48,10 @@ export async function GET() {
         catalog
       );
   const secondaryBanner = getActiveBannersByPlacement("homepage_secondary")[0] ?? null;
+  const offerBanners = getActiveBannersByPlacement("homepage_secondary");
 
   return NextResponse.json({
     success: true,
-    data: { sections, trips, secondaryBanner },
+    data: { sections, trips, secondaryBanner, offerBanners },
   });
 }

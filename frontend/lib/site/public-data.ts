@@ -36,6 +36,8 @@ export interface HomepageData extends SiteLayoutData {
   sections: HomepageSection[];
   trips: PublicTrip[];
   secondaryBanner: Banner | null;
+  /** Active homepage_secondary banners for the offers slider */
+  offerBanners: Banner[];
   destinations: import("@/types/destination").Destination[];
   categories: import("@/types/category").Category[];
 }
@@ -172,15 +174,18 @@ async function fetchLaravelHomepage(
     ? resolvePopularTrips(popularSection.content as PopularTripsContent, catalog)
     : catalog.trips.filter((t) => t.isFeatured).slice(0, 8);
 
-  const secondaryBanner =
-    (data.data.banners ?? []).find((b) => b.placement === "homepage_secondary") ??
-    null;
+  const offerBanners = (data.data.banners ?? [])
+    .filter((b) => b.placement === "homepage_secondary" && b.isActive)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const secondaryBanner = offerBanners[0] ?? null;
 
   return {
     ...layout,
     sections,
     trips,
     secondaryBanner,
+    offerBanners,
     destinations: catalog.destinations,
     categories: data.data.categories ?? [],
   };
@@ -220,6 +225,7 @@ function getMockHomepageData(layout: SiteLayoutData): HomepageData {
     sections,
     trips,
     secondaryBanner: secondaryBanners[0] ?? null,
+    offerBanners: secondaryBanners,
     destinations,
     categories: getActiveCategories(),
   };

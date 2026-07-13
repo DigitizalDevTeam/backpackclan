@@ -49,7 +49,10 @@ class CmsSeeder extends Seeder
     {
         $banners = [
             ['title' => 'Summer Ladakh Campaign', 'placement' => 'homepage_hero', 'media_type' => 'image', 'media_id' => '1', 'headline' => 'Conquer the Himalayas', 'subheadline' => 'Epic bike tours & treks across Ladakh, Spiti & beyond', 'link_url' => '/trips', 'cta_buttons' => [['id' => 'cta1', 'label' => 'Explore Trips', 'url' => '/trips', 'style' => 'primary'], ['id' => 'cta2', 'label' => 'Custom Trip', 'url' => '/contact', 'style' => 'outline']], 'starts_at' => '2026-04-01', 'ends_at' => '2026-09-30', 'sort_order' => 0, 'is_active' => true],
-            ['title' => 'Spiti Valley Promo', 'placement' => 'homepage_secondary', 'media_type' => 'image', 'media_id' => '2', 'headline' => 'Spiti Valley Awaits', 'subheadline' => '7-day road trip through the middle land', 'link_url' => '/destinations/spiti', 'cta_buttons' => [['id' => 'cta3', 'label' => 'View Packages', 'url' => '/destinations/spiti', 'style' => 'primary']], 'starts_at' => null, 'ends_at' => null, 'sort_order' => 1, 'is_active' => true],
+            ['title' => 'Flat 20% Off', 'placement' => 'homepage_secondary', 'media_type' => 'image', 'media_id' => '1', 'headline' => 'Early Bird Ladakh Bike Deals', 'subheadline' => 'Book your high-altitude motorcycle expedition early and save on select July–September departures.', 'link_url' => '/trips?category=motor-biking&region=domestic', 'cta_buttons' => [['id' => 'cta-offer-1', 'label' => 'Grab Deal', 'url' => '/trips?category=motor-biking&region=domestic', 'style' => 'primary']], 'starts_at' => null, 'ends_at' => null, 'sort_order' => 0, 'is_active' => true],
+            ['title' => 'Spiti Special', 'placement' => 'homepage_secondary', 'media_type' => 'image', 'media_id' => '2', 'headline' => 'Spiti Valley Group Offer', 'subheadline' => 'Limited seats on our Spiti backpacking & bike circuits — complimentary gear kit on confirmed bookings.', 'link_url' => '/trips?destination=spiti', 'cta_buttons' => [['id' => 'cta-offer-2', 'label' => 'View Spiti Trips', 'url' => '/trips?destination=spiti', 'style' => 'primary']], 'starts_at' => null, 'ends_at' => null, 'sort_order' => 1, 'is_active' => true],
+            ['title' => 'International Week', 'placement' => 'homepage_secondary', 'media_type' => 'image', 'media_id' => '4', 'headline' => 'Bhutan & Bali Custom Savings', 'subheadline' => 'Private departures with exclusive seasonal pricing for couples and small groups.', 'link_url' => '/trips?category=custom-departures&region=international', 'cta_buttons' => [['id' => 'cta-offer-3', 'label' => 'Enquire Now', 'url' => '/contact', 'style' => 'primary']], 'starts_at' => null, 'ends_at' => null, 'sort_order' => 2, 'is_active' => true],
+            ['title' => 'Trek Season', 'placement' => 'homepage_secondary', 'media_type' => 'image', 'media_id' => '7', 'headline' => 'Himalayan Trek Festival', 'subheadline' => 'Save on Kashmir Great Lakes & Nepal EBC — free rain jacket on every trek booking this month.', 'link_url' => '/trips?category=treks', 'cta_buttons' => [['id' => 'cta-offer-4', 'label' => 'Browse Treks', 'url' => '/trips?category=treks', 'style' => 'primary']], 'starts_at' => null, 'ends_at' => null, 'sort_order' => 3, 'is_active' => true],
             ['title' => 'Bike Tour Video Hero', 'placement' => 'homepage_hero', 'media_type' => 'video', 'media_id' => '6', 'headline' => 'Ride the Roof of the World', 'subheadline' => 'Experience the thrill of Himalayan motorcycle tours', 'link_url' => '/trips?type=bike', 'cta_buttons' => [['id' => 'cta4', 'label' => 'Watch & Book', 'url' => '/trips?type=bike', 'style' => 'primary']], 'starts_at' => null, 'ends_at' => null, 'sort_order' => 2, 'is_active' => false],
             ['title' => 'Kashmir Destination Banner', 'placement' => 'destination_page', 'media_type' => 'image', 'media_id' => '3', 'headline' => 'Paradise on Earth', 'subheadline' => 'Discover Kashmir with Backpackclan', 'link_url' => '/destinations/kashmir', 'cta_buttons' => [['id' => 'cta5', 'label' => 'Explore Kashmir', 'url' => '/destinations/kashmir', 'style' => 'secondary']], 'starts_at' => '2026-05-01', 'ends_at' => '2026-10-31', 'sort_order' => 0, 'is_active' => true],
         ];
@@ -57,6 +60,11 @@ class CmsSeeder extends Seeder
         foreach ($banners as $banner) {
             Banner::query()->updateOrCreate(['title' => $banner['title']], $banner);
         }
+
+        // Disable legacy single promo title if it still exists from older seeds.
+        Banner::query()
+            ->where('title', 'Spiti Valley Promo')
+            ->update(['is_active' => false]);
     }
 
     private function seedSeo(): void

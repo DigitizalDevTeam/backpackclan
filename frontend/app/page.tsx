@@ -19,6 +19,7 @@ export default async function HomePage() {
     categories: data.categories,
     destinations: data.destinations,
     trips: data.trips,
+    offerBanners: data.offerBanners,
   });
 
   return (

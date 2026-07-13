@@ -46,8 +46,8 @@ export const BANNER_PLACEMENTS: Record<
     description: "Main hero banner at the top of the homepage",
   },
   homepage_secondary: {
-    label: "Homepage Secondary",
-    description: "Secondary promotional banner below the hero",
+    label: "Homepage Offers Slider",
+    description: "Discount & promotional banners on the homepage offers carousel",
   },
   destination_page: {
     label: "Destination Page",

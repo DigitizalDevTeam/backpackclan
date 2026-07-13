@@ -7,6 +7,7 @@ import type {
   TestimonialsContent,
   YoutubeVideosContent,
 } from "@/types/homepage";
+import type { Banner } from "@/types/banner";
 import type { Category } from "@/types/category";
 import type { Destination } from "@/types/destination";
 import type { PublicTrip } from "@/types/trip";
@@ -79,10 +80,21 @@ export type ResolvedYoutubeVideos = {
   }[];
 };
 
+export type ResolvedOffer = {
+  id: string;
+  badge: string;
+  headline: string;
+  subheadline: string;
+  image: string | null;
+  href: string;
+  ctaLabel: string;
+};
+
 export type MarketingHomepageView = {
   hero: ResolvedHero;
   categories: ResolvedCategory[];
   quickDestinations: ResolvedDestination[];
+  offers: ResolvedOffer[];
   reviews: ResolvedTestimonials | null;
   videos: ResolvedYoutubeVideos | null;
   inquiry: ResolvedInquiry | null;
@@ -202,6 +214,7 @@ export function buildMarketingHomepageView(
     categories?: Category[];
     destinations?: Destination[];
     trips?: PublicTrip[];
+    offerBanners?: Banner[];
   }
 ): MarketingHomepageView {
   const heroSection = sections.find((s) => s.type === "hero");
@@ -356,5 +369,21 @@ export function buildMarketingHomepageView(
         }
       : null;
 
-  return { hero, categories, quickDestinations, reviews, videos, inquiry };
+  const offers: ResolvedOffer[] = (catalog?.offerBanners ?? [])
+    .filter((b) => b.isActive)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((banner) => ({
+      id: banner.id,
+      badge: banner.title?.trim() || "Limited Offer",
+      headline: banner.headline,
+      subheadline: banner.subheadline,
+      image: resolveMedia(mediaMap, banner.mediaId),
+      href:
+        banner.ctaButtons?.[0]?.url?.trim() ||
+        banner.linkUrl?.trim() ||
+        "/trips",
+      ctaLabel: banner.ctaButtons?.[0]?.label?.trim() || "View Offer",
+    }));
+
+  return { hero, categories, quickDestinations, offers, reviews, videos, inquiry };
 }

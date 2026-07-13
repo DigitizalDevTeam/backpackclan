@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { HeroVideoBanner } from "@/components/homepage/HeroVideoBanner";
 import { HomeCategoryNav } from "@/components/homepage/HomeCategoryNav";
+import { HomeOffersSlider } from "@/components/homepage/HomeOffersSlider";
 import { CategorySection } from "@/components/homepage/CategorySection";
 import { HomeReviewsSection } from "@/components/homepage/HomeReviewsSection";
 import { HomeVideosSection } from "@/components/homepage/HomeVideosSection";
@@ -46,7 +47,11 @@ export function HomeMarketing({ view: initialView, fetchOnClient = false }: Home
           );
         }
 
-        setView(buildMarketingHomepageView(sections, mediaMap));
+        setView(
+          buildMarketingHomepageView(sections, mediaMap, {
+            offerBanners: Array.isArray(payload) ? [] : (payload.offerBanners ?? []),
+          })
+        );
       } finally {
         setLoading(false);
       }
@@ -70,6 +75,7 @@ export function HomeMarketing({ view: initialView, fetchOnClient = false }: Home
         destinations={view.quickDestinations}
         categories={view.categories}
       />
+      {view.offers.length > 0 ? <HomeOffersSlider offers={view.offers} /> : null}
       {view.categories.map((category, index) => (
         <div key={category.id} id={category.slug}>
           <CategorySection category={category} index={index} />

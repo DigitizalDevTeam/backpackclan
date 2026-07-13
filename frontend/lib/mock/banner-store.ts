@@ -26,19 +26,98 @@ const SEED_BANNERS: Banner[] = [
   },
   {
     id: "2",
-    title: "Spiti Valley Promo",
+    title: "Flat 20% Off",
+    placement: "homepage_secondary",
+    mediaType: "image",
+    mediaId: "1",
+    headline: "Early Bird Ladakh Bike Deals",
+    subheadline:
+      "Book your high-altitude motorcycle expedition early and save on select July–September departures.",
+    linkUrl: "/trips?category=motor-biking&region=domestic",
+    ctaButtons: [
+      {
+        id: "cta-offer-1",
+        label: "Grab Deal",
+        url: "/trips?category=motor-biking&region=domestic",
+        style: "primary",
+      },
+    ],
+    startsAt: null,
+    endsAt: null,
+    sortOrder: 0,
+    isActive: true,
+    createdAt: "2026-02-01T10:00:00.000Z",
+    updatedAt: "2026-02-01T10:00:00.000Z",
+    destinationId: null,
+  },
+  {
+    id: "5",
+    title: "Spiti Special",
     placement: "homepage_secondary",
     mediaType: "image",
     mediaId: "2",
-    headline: "Spiti Valley Awaits",
-    subheadline: "7-day road trip through the middle land",
-    linkUrl: "/destinations/spiti",
+    headline: "Spiti Valley Group Offer",
+    subheadline:
+      "Limited seats on our Spiti backpacking & bike circuits — complimentary gear kit on confirmed bookings.",
+    linkUrl: "/trips?destination=spiti",
     ctaButtons: [
-      { id: "cta3", label: "View Packages", url: "/destinations/spiti", style: "primary" },
+      {
+        id: "cta-offer-2",
+        label: "View Spiti Trips",
+        url: "/trips?destination=spiti",
+        style: "primary",
+      },
     ],
     startsAt: null,
     endsAt: null,
     sortOrder: 1,
+    isActive: true,
+    createdAt: "2026-02-01T10:00:00.000Z",
+    updatedAt: "2026-02-01T10:00:00.000Z",
+    destinationId: null,
+  },
+  {
+    id: "6",
+    title: "International Week",
+    placement: "homepage_secondary",
+    mediaType: "image",
+    mediaId: "4",
+    headline: "Bhutan & Bali Custom Savings",
+    subheadline:
+      "Private departures with exclusive seasonal pricing for couples and small groups.",
+    linkUrl: "/trips?category=custom-departures&region=international",
+    ctaButtons: [
+      { id: "cta-offer-3", label: "Enquire Now", url: "/contact", style: "primary" },
+    ],
+    startsAt: null,
+    endsAt: null,
+    sortOrder: 2,
+    isActive: true,
+    createdAt: "2026-02-01T10:00:00.000Z",
+    updatedAt: "2026-02-01T10:00:00.000Z",
+    destinationId: null,
+  },
+  {
+    id: "7",
+    title: "Trek Season",
+    placement: "homepage_secondary",
+    mediaType: "image",
+    mediaId: "7",
+    headline: "Himalayan Trek Festival",
+    subheadline:
+      "Save on Kashmir Great Lakes & Nepal EBC — free rain jacket on every trek booking this month.",
+    linkUrl: "/trips?category=treks",
+    ctaButtons: [
+      {
+        id: "cta-offer-4",
+        label: "Browse Treks",
+        url: "/trips?category=treks",
+        style: "primary",
+      },
+    ],
+    startsAt: null,
+    endsAt: null,
+    sortOrder: 3,
     isActive: true,
     createdAt: "2026-02-01T10:00:00.000Z",
     updatedAt: "2026-02-01T10:00:00.000Z",
@@ -86,7 +165,7 @@ const SEED_BANNERS: Banner[] = [
   },
 ];
 
-const bannerStore = createPersistedStore("banners", SEED_BANNERS);
+const bannerStore = createPersistedStore("banners-v2", SEED_BANNERS);
 
 function generateId(): string {
   return String(Date.now() + Math.random()).replace(".", "");
