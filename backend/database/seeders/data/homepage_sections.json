@@ -6,14 +6,147 @@
     "sort_order": 0,
     "is_enabled": true,
     "content": {
-      "headline": "Explore the Himalayas with Backpackclan",
-      "subheadline": "Curated bike tours, treks, and group adventures across Leh Ladakh, Spiti, Kashmir, Bhutan & Nepal.",
-      "mediaType": "image",
-      "mediaId": "1",
+      "eyebrow": "Travel · Explore · Share",
+      "headline": "Adventures that feel like tomorrow",
+      "subheadline": "Bike tours, treks, backpacking & custom departures across India and beyond.",
+      "mediaType": "video",
+      "mediaId": "6",
+      "posterMediaId": "2",
       "bannerId": "1",
       "ctas": [
         { "label": "Explore Trips", "url": "/trips", "style": "primary" },
-        { "label": "Custom Trip Inquiry", "url": "/contact", "style": "outline" }
+        { "label": "Enquire Now", "url": "/contact", "style": "outline" }
+      ]
+    }
+  },
+  {
+    "slug": "motor-biking",
+    "title": "Motor Biking",
+    "type": "category_showcase",
+    "sort_order": 1,
+    "is_enabled": true,
+    "content": {
+      "title": "Motor Biking",
+      "subtitle": "High passes, open roads, and legendary Himalayan circuits.",
+      "href": "/trips?category=motor-biking",
+      "layout": "banner-below",
+      "categorySlug": "motor-biking",
+      "videoMediaId": "6",
+      "posterMediaId": "1",
+      "tabs": [
+        {
+          "id": "india",
+          "label": "India",
+          "destinationSlugs": ["leh-ladakh", "spiti", "tawang"],
+          "items": []
+        },
+        {
+          "id": "international",
+          "label": "International",
+          "destinationSlugs": ["vietnam", "thailand"],
+          "items": []
+        }
+      ]
+    }
+  },
+  {
+    "slug": "backpacking",
+    "title": "Backpacking",
+    "type": "category_showcase",
+    "sort_order": 2,
+    "is_enabled": true,
+    "content": {
+      "title": "Backpacking",
+      "subtitle": "Slow travel, local stays, and stories worth sharing.",
+      "href": "/trips?category=backpacking",
+      "layout": "banner-below",
+      "categorySlug": "backpacking",
+      "videoMediaId": "6",
+      "posterMediaId": "2",
+      "tabs": [
+        {
+          "id": "india",
+          "label": "India",
+          "destinationSlugs": ["spiti", "kerala", "meghalaya"],
+          "items": []
+        },
+        {
+          "id": "international",
+          "label": "International",
+          "destinationSlugs": ["thailand", "bali", "bhutan"],
+          "items": []
+        }
+      ]
+    }
+  },
+  {
+    "slug": "treks",
+    "title": "Treks",
+    "type": "category_showcase",
+    "sort_order": 3,
+    "is_enabled": true,
+    "content": {
+      "title": "Treks",
+      "subtitle": "Season-ready Himalayan trails — pick your month, pack your bag.",
+      "href": "/trips?category=treks",
+      "layout": "banner-below",
+      "categorySlug": "treks",
+      "videoMediaId": "6",
+      "posterMediaId": "7",
+      "tabs": [
+        {
+          "id": "india",
+          "label": "India",
+          "destinationSlugs": ["kashmir", "sikkim"],
+          "items": []
+        },
+        {
+          "id": "international",
+          "label": "International",
+          "destinationSlugs": ["nepal"],
+          "items": []
+        },
+        {
+          "id": "months",
+          "label": "Month-wise",
+          "destinationSlugs": [],
+          "items": [
+            { "id": "q1", "name": "Jan – Mar", "href": "/trips?category=treks&month=jan", "imageId": "7", "tripCount": 4 },
+            { "id": "q2", "name": "Apr – Jun", "href": "/trips?category=treks&month=apr", "imageId": "2", "tripCount": 5 },
+            { "id": "q3", "name": "Jul – Sep", "href": "/trips?category=treks&month=jul", "imageId": "5", "tripCount": 6 },
+            { "id": "q4", "name": "Oct – Dec", "href": "/trips?category=treks&month=oct", "imageId": "1", "tripCount": 5 }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "custom-departures",
+    "title": "Custom Departures",
+    "type": "category_showcase",
+    "sort_order": 4,
+    "is_enabled": true,
+    "content": {
+      "title": "Custom Departures",
+      "subtitle": "Private groups and bespoke itineraries, built around your dates.",
+      "href": "/contact",
+      "layout": "banner-below",
+      "categorySlug": "custom-departures",
+      "videoMediaId": "6",
+      "posterMediaId": "4",
+      "tabs": [
+        {
+          "id": "india",
+          "label": "India",
+          "destinationSlugs": ["andaman", "kerala", "spiti"],
+          "items": []
+        },
+        {
+          "id": "international",
+          "label": "International",
+          "destinationSlugs": ["bali", "bhutan", "thailand"],
+          "items": []
+        }
       ]
     }
   },
@@ -21,126 +154,157 @@
     "slug": "featured-destinations",
     "title": "Featured Destinations",
     "type": "featured_destinations",
-    "sort_order": 1,
+    "sort_order": 5,
     "is_enabled": true,
     "content": {
       "title": "Popular Destinations",
-      "cards": [
-        { "id": "d1", "name": "Leh Ladakh", "tripCount": 24, "imageId": "1", "link": "/destinations/leh-ladakh" },
-        { "id": "d2", "name": "Spiti Valley", "tripCount": 18, "imageId": "2", "link": "/destinations/spiti" },
-        { "id": "d3", "name": "Kashmir", "tripCount": 15, "imageId": "3", "link": "/destinations/kashmir" },
-        { "id": "d4", "name": "Bhutan", "tripCount": 12, "imageId": "4", "link": "/destinations/bhutan" },
-        { "id": "d5", "name": "Nepal", "tripCount": 20, "imageId": "5", "link": "/destinations/nepal" }
-      ]
+      "destinationSlugs": ["leh-ladakh", "spiti", "kashmir", "bhutan", "nepal", "tawang", "thailand"],
+      "cards": []
     }
   },
   {
     "slug": "popular-trips",
     "title": "Popular Trips",
     "type": "popular_trips",
-    "sort_order": 2,
-    "is_enabled": true,
+    "sort_order": 6,
+    "is_enabled": false,
     "content": {
       "title": "Trending Adventures",
       "layout": "carousel",
-      "filterTags": ["Bike Tour", "Trek", "Guaranteed Departures", "Weekend"]
-    }
-  },
-  {
-    "slug": "why-choose-us",
-    "title": "Why Choose Us",
-    "type": "why_choose_us",
-    "sort_order": 3,
-    "is_enabled": true,
-    "content": {
-      "title": "Why Travel with Backpackclan?",
-      "blocks": [
-        { "id": "w1", "icon": "Shield", "title": "Safe & Verified", "description": "Experienced guides and safety-first approach on every trip." },
-        { "id": "w2", "icon": "Users", "title": "Small Groups", "description": "Intimate group sizes for a personal adventure experience." },
-        { "id": "w3", "icon": "MapPin", "title": "Local Expertise", "description": "Deep knowledge of Himalayan routes and hidden gems." },
-        { "id": "w4", "icon": "Star", "title": "4.8★ Rated", "description": "Thousands of happy travelers and glowing reviews." }
-      ]
+      "mode": "featured",
+      "tripIds": [],
+      "filterTags": ["Motor Biking", "Trek", "Backpacking", "Custom"]
     }
   },
   {
     "slug": "testimonials",
-    "title": "Testimonials",
+    "title": "Reviews",
     "type": "testimonials",
-    "sort_order": 4,
+    "sort_order": 7,
     "is_enabled": true,
     "content": {
-      "title": "What Travelers Say",
+      "eyebrow": "Reviews",
+      "title": "What Our Clients Say About Us",
       "items": [
-        { "id": "t1", "name": "Rahul Sharma", "trip": "Leh Ladakh Bike Trip", "rating": 5, "text": "An absolutely incredible experience! The team handled everything perfectly.", "avatarId": null },
-        { "id": "t2", "name": "Priya Mehta", "trip": "Spiti Valley Tour", "rating": 5, "text": "Best travel company for Himalayan adventures. Highly recommended!", "avatarId": null },
-        { "id": "t3", "name": "Arjun Patel", "trip": "Kashmir Trek", "rating": 4, "text": "Great guides, beautiful scenery, and seamless organization throughout.", "avatarId": null }
+        {
+          "id": "t1",
+          "name": "Ananya Kapoor",
+          "trip": "Leh Ladakh Bike Expedition",
+          "tripHref": "/trips?destination=leh-ladakh",
+          "tripImageId": "1",
+          "tripImageUrl": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80",
+          "reviewUrl": "https://www.google.com/maps",
+          "rating": 5,
+          "text": "From the high passes to the campfire nights, everything was planned to perfection. The BackpackClan crew made our first Himalayan ride feel safe and unforgettable.",
+          "avatarId": null
+        },
+        {
+          "id": "t2",
+          "name": "devansh mehta",
+          "trip": "Spiti Valley Backpacking Circuit",
+          "tripHref": "/trips?destination=spiti",
+          "tripImageId": "2",
+          "tripImageUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80",
+          "reviewUrl": "https://www.google.com/maps",
+          "rating": 5,
+          "text": "Honestly the best group trip I've done. Small batch, great guides, and zero chaos with permits or stays. Spiti looked even better than the photos.",
+          "avatarId": null
+        },
+        {
+          "id": "t3",
+          "name": "Sneha Iyer",
+          "trip": "Kashmir Great Lakes Trek",
+          "tripHref": "/trips?destination=kashmir",
+          "tripImageId": "3",
+          "tripImageUrl": "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=400&q=80",
+          "reviewUrl": "https://www.google.com/maps",
+          "rating": 5,
+          "text": "The meadows, the lakes, the food — every day felt like a postcard. Support staff were attentive without hovering. Already booking our next trek with them.",
+          "avatarId": null
+        },
+        {
+          "id": "t4",
+          "name": "Rohit Banerjee",
+          "trip": "Bhutan Custom Departure",
+          "tripHref": "/trips?destination=bhutan",
+          "tripImageId": "4",
+          "tripImageUrl": "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=400&q=80",
+          "reviewUrl": null,
+          "rating": 5,
+          "text": "They built a private itinerary around our dates and it still felt like a proper adventure, not a rushed checklist. Smooth border formalities and lovely stays.",
+          "avatarId": null
+        },
+        {
+          "id": "t5",
+          "name": "Meera Joshi",
+          "trip": "Nepal Everest Region Trek",
+          "tripHref": "/trips?destination=nepal",
+          "tripImageId": "5",
+          "tripImageUrl": "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=400&q=80",
+          "reviewUrl": "https://www.google.com/maps",
+          "rating": 4,
+          "text": "Tough days, beautiful nights, and a team that checked on everyone. Acclimatization pacing was sensible and the local guides knew every ridge like home.",
+          "avatarId": null
+        }
       ]
     }
   },
   {
-    "slug": "gallery",
-    "title": "Instagram / Gallery",
-    "type": "gallery",
-    "sort_order": 5,
-    "is_enabled": true,
-    "content": { "title": "Adventures in Pictures", "imageIds": ["1", "2", "3", "4", "5", "7"] }
-  },
-  {
-    "slug": "blog-highlights",
-    "title": "Blog Highlights",
-    "type": "blog_highlights",
-    "sort_order": 6,
+    "slug": "youtube-videos",
+    "title": "YouTube Videos",
+    "type": "youtube_videos",
+    "sort_order": 8,
     "is_enabled": true,
     "content": {
-      "title": "From Our Blog",
-      "posts": [
-        { "id": "b1", "title": "Best Time to Visit Ladakh", "excerpt": "Plan your Ladakh trip with our seasonal guide...", "imageId": "1", "link": "/blog/best-time-ladakh", "date": "2026-03-01" },
-        { "id": "b2", "title": "Spiti Valley Road Trip Guide", "excerpt": "Everything you need for an epic Spiti adventure...", "imageId": "2", "link": "/blog/spiti-guide", "date": "2026-02-15" },
-        { "id": "b3", "title": "Packing for Himalayan Treks", "excerpt": "Essential gear list for high-altitude trekking...", "imageId": "7", "link": "/blog/trek-packing", "date": "2026-02-01" }
+      "eyebrow": "Videos",
+      "title": "Memories For Life",
+      "items": [
+        {
+          "id": "yt1",
+          "title": "Leh Ladakh Motorcycle Diaries",
+          "youtubeUrl": "https://www.youtube.com/watch?v=LXb3EKWsInQ",
+          "thumbnailUrl": null
+        },
+        {
+          "id": "yt2",
+          "title": "Spiti Valley Road Trip",
+          "youtubeUrl": "https://www.youtube.com/watch?v=s6zR2T9vn2c",
+          "thumbnailUrl": null
+        },
+        {
+          "id": "yt3",
+          "title": "Himalayan Trek Stories",
+          "youtubeUrl": "https://www.youtube.com/watch?v=YeF-Q6sCtEI",
+          "thumbnailUrl": null
+        },
+        {
+          "id": "yt4",
+          "title": "Kashmir Trails",
+          "youtubeUrl": "https://www.youtube.com/watch?v=hY7m5jjJ9mM",
+          "thumbnailUrl": null
+        },
+        {
+          "id": "yt5",
+          "title": "Bhutan Custom Departures",
+          "youtubeUrl": "https://www.youtube.com/watch?v=9bZkp7q19f0",
+          "thumbnailUrl": null
+        }
       ]
     }
   },
   {
     "slug": "newsletter-cta",
-    "title": "Newsletter CTA",
+    "title": "Inquiry CTA",
     "type": "newsletter_cta",
-    "sort_order": 7,
-    "is_enabled": true,
-    "content": {
-      "headline": "Get Exclusive Trip Deals",
-      "description": "Subscribe for early-bird discounts, new trip launches, and travel tips.",
-      "buttonText": "Subscribe",
-      "placeholder": "Enter your email"
-    }
-  },
-  {
-    "slug": "partner-logos",
-    "title": "Partner Logos",
-    "type": "partner_logos",
-    "sort_order": 8,
-    "is_enabled": false,
-    "content": {
-      "title": "Our Partners",
-      "logos": [
-        { "id": "p1", "name": "Partner 1", "imageId": "1", "link": "#" },
-        { "id": "p2", "name": "Partner 2", "imageId": "2", "link": "#" },
-        { "id": "p3", "name": "Partner 3", "imageId": "4", "link": "#" }
-      ]
-    }
-  },
-  {
-    "slug": "faq-strip",
-    "title": "FAQ Strip",
-    "type": "faq_strip",
     "sort_order": 9,
     "is_enabled": true,
     "content": {
-      "title": "Frequently Asked Questions",
-      "items": [
-        { "id": "f1", "question": "What is included in the trip price?", "answer": "Accommodation, meals as per itinerary, permits, and guide services." },
-        { "id": "f2", "question": "Do you offer custom trips?", "answer": "Yes! Contact us for fully customized private group adventures." },
-        { "id": "f3", "question": "What is the cancellation policy?", "answer": "Free cancellation up to 30 days before departure. Terms apply." }
-      ]
+      "headline": "We're here to help you pick the perfect trip",
+      "description": "Share your dates, group size, and vibe — we'll craft an itinerary that fits.",
+      "buttonText": "Get a free quote",
+      "placeholder": "",
+      "secondaryButtonText": "Browse trips",
+      "secondaryButtonUrl": "/trips"
     }
   }
 ]

@@ -5,23 +5,31 @@ import { ArrowLeft } from "lucide-react";
 import { TripDetailView } from "@/components/trips/TripDetailView";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { Button } from "@/components/ui/button";
-import { getTripDetail } from "@/lib/mock/trip-detail-store";
-import { getAllTrips, getTripBySlug } from "@/lib/mock/trip-store";
 import { getSiteLayoutData } from "@/lib/site/public-data";
+import {
+  getPublicTripDetail,
+  getPublicTripSlugs,
+} from "@/lib/site/trip-data";
 import { formatInr } from "@/lib/site/format";
 
 interface TripDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export function generateStaticParams() {
-  return getAllTrips().map((trip) => ({ slug: trip.slug }));
+export const dynamic = "force-dynamic";
+
+export async function generateStaticParams() {
+  const slugs = await getPublicTripSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
-export async function generateMetadata({ params }: TripDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: TripDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const trip = getTripBySlug(slug);
-  if (!trip) return { title: "Trip Not Found" };
+  const detail = await getPublicTripDetail(slug);
+  if (!detail) return { title: "Trip Not Found" };
+  const { trip } = detail;
   return {
     title: `${trip.title} | Backpackclan`,
     description: `${trip.duration} adventure to ${trip.destination}. Starting from ${formatInr(trip.price)}.`,
@@ -30,14 +38,12 @@ export async function generateMetadata({ params }: TripDetailPageProps): Promise
 
 export default async function TripDetailPage({ params }: TripDetailPageProps) {
   const { slug } = await params;
-  const trip = getTripBySlug(slug);
-  if (!trip) notFound();
+  const [data, layout] = await Promise.all([
+    getPublicTripDetail(slug),
+    getSiteLayoutData(),
+  ]);
 
-  const layout = getSiteLayoutData();
-  const detail = getTripDetail(trip);
-  const similarTrips = getAllTrips()
-    .filter((t) => t.slug !== slug && (t.destination === trip.destination || t.category === trip.category))
-    .slice(0, 3);
+  if (!data) notFound();
 
   return (
     <SitePageShell>
@@ -52,10 +58,10 @@ export default async function TripDetailPage({ params }: TripDetailPageProps) {
         </div>
       </div>
       <TripDetailView
-        trip={trip}
-        detail={detail}
+        trip={data.trip}
+        detail={data.detail}
         mediaMap={layout.mediaMap}
-        similarTrips={similarTrips}
+        similarTrips={data.related}
       />
     </SitePageShell>
   );

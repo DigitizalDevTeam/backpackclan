@@ -1,30 +1,62 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { PageHero } from "@/components/site/PageHero";
 import { BlogListing } from "@/components/blog/BlogListing";
-import { getPublishedPosts, getBlogCategories } from "@/lib/mock/blog-store";
 import { buildPageMetadata } from "@/lib/site/seo-metadata";
-import { getSiteLayoutData } from "@/lib/site/public-data";
+import { getBlogListingData } from "@/lib/site/blog-data";
 
-export const metadata = buildPageMetadata("blog", {
-  title: "Travel Blog — Backpackclan",
-  description: "Travel guides, tips, and stories from the Backpackclan team.",
-});
+export const dynamic = "force-dynamic";
 
-export default function BlogPage() {
-  const layout = getSiteLayoutData();
-  const posts = getPublishedPosts();
-  const categories = getBlogCategories();
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata("blog", {
+    title: "Travel Blog — Backpackclan",
+    description: "Travel guides, tips, and stories from the Backpackclan team.",
+  });
+}
+
+interface BlogPageProps {
+  searchParams: Promise<{
+    category?: string;
+    tag?: string;
+    page?: string;
+  }>;
+}
+
+export default async function BlogPage({ searchParams }: BlogPageProps) {
+  const params = await searchParams;
+  const page = Math.max(1, Number(params.page) || 1);
+  const data = await getBlogListingData({
+    category: params.category,
+    tag: params.tag,
+    page,
+    perPage: 9,
+  });
 
   return (
     <SitePageShell seoPageKey="blog">
       <PageHero
-        badge="Travel blog"
-        title="Guides, tips & stories from the trail"
-        subtitle="Expert advice from our trip leaders to help you plan smarter Himalayan adventures."
-        imageUrl={layout.mediaMap["5"]}
+        badge={data.hero.badge}
+        title={data.hero.title}
+        subtitle={data.hero.subtitle}
+        imageUrl={data.hero.imageUrl ?? undefined}
       />
-      <BlogListing posts={posts} categories={categories} mediaMap={layout.mediaMap} />
+      <Suspense
+        fallback={
+          <div className="mx-auto max-w-7xl px-4 py-16 text-center text-muted-foreground">
+            Loading articles…
+          </div>
+        }
+      >
+        <BlogListing
+          posts={data.posts}
+          categories={data.categories}
+          mediaMap={data.mediaMap}
+          meta={data.meta}
+          initialCategory={params.category ?? "All"}
+          initialTag={params.tag}
+        />
+      </Suspense>
     </SitePageShell>
   );
 }

@@ -28,6 +28,8 @@ import {
   TrustBar,
 } from "@/components/homepage/homepage-parts";
 import { ScrollCarousel } from "@/components/homepage/ScrollCarousel";
+import { HomeVideosSection } from "@/components/homepage/HomeVideosSection";
+import { extractYoutubeId } from "@/lib/site/home-categories";
 import type { HomepageSection } from "@/types/homepage";
 import type { PublicTrip } from "@/types/trip";
 import type { Banner } from "@/types/banner";
@@ -195,7 +197,7 @@ function SectionBlock({
             <p className="homepage-fade-up mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-200 sm:text-xl [animation-delay:150ms]">
               {content.subheadline}
             </p>
-            <HeroSearchBar />
+            <HeroSearchBar className="mt-10" />
             <div className="homepage-fade-up mt-8 [animation-delay:300ms]">
               <CategoryChips />
             </div>
@@ -405,6 +407,36 @@ function SectionBlock({
             </ScrollCarousel>
           </div>
         </section>
+      );
+    }
+
+    case "youtube_videos": {
+      const content = c as import("@/types/homepage").YoutubeVideosContent;
+      const items = (content.items ?? [])
+        .map((item) => {
+          const youtubeId = extractYoutubeId(item.youtubeUrl ?? "");
+          if (!youtubeId) return null;
+          return {
+            id: item.id,
+            youtubeId,
+            title: item.title?.trim() || "Watch on YouTube",
+            thumbnailUrl:
+              item.thumbnailUrl?.trim() ||
+              `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+      if (!items.length) return null;
+
+      return (
+        <HomeVideosSection
+          videos={{
+            eyebrow: content.eyebrow?.trim() || "Videos",
+            title: content.title || "Memories For Life",
+            items,
+          }}
+        />
       );
     }
 

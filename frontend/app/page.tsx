@@ -1,26 +1,29 @@
 import type { Metadata } from "next";
-import { HomepageRenderer } from "@/components/homepage/HomepageRenderer";
+import { HomeMarketing } from "@/components/homepage/HomeMarketing";
 import { SitePageShell } from "@/components/site/SitePageShell";
-import { getHomepageData } from "@/lib/site/public-data";
 import { buildPageMetadata } from "@/lib/site/seo-metadata";
+import { getHomepageData } from "@/lib/site/public-data";
+import { buildMarketingHomepageView } from "@/lib/site/home-categories";
 
-export const metadata: Metadata = buildPageMetadata("homepage", {
-  title: "Backpackclan — Adventure Tours in the Himalayas",
-  description:
-    "Curated bike tours, treks, and group adventures across Leh Ladakh, Spiti, Kashmir, Bhutan & Nepal.",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata("homepage", {
+    title: "Backpackclan — Travel Explore Share",
+    description:
+      "Premium motor biking, backpacking, treks, and custom departures across India and beyond.",
+  });
+}
 
-export default function HomePage() {
-  const data = getHomepageData();
+export default async function HomePage() {
+  const data = await getHomepageData();
+  const view = buildMarketingHomepageView(data.sections, data.mediaMap, {
+    categories: data.categories,
+    destinations: data.destinations,
+    trips: data.trips,
+  });
 
   return (
     <SitePageShell seoPageKey="homepage">
-      <HomepageRenderer
-        sections={data.sections}
-        mediaMap={data.mediaMap}
-        trips={data.trips}
-        secondaryBanner={data.secondaryBanner}
-      />
+      <HomeMarketing view={view} />
     </SitePageShell>
   );
 }

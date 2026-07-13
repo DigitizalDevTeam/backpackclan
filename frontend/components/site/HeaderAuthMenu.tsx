@@ -15,8 +15,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
-export function HeaderAuthMenu() {
+export function HeaderAuthMenu({ light = false }: { light?: boolean }) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +47,12 @@ export function HeaderAuthMenu() {
 
   if (loading) {
     return (
-      <Button variant="ghost" size="sm" disabled className="hidden sm:inline-flex">
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled
+        className={cn("hidden sm:inline-flex", light && "text-white")}
+      >
         <Loader2 className="h-4 w-4 animate-spin" />
       </Button>
     );
@@ -57,7 +63,14 @@ export function HeaderAuthMenu() {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="hidden gap-2 sm:inline-flex">
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              "hidden gap-2 sm:inline-flex",
+              light && "border-white/30 bg-white/5 text-white hover:bg-white/15 hover:text-white"
+            )}
+          >
             <User className="h-4 w-4" />
             {user?.name}
           </Button>
@@ -90,10 +103,26 @@ export function HeaderAuthMenu() {
 
   return (
     <>
-      <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        className={cn(
+          "hidden sm:inline-flex",
+          light && "text-white/85 hover:bg-white/10 hover:text-white"
+        )}
+      >
         <Link href="/login">Login</Link>
       </Button>
-      <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        className={cn(
+          "hidden sm:inline-flex",
+          light && "border-white/30 bg-white/5 text-white hover:bg-white/15 hover:text-white"
+        )}
+      >
         <Link href="/register">Register</Link>
       </Button>
     </>

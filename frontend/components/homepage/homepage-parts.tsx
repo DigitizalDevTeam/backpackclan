@@ -1,5 +1,8 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Bike,
   Calendar,
@@ -157,55 +160,98 @@ export function CategoryChips() {
   );
 }
 
-export function HeroSearchBar() {
+const TRAVEL_MONTHS = [
+  { value: "jan", label: "January" },
+  { value: "feb", label: "February" },
+  { value: "mar", label: "March" },
+  { value: "apr", label: "April" },
+  { value: "may", label: "May" },
+  { value: "jun", label: "June" },
+  { value: "jul", label: "July" },
+  { value: "aug", label: "August" },
+  { value: "sep", label: "September" },
+  { value: "oct", label: "October" },
+  { value: "nov", label: "November" },
+  { value: "dec", label: "December" },
+] as const;
+
+export function HeroSearchBar({ className }: { className?: string }) {
+  const router = useRouter();
+  const [destination, setDestination] = useState("");
+  const [month, setMonth] = useState("");
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (destination.trim()) params.set("search", destination.trim());
+    if (month) params.set("month", month);
+    const qs = params.toString();
+    router.push(qs ? `/trips?${qs}` : "/trips");
+  }
+
   return (
-    <div className="homepage-fade-up mx-auto mt-10 max-w-4xl rounded-2xl border border-white/20 bg-white p-2 shadow-2xl shadow-black/25 backdrop-blur-sm [animation-delay:200ms]">
+    <form
+      onSubmit={onSubmit}
+      className={cn(
+        "homepage-fade-up mx-auto w-full max-w-3xl rounded-2xl border border-white/25 bg-white p-2 shadow-2xl shadow-black/25 [animation-delay:180ms]",
+        className
+      )}
+    >
       <div className="flex flex-col gap-2 md:flex-row md:items-stretch">
-        <div className="flex flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4 py-3.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <MapPin className="h-4 w-4 text-primary" />
-          </div>
-          <div className="text-left">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <label className="flex flex-1 cursor-text items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50">
+            <MapPin className="h-4 w-4 text-[#F58220]" />
+          </span>
+          <span className="min-w-0 flex-1 text-left">
+            <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               Destination
-            </p>
+            </span>
             <input
               type="text"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
               placeholder="Ladakh, Spiti, Kashmir..."
               className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
-              readOnly
             />
-          </div>
-        </div>
+          </span>
+        </label>
+
         <div className="hidden h-auto w-px bg-slate-200 md:block" />
-        <div className="flex flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4 py-3.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <Calendar className="h-4 w-4 text-primary" />
-          </div>
-          <div className="text-left">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+
+        <label className="relative flex flex-1 cursor-pointer items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50">
+            <Calendar className="h-4 w-4 text-[#F58220]" />
+          </span>
+          <span className="min-w-0 flex-1 text-left">
+            <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               Travel Month
-            </p>
-            <input
-              type="text"
-              placeholder="May – September"
-              className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
-              readOnly
-            />
-          </div>
-        </div>
+            </span>
+            <select
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="w-full appearance-none bg-transparent text-sm font-medium text-slate-900 outline-none"
+            >
+              <option value="">Any month</option>
+              {TRAVEL_MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </span>
+          <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4 text-slate-400" />
+        </label>
+
         <Button
-          asChild
+          type="submit"
           size="lg"
-          className="h-auto rounded-xl bg-orange-500 px-8 py-3.5 text-base font-semibold shadow-lg shadow-orange-500/25 hover:bg-orange-600"
+          className="h-auto rounded-xl bg-[#F58220] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-orange-500/25 hover:bg-[#e07418]"
         >
-          <Link href="/trips">
-            <Search className="h-4 w-4" />
-            Search Trips
-          </Link>
+          <Search className="h-4 w-4" />
+          Search Trips
         </Button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -256,7 +302,7 @@ export function StatsStrip() {
               <Icon className="h-6 w-6 text-orange-300" />
             </div>
             <p className="text-3xl font-bold tracking-tight">{value}</p>
-            <p className="mt-1 text-sm text-teal-100">{label}</p>
+            <p className="mt-1 text-sm text-orange-100">{label}</p>
           </div>
         ))}
       </div>

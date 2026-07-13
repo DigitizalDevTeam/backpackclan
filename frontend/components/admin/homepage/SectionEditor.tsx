@@ -31,6 +31,7 @@ import type {
 } from "@/types/homepage";
 import type { UserRole } from "@/types/auth";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { DestinationMultiSelect } from "@/components/admin/homepage/DestinationMultiSelect";
 
 interface SectionEditorProps {
   slug: string;
@@ -90,6 +91,16 @@ export function SectionEditor({ slug, userRole }: SectionEditorProps) {
             mode: c.mode ?? "latest",
             postIds: c.postIds ?? [],
             posts: c.posts ?? [],
+          });
+        } else if (result.data.type === "category_showcase") {
+          const c = content as import("@/types/homepage").CategoryShowcaseContent;
+          reset({
+            ...c,
+            tabs: (c.tabs ?? []).map((t) => ({
+              ...t,
+              destinationIds: t.destinationIds ?? [],
+              items: t.items ?? [],
+            })),
           });
         } else {
           reset(content);
@@ -199,6 +210,8 @@ function SectionFormFields({
       return <WhyChooseUsForm {...props} />;
     case "testimonials":
       return <TestimonialsForm {...props} />;
+    case "youtube_videos":
+      return <YoutubeVideosForm {...props} />;
     case "gallery":
       return <GalleryForm {...props} />;
     case "blog_highlights":
@@ -209,6 +222,8 @@ function SectionFormFields({
       return <PartnerLogosForm {...props} />;
     case "faq_strip":
       return <FaqForm {...props} />;
+    case "category_showcase":
+      return <CategoryShowcaseForm {...props} />;
     default:
       return <p className="text-muted-foreground">Unknown section type.</p>;
   }
@@ -272,6 +287,18 @@ function HeroForm({ register, control, watch, setValue, readOnly }: FormProps) {
           disabled={readOnly}
         />
       </div>
+      {mediaType === "video" ? (
+        <div className="space-y-2">
+          <Label>Poster image</Label>
+          <MediaPicker
+            value={watch("posterMediaId" as never) as unknown as string | null}
+            onChange={(m) => setValue("posterMediaId" as never, (m?.id ?? null) as never)}
+            accept="image"
+            disabled={readOnly}
+          />
+        </div>
+      ) : null}
+      <Field label="Eyebrow (optional)" name="eyebrow" register={register} readOnly={readOnly} />
       <RepeaterHeader
         label="CTA buttons"
         readOnly={readOnly}
@@ -296,69 +323,22 @@ function HeroForm({ register, control, watch, setValue, readOnly }: FormProps) {
 }
 
 function FeaturedDestinationsForm({ register, control, readOnly }: FormProps) {
-  const [destinations, setDestinations] = useState<
-    { id: string; name: string; slug: string; status: string }[]
-  >([]);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/admin/destinations");
-        const result = await res.json();
-        if (result.success) {
-          setDestinations(
-            result.data.filter((d: { status: string }) => d.status === "published")
-          );
-        }
-      } catch {
-        // non-blocking
-      }
-    }
-    load();
-  }, []);
-
   return (
     <>
       <Field label="Section title" name="title" register={register} readOnly={readOnly} />
-      <div className="space-y-2">
-        <Label>Featured destinations</Label>
-        <p className="text-xs text-muted-foreground">
-          Pick published destinations — cards are built automatically from live data.
-        </p>
-        <Controller
-          control={control}
-          name={"destinationIds" as never}
-          render={({ field }) => {
-            const selected = (field.value as string[]) ?? [];
-            return (
-              <div className="space-y-2 rounded-lg border p-4 max-h-64 overflow-y-auto">
-                {destinations.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No published destinations.</p>
-                ) : (
-                  destinations.map((dest) => (
-                    <label key={dest.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(dest.id)}
-                        disabled={readOnly}
-                        onChange={(e) => {
-                          const next = e.target.checked
-                            ? [...selected, dest.id]
-                            : selected.filter((id) => id !== dest.id);
-                          field.onChange(next);
-                        }}
-                        className="rounded border-input"
-                      />
-                      {dest.name}
-                      <span className="text-muted-foreground">/destinations/{dest.slug}</span>
-                    </label>
-                  ))
-                )}
-              </div>
-            );
-          }}
-        />
-      </div>
+      <Controller
+        control={control}
+        name={"destinationIds" as never}
+        render={({ field }) => (
+          <DestinationMultiSelect
+            value={(field.value as string[]) ?? []}
+            onChange={field.onChange}
+            disabled={readOnly}
+            label="Featured destinations"
+            hint="Pick published destinations — cards are built automatically from live data."
+          />
+        )}
+      />
     </>
   );
 }
@@ -499,17 +479,46 @@ function WhyChooseUsForm({ register, control, readOnly }: FormProps) {
   );
 }
 
-function TestimonialsForm({ register, control, readOnly }: FormProps) {
+function TestimonialsForm({ register, control, watch, setValue, readOnly }: FormProps) {
   const { fields, append, remove } = useFieldArray({ control, name: "items" as never });
   return (
     <>
+      <Field label="Eyebrow" name="eyebrow" register={register} readOnly={readOnly} />
       <Field label="Section title" name="title" register={register} readOnly={readOnly} />
-      <RepeaterHeader label="Testimonials" readOnly={readOnly} onAdd={() => append({ id: `t-${Date.now()}`, name: "", trip: "", rating: 5, text: "", avatarId: null } as never)} />
+      <RepeaterHeader
+        label="Testimonials"
+        readOnly={readOnly}
+        onAdd={() =>
+          append({
+            id: `t-${Date.now()}`,
+            name: "",
+            trip: "",
+            rating: 5,
+            text: "",
+            avatarId: null,
+            tripHref: "/trips",
+            tripImageId: null,
+            tripImageUrl: null,
+            reviewUrl: null,
+          } as never)
+        }
+      />
       {fields.map((field, i) => (
         <div key={field.id} className="space-y-2 rounded-lg border p-4">
           <Input {...register(`items.${i}.name` as never)} placeholder="Name" disabled={readOnly} />
-          <Input {...register(`items.${i}.trip` as never)} placeholder="Trip" disabled={readOnly} />
+          <Input {...register(`items.${i}.trip` as never)} placeholder="Trip name" disabled={readOnly} />
+          <Input {...register(`items.${i}.tripHref` as never)} placeholder="Trip link (e.g. /trips/slug)" disabled={readOnly} />
+          <Input {...register(`items.${i}.reviewUrl` as never)} placeholder="External review URL (optional)" disabled={readOnly} />
           <Input type="number" min={1} max={5} {...register(`items.${i}.rating` as never, { valueAsNumber: true })} placeholder="Rating" disabled={readOnly} />
+          <div className="space-y-2">
+            <Label>Trip thumbnail</Label>
+            <MediaPicker
+              value={watch(`items.${i}.tripImageId` as never) as unknown as string | null}
+              onChange={(m) => setValue(`items.${i}.tripImageId` as never, (m?.id ?? null) as never)}
+              accept="image"
+              disabled={readOnly}
+            />
+          </div>
           <RichTextField
             control={control}
             name={`items.${i}.text`}
@@ -517,6 +526,52 @@ function TestimonialsForm({ register, control, readOnly }: FormProps) {
             readOnly={readOnly}
           />
           {!readOnly && <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+        </div>
+      ))}
+    </>
+  );
+}
+
+function YoutubeVideosForm({ register, control, readOnly }: FormProps) {
+  const { fields, append, remove } = useFieldArray({ control, name: "items" as never });
+  return (
+    <>
+      <Field label="Eyebrow" name="eyebrow" register={register} readOnly={readOnly} />
+      <Field label="Section title" name="title" register={register} readOnly={readOnly} />
+      <RepeaterHeader
+        label="YouTube videos"
+        readOnly={readOnly}
+        onAdd={() =>
+          append({
+            id: `yt-${Date.now()}`,
+            youtubeUrl: "",
+            title: "",
+            thumbnailUrl: null,
+          } as never)
+        }
+      />
+      {fields.map((field, i) => (
+        <div key={field.id} className="space-y-2 rounded-lg border p-4">
+          <Input
+            {...register(`items.${i}.title` as never)}
+            placeholder="Video title (optional)"
+            disabled={readOnly}
+          />
+          <Input
+            {...register(`items.${i}.youtubeUrl` as never)}
+            placeholder="YouTube URL or video ID"
+            disabled={readOnly}
+          />
+          <Input
+            {...register(`items.${i}.thumbnailUrl` as never)}
+            placeholder="Custom thumbnail URL (optional)"
+            disabled={readOnly}
+          />
+          {!readOnly && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
         </div>
       ))}
     </>
@@ -645,6 +700,104 @@ function NewsletterForm({ register, control, readOnly }: FormProps) {
       />
       <Field label="Button text" name="buttonText" register={register} readOnly={readOnly} />
       <Field label="Email placeholder" name="placeholder" register={register} readOnly={readOnly} />
+      <Field
+        label="Secondary button text"
+        name="secondaryButtonText"
+        register={register}
+        readOnly={readOnly}
+      />
+      <Field
+        label="Secondary button URL"
+        name="secondaryButtonUrl"
+        register={register}
+        readOnly={readOnly}
+      />
+    </>
+  );
+}
+
+function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: FormProps) {
+  const { fields, append, remove } = useFieldArray({
+    control: control as Control<HomepageSectionContent & { tabs: unknown[] }>,
+    name: "tabs" as "tabs",
+  });
+
+  return (
+    <>
+      <Field label="Title" name="title" register={register} readOnly={readOnly} />
+      <Field label="Subtitle" name="subtitle" register={register} readOnly={readOnly} />
+      <Field label="View all URL" name="href" register={register} readOnly={readOnly} />
+      <div className="space-y-2">
+        <Label>Layout</Label>
+        <select
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          value={(watch("layout" as never) as unknown as string) ?? "banner-below"}
+          disabled={readOnly}
+          onChange={(e) => setValue("layout" as never, e.target.value as never)}
+        >
+          <option value="banner-below">Banner + cards below</option>
+          <option value="sidebar">Sidebar cards + banner</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        <Label>Banner video</Label>
+        <MediaPicker
+          value={watch("videoMediaId" as never) as unknown as string | null}
+          onChange={(m) => setValue("videoMediaId" as never, (m?.id ?? null) as never)}
+          accept="video"
+          disabled={readOnly}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Banner poster</Label>
+        <MediaPicker
+          value={watch("posterMediaId" as never) as unknown as string | null}
+          onChange={(m) => setValue("posterMediaId" as never, (m?.id ?? null) as never)}
+          accept="image"
+          disabled={readOnly}
+        />
+      </div>
+      <RepeaterHeader
+        label="Tabs"
+        readOnly={readOnly}
+        onAdd={() =>
+          append({
+            id: `tab-${Date.now()}`,
+            label: "New tab",
+            destinationIds: [],
+            items: [],
+          } as never)
+        }
+      />
+      {fields.map((field, i) => (
+        <div key={field.id} className="space-y-3 rounded-lg border p-4">
+          <div className="flex items-center justify-between gap-2">
+            <Input
+              {...register(`tabs.${i}.label` as never)}
+              placeholder="Tab label"
+              disabled={readOnly}
+            />
+            {!readOnly && (
+              <Button type="button" variant="ghost" size="icon" onClick={() => remove(i)}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            )}
+          </div>
+          <Controller
+            control={control}
+            name={`tabs.${i}.destinationIds` as never}
+            render={({ field: destField }) => (
+              <DestinationMultiSelect
+                value={(destField.value as string[]) ?? []}
+                onChange={destField.onChange}
+                disabled={readOnly}
+                label="Destinations"
+                hint="Pick published destinations for this tab — cards build automatically."
+              />
+            )}
+          />
+        </div>
+      ))}
     </>
   );
 }

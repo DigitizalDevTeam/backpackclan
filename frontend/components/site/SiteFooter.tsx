@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CreditCard, Mail, MapPin, Phone } from "lucide-react";
-import { SocialIcon } from "@/components/site/SocialIcon";
+import { SocialIcon, socialHref } from "@/components/site/SocialIcon";
 import { SiteLogo } from "@/components/site/SiteLogo";
 import { RichTextContent } from "@/components/site/RichTextContent";
 import type { MenuItemNode } from "@/types/menu";
@@ -23,15 +23,16 @@ export function SiteFooter({
 }: SiteFooterProps) {
   const { general, social, footer } = settings;
 
-  const legalLinks = menu.filter((item) =>
-    ["/privacy", "/terms"].includes(item.url)
-  );
-  const quickLinks = menu.filter(
-    (item) => !["/privacy", "/terms"].includes(item.url)
-  );
+  const isLegalLink = (url: string) =>
+    ["/privacy", "/terms", "/privacy-policy", "/terms-conditions"].includes(url) ||
+    url.includes("privacy") ||
+    url.includes("terms");
+
+  const legalLinks = menu.filter((item) => isLegalLink(item.url));
+  const quickLinks = menu.filter((item) => !isLegalLink(item.url));
 
   return (
-    <footer className="bg-slate-950 text-slate-300">
+    <footer className="bg-[#0c0c0c] text-zinc-300">
       <div className="mx-auto max-w-7xl px-4 py-14">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -41,14 +42,14 @@ export function SiteFooter({
               mediaMap={mediaMap}
               showTagline={false}
               className="mb-4"
-              imageClassName="h-9 w-9"
+              imageClassName="h-11 w-auto max-w-[180px]"
             />
             <RichTextContent
               html={footer.description}
-              className="text-sm leading-relaxed text-slate-400 [&_p]:text-slate-400"
+              className="text-sm leading-relaxed text-zinc-400 [&_p]:text-zinc-400"
             />
             {footer.showPaymentIcons ? (
-              <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+              <div className="mt-4 flex items-center gap-2 text-xs text-zinc-500">
                 <CreditCard className="h-4 w-4" />
                 <span>Secure payments via UPI, Cards & Net Banking</span>
               </div>
@@ -116,24 +117,59 @@ export function SiteFooter({
               ) : null}
             </ul>
             <div className="mt-5 flex gap-3">
-              {social.facebook ? (
-                <a href={social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="rounded-full bg-slate-800 p-2 hover:bg-primary">
+              {social.facebook?.trim() ? (
+                <a
+                  href={socialHref("facebook", social.facebook)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="rounded-full bg-slate-800 p-2 hover:bg-primary"
+                >
                   <SocialIcon network="facebook" />
                 </a>
               ) : null}
-              {social.instagram ? (
-                <a href={social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="rounded-full bg-slate-800 p-2 hover:bg-primary">
+              {social.instagram?.trim() ? (
+                <a
+                  href={socialHref("instagram", social.instagram)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="rounded-full bg-slate-800 p-2 hover:bg-primary"
+                >
                   <SocialIcon network="instagram" />
                 </a>
               ) : null}
-              {social.youtube ? (
-                <a href={social.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="rounded-full bg-slate-800 p-2 hover:bg-primary">
+              {social.youtube?.trim() ? (
+                <a
+                  href={socialHref("youtube", social.youtube)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="YouTube"
+                  className="rounded-full bg-slate-800 p-2 hover:bg-primary"
+                >
                   <SocialIcon network="youtube" />
                 </a>
               ) : null}
-              {social.linkedin ? (
-                <a href={social.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="rounded-full bg-slate-800 p-2 hover:bg-primary">
+              {social.linkedin?.trim() ? (
+                <a
+                  href={socialHref("linkedin", social.linkedin)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                  className="rounded-full bg-slate-800 p-2 hover:bg-primary"
+                >
                   <SocialIcon network="linkedin" />
+                </a>
+              ) : null}
+              {social.whatsapp?.trim() ? (
+                <a
+                  href={socialHref("whatsapp", social.whatsapp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="WhatsApp"
+                  className="rounded-full bg-slate-800 p-2 hover:bg-primary"
+                >
+                  <SocialIcon network="whatsapp" />
                 </a>
               ) : null}
             </div>

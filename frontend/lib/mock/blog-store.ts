@@ -207,10 +207,12 @@ export function getBlogCategories(): string[] {
 
 export function getRelatedPosts(slug: string, limit = 3): BlogPost[] {
   const post = getPublishedPostBySlug(slug);
-  if (!post) return getPublishedPosts().slice(0, limit);
-  return getPublishedPosts()
-    .filter((p) => p.slug !== slug && p.category === post.category)
-    .slice(0, limit);
+  const others = getPublishedPosts().filter((p) => p.slug !== slug);
+  if (!post) return others.slice(0, limit);
+
+  const sameCategory = others.filter((p) => p.category === post.category);
+  const differentCategory = others.filter((p) => p.category !== post.category);
+  return [...sameCategory, ...differentCategory].slice(0, limit);
 }
 
 export function createPost(data: BlogPostInput): BlogPost {

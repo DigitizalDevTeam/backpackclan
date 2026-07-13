@@ -7,6 +7,8 @@ export interface BlogPost {
   excerpt: string;
   content: string[];
   imageId: string | null;
+  /** Resolved media URL from Laravel when available */
+  imageUrl?: string | null;
   category: string;
   author: string;
   authorRole: string;

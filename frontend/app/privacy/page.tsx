@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { PageHero } from "@/components/site/PageHero";
+import { buildPageMetadata } from "@/lib/site/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy — Backpackclan",
-  description: "How Backpackclan collects, uses, and protects your personal information.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata("privacy", {
+    title: "Privacy Policy — Backpackclan",
+    description: "How Backpackclan collects, uses, and protects your personal information.",
+  });
+}
 
 const sections = [
   {
@@ -36,7 +39,7 @@ const sections = [
 
 export default function PrivacyPage() {
   return (
-    <SitePageShell>
+    <SitePageShell seoPageKey="privacy">
       <PageHero
         badge="Legal"
         title="Privacy Policy"

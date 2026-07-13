@@ -249,7 +249,7 @@ function SettingsTabForm({
             <div className="flex gap-3">
               <div
                 className="h-12 flex-1 rounded-lg"
-                style={{ backgroundColor: primaryColor ?? "#0d9488" }}
+                style={{ backgroundColor: primaryColor ?? "#F58220" }}
               />
               <div
                 className="h-12 flex-1 rounded-lg"

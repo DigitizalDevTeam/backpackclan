@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\ActivityLog;
 use App\Models\Banner;
+use App\Models\Category;
+use App\Models\Destination;
 use App\Models\HomepageSection;
 use App\Models\Media;
 use App\Models\Menu;
@@ -89,37 +91,61 @@ class CmsSeeder extends Seeder
             MenuItem::query()->create(array_merge($item, ['menu_id' => $header->id, 'target' => '_self', 'is_active' => true]));
         }
 
-        foreach (['Leh Ladakh', 'Spiti Valley', 'Kashmir', 'Bhutan', 'Nepal'] as $i => $name) {
+        foreach (
+            [
+                ['label' => 'Leh Ladakh', 'slug' => 'leh-ladakh'],
+                ['label' => 'Spiti Valley', 'slug' => 'spiti'],
+                ['label' => 'Kashmir', 'slug' => 'kashmir'],
+                ['label' => 'Bhutan', 'slug' => 'bhutan'],
+                ['label' => 'Nepal', 'slug' => 'nepal'],
+                ['label' => 'Tawang', 'slug' => 'tawang'],
+                ['label' => 'Thailand', 'slug' => 'thailand'],
+            ] as $i => $dest
+        ) {
             MenuItem::query()->create([
                 'menu_id' => $header->id,
                 'parent_id' => $destinations->id,
-                'label' => $name,
-                'url' => '/destinations/'.Str::slug($name),
+                'label' => $dest['label'],
+                'url' => '/destinations/'.$dest['slug'],
                 'target' => '_self',
                 'sort_order' => $i,
                 'is_active' => true,
             ]);
         }
 
-        $footerLabels = ['About Us', 'All Trips', 'Blog', 'Contact', 'Privacy Policy', 'Terms & Conditions'];
-        foreach ($footerLabels as $i => $label) {
+        $footerItems = [
+            ['label' => 'About Us', 'url' => '/about'],
+            ['label' => 'All Trips', 'url' => '/trips'],
+            ['label' => 'Blog', 'url' => '/blog'],
+            ['label' => 'Contact', 'url' => '/contact'],
+            ['label' => 'Privacy Policy', 'url' => '/privacy'],
+            ['label' => 'Terms & Conditions', 'url' => '/terms'],
+        ];
+        foreach ($footerItems as $i => $item) {
             MenuItem::query()->create([
                 'menu_id' => $footer->id,
-                'label' => $label,
-                'url' => '/'.Str::slug($label),
+                'label' => $item['label'],
+                'url' => $item['url'],
                 'target' => '_self',
                 'sort_order' => $i,
                 'is_active' => true,
             ]);
         }
 
-        foreach (['Home', 'Destinations', 'Trips', 'Contact'] as $i => $label) {
+        foreach (
+            [
+                ['label' => 'Home', 'url' => '/', 'icon' => 'Home'],
+                ['label' => 'Destinations', 'url' => '/destinations', 'icon' => 'MapPin'],
+                ['label' => 'Trips', 'url' => '/trips', 'icon' => 'Compass'],
+                ['label' => 'Contact', 'url' => '/contact', 'icon' => 'Phone'],
+            ] as $i => $item
+        ) {
             MenuItem::query()->create([
                 'menu_id' => $mobile->id,
-                'label' => $label,
-                'url' => $label === 'Home' ? '/' : '/'.Str::slug($label),
+                'label' => $item['label'],
+                'url' => $item['url'],
                 'target' => '_self',
-                'icon' => $label === 'Contact' ? 'Phone' : ($label === 'Destinations' ? 'MapPin' : ($label === 'Trips' ? 'Compass' : 'Home')),
+                'icon' => $item['icon'],
                 'sort_order' => $i,
                 'is_active' => true,
             ]);
@@ -129,8 +155,42 @@ class CmsSeeder extends Seeder
     private function seedHomepage(): void
     {
         $sections = json_decode(file_get_contents(database_path('seeders/data/homepage_sections.json')), true);
+        $destinationIds = Destination::query()->pluck('id', 'slug');
+        $categoryIds = Category::query()->pluck('id', 'slug');
 
         foreach ($sections as $section) {
+            $content = $section['content'] ?? [];
+
+            if (! empty($content['categorySlug'])) {
+                $content['categoryId'] = isset($categoryIds[$content['categorySlug']])
+                    ? (string) $categoryIds[$content['categorySlug']]
+                    : null;
+                unset($content['categorySlug']);
+            }
+
+            if (! empty($content['destinationSlugs']) && is_array($content['destinationSlugs'])) {
+                $content['destinationIds'] = collect($content['destinationSlugs'])
+                    ->map(fn (string $slug) => isset($destinationIds[$slug]) ? (string) $destinationIds[$slug] : null)
+                    ->filter()
+                    ->values()
+                    ->all();
+                unset($content['destinationSlugs']);
+            }
+
+            if (! empty($content['tabs']) && is_array($content['tabs'])) {
+                foreach ($content['tabs'] as &$tab) {
+                    if (array_key_exists('destinationSlugs', $tab) && is_array($tab['destinationSlugs'])) {
+                        $tab['destinationIds'] = collect($tab['destinationSlugs'])
+                            ->map(fn (string $slug) => isset($destinationIds[$slug]) ? (string) $destinationIds[$slug] : null)
+                            ->filter()
+                            ->values()
+                            ->all();
+                        unset($tab['destinationSlugs']);
+                    }
+                }
+                unset($tab);
+            }
+
             HomepageSection::query()->updateOrCreate(
                 ['slug' => $section['slug']],
                 [
@@ -138,10 +198,15 @@ class CmsSeeder extends Seeder
                     'type' => $section['type'],
                     'sort_order' => $section['sort_order'],
                     'is_enabled' => $section['is_enabled'],
-                    'content' => $section['content'],
+                    'content' => $content,
                 ]
             );
         }
+
+        // Disable legacy sections that are no longer part of the marketing homepage.
+        HomepageSection::query()
+            ->whereNotIn('slug', collect($sections)->pluck('slug')->all())
+            ->update(['is_enabled' => false]);
     }
 
     private function seedActivity(): void

@@ -1,27 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #faf8f5;
+  --foreground: #14110f;
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --primary: #0d9488;
+  --card-foreground: #14110f;
+  --primary: #f58220;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #1e293b;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #fff7ed;
-  --accent-foreground: #c2410c;
+  --secondary: #fff4e0;
+  --secondary-foreground: #7a3b05;
+  --muted: #f3efe8;
+  --muted-foreground: #6b635a;
+  --accent: #fff8e8;
+  --accent-foreground: #c45a0a;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #0d9488;
-  --sidebar: #0f172a;
-  --sidebar-foreground: #e2e8f0;
-  --sidebar-muted: #94a3b8;
-  --sidebar-active: #0d9488;
+  --border: #ebe4d8;
+  --input: #ebe4d8;
+  --ring: #f58220;
+  --brand-yellow: #ffd200;
+  --brand-green: #7bc043;
+  --sidebar: #111111;
+  --sidebar-foreground: #f5f0e8;
+  --sidebar-muted: #a39a8e;
+  --sidebar-active: #f58220;
   --radius: 0.625rem;
 }
 
@@ -51,8 +53,15 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-outfit);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-oswald);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-green: var(--brand-green);
+}
+
+.font-display {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
 }
 
 * {
@@ -113,4 +122,8 @@ button{
 
 .homepage-hero-bg {
   animation: homepage-ken-burns 20s ease-in-out infinite alternate;
+}
+
+html {
+  scroll-behavior: smooth;
 }

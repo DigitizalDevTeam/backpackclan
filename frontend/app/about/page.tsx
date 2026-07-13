@@ -13,10 +13,12 @@ import { buildPageMetadata } from "@/lib/site/seo-metadata";
 import { getSiteLayoutData } from "@/lib/site/public-data";
 import { Button } from "@/components/ui/button";
 
-export const metadata = buildPageMetadata("about", {
-  title: "About Us — Backpackclan",
-  description: "Learn about Backpackclan and our Himalayan adventure tours.",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata("about", {
+    title: "About Us — Backpackclan",
+    description: "Learn about Backpackclan and our Himalayan adventure tours.",
+  });
+}
 
 const stats = [
   { value: "12,000+", label: "Happy travelers" },
@@ -55,8 +57,8 @@ const team = [
   { name: "Vikram Singh", role: "Bike Expeditions", region: "Ladakh circuits" },
 ];
 
-export default function AboutPage() {
-  const layout = getSiteLayoutData();
+export default async function AboutPage() {
+  const layout = await getSiteLayoutData();
 
   return (
     <SitePageShell seoPageKey="about">
@@ -121,7 +123,7 @@ export default function AboutPage() {
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {team.map((member) => (
             <div key={member.name} className="rounded-2xl border p-6 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-teal-100 text-lg font-bold text-primary">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-lg font-bold text-primary">
                 {member.name.split(" ").map((n) => n[0]).join("")}
               </div>
               <h3 className="mt-4 font-semibold">{member.name}</h3>
@@ -135,17 +137,22 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="bg-teal-900 py-16 text-white">
-        <div className="mx-auto max-w-3xl px-4 text-center">
-          <h2 className="text-3xl font-bold">Ready for your next adventure?</h2>
-          <p className="mt-4 text-teal-100">
+      <section className="relative overflow-hidden bg-[#111111] py-16 text-white">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F58220]/20 via-transparent to-[#FFD200]/15" />
+        <div className="relative mx-auto max-w-3xl px-4 text-center">
+          <h2 className="font-display text-3xl font-semibold">Ready for your next adventure?</h2>
+          <p className="mt-4 text-white/70">
             Browse our upcoming trips or tell us about your dream itinerary — we&apos;ll make it happen.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Button asChild size="lg" className="bg-orange-500 hover:bg-orange-600">
+            <Button
+              asChild
+              size="lg"
+              className="bg-gradient-to-r from-[#F58220] to-[#FFD200] font-semibold text-black hover:opacity-95"
+            >
               <Link href="/trips">Browse trips</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+            <Button asChild size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
               <Link href="/contact">Contact us</Link>
             </Button>
           </div>

@@ -1,12 +1,10 @@
-import {
-  HomepagePreviewShell,
-  HomepageRenderer,
-} from "@/components/homepage/HomepageRenderer";
+import { HomepagePreviewShell } from "@/components/homepage/HomepageRenderer";
+import { HomeMarketing } from "@/components/homepage/HomeMarketing";
 
 export default function HomepagePreviewPage() {
   return (
     <HomepagePreviewShell>
-      <HomepageRenderer fetchOnClient />
+      <HomeMarketing fetchOnClient />
     </HomepagePreviewShell>
   );
 }

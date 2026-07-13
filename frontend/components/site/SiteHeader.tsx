@@ -9,7 +9,7 @@ import {
   Phone,
   X,
 } from "lucide-react";
-import { SocialIcon } from "@/components/site/SocialIcon";
+import { SocialIcon, socialHref } from "@/components/site/SocialIcon";
 import { SiteLogo } from "@/components/site/SiteLogo";
 import type { MenuItemNode } from "@/types/menu";
 import type { SiteSettings } from "@/types/settings";
@@ -34,11 +34,9 @@ interface SiteHeaderProps {
 function NavLinks({
   items,
   onNavigate,
-  className,
 }: {
   items: MenuItemNode[];
   onNavigate?: () => void;
-  className?: string;
 }) {
   return (
     <>
@@ -46,12 +44,7 @@ function NavLinks({
         item.children.length > 0 ? (
           <DropdownMenu key={item.id}>
             <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-primary",
-                  className
-                )}
-              >
+              <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-orange-50 hover:text-[#F58220]">
                 {item.label}
                 <ChevronDown className="h-4 w-4" />
               </button>
@@ -71,10 +64,7 @@ function NavLinks({
             key={item.id}
             href={item.url}
             onClick={onNavigate}
-            className={cn(
-              "rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-primary",
-              className
-            )}
+            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-orange-50 hover:text-[#F58220]"
           >
             {item.label}
           </Link>
@@ -97,7 +87,7 @@ function MobileNavLinks({
         <div key={item.id}>
           <Link
             href={item.url}
-            className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100"
+            className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-orange-50"
             onClick={onNavigate}
           >
             {item.label}
@@ -108,7 +98,7 @@ function MobileNavLinks({
                 <Link
                   key={child.id}
                   href={child.url}
-                  className="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-slate-100 hover:text-foreground"
+                  className="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-orange-50 hover:text-foreground"
                   onClick={onNavigate}
                 >
                   {child.label}
@@ -168,24 +158,54 @@ export function SiteHeader({
             ) : null}
           </div>
           <div className="flex items-center gap-3">
-            {social.facebook ? (
-              <a href={social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            {social.facebook?.trim() ? (
+              <a
+                href={socialHref("facebook", social.facebook)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+              >
                 <SocialIcon network="facebook" className="h-3.5 w-3.5 hover:text-white" />
               </a>
             ) : null}
-            {social.instagram ? (
-              <a href={social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            {social.instagram?.trim() ? (
+              <a
+                href={socialHref("instagram", social.instagram)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+              >
                 <SocialIcon network="instagram" className="h-3.5 w-3.5 hover:text-white" />
               </a>
             ) : null}
-            {social.youtube ? (
-              <a href={social.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+            {social.youtube?.trim() ? (
+              <a
+                href={socialHref("youtube", social.youtube)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+              >
                 <SocialIcon network="youtube" className="h-3.5 w-3.5 hover:text-white" />
               </a>
             ) : null}
-            {social.linkedin ? (
-              <a href={social.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            {social.linkedin?.trim() ? (
+              <a
+                href={socialHref("linkedin", social.linkedin)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+              >
                 <SocialIcon network="linkedin" className="h-3.5 w-3.5 hover:text-white" />
+              </a>
+            ) : null}
+            {social.whatsapp?.trim() ? (
+              <a
+                href={socialHref("whatsapp", social.whatsapp)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp"
+              >
+                <SocialIcon network="whatsapp" className="h-3.5 w-3.5 hover:text-white" />
               </a>
             ) : null}
           </div>
@@ -194,13 +214,11 @@ export function SiteHeader({
 
       <div
         className={cn(
-          "border-b transition-all duration-300",
-          scrolled
-            ? "bg-white/95 shadow-md backdrop-blur-md"
-            : "border-transparent bg-white shadow-sm"
+          "border-b border-slate-100 bg-white py-2 transition-shadow duration-300 sm:py-3",
+          scrolled && "shadow-md"
         )}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:h-16">
           <SiteLogo
             siteName={general.siteName}
             tagline={general.tagline}
@@ -216,14 +234,13 @@ export function SiteHeader({
             <HeaderAuthMenu />
             <Button
               asChild
-              className="hidden sm:inline-flex text-white hover:opacity-90"
-              style={{ backgroundColor: branding.secondaryColor }}
+              className="hidden rounded-full bg-[#FFD200] px-5 font-bold text-black hover:bg-[#F58220] hover:text-white sm:inline-flex"
             >
               <Link href="/contact">Plan My Trip</Link>
             </Button>
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 lg:hidden"
               onClick={() => setMobileOpen((v) => !v)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
             >
@@ -233,21 +250,12 @@ export function SiteHeader({
         </div>
       </div>
 
-      <div
-        className={cn(
-          "border-b bg-white lg:hidden",
-          mobileOpen ? "block" : "hidden"
-        )}
-      >
+      <div className={cn("border-b bg-white lg:hidden", mobileOpen ? "block" : "hidden")}>
         <nav className="mx-auto max-w-7xl space-y-1 px-4 py-4">
-          <MobileNavLinks
-            items={drawerMenu}
-            onNavigate={() => setMobileOpen(false)}
-          />
+          <MobileNavLinks items={drawerMenu} onNavigate={() => setMobileOpen(false)} />
           <Button
             asChild
-            className="mt-2 w-full text-white hover:opacity-90"
-            style={{ backgroundColor: branding.secondaryColor }}
+            className="mt-2 w-full rounded-full bg-[#FFD200] font-bold text-black hover:bg-[#F58220] hover:text-white"
           >
             <Link href="/contact" onClick={() => setMobileOpen(false)}>
               Plan My Trip
@@ -265,11 +273,6 @@ export function SiteHeader({
               </Link>
             </Button>
           </div>
-          <Button asChild variant="outline" className="mt-2 w-full">
-            <Link href="/account/dashboard" onClick={() => setMobileOpen(false)}>
-              My Account
-            </Link>
-          </Button>
         </nav>
       </div>
     </header>

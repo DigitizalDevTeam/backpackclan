@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\HomepageSectionController;
 use App\Http\Controllers\Api\V1\Admin\MediaController;
 use App\Http\Controllers\Api\V1\Admin\MenuController;
 use App\Http\Controllers\Api\V1\Admin\MenuSyncController;
+use App\Http\Controllers\Api\V1\Admin\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\PricingController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\SeoController;
@@ -19,7 +20,35 @@ use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Customer\AuthController as CustomerAuthController;
 use App\Http\Controllers\Api\V1\Customer\BookingController as CustomerBookingController;
+use App\Http\Controllers\Api\V1\Public\BlogController as PublicBlogController;
+use App\Http\Controllers\Api\V1\Public\CategoryController as PublicCategoryController;
+use App\Http\Controllers\Api\V1\Public\DestinationController as PublicDestinationController;
+use App\Http\Controllers\Api\V1\Public\HomepageController as PublicHomepageController;
+use App\Http\Controllers\Api\V1\Public\SiteController as PublicSiteController;
+use App\Http\Controllers\Api\V1\Public\TripController as PublicTripController;
 use Illuminate\Support\Facades\Route;
+
+Route::prefix('v1')->group(function () {
+    Route::get('blogs', [PublicBlogController::class, 'index']);
+    Route::get('blogs/slugs', [PublicBlogController::class, 'slugs']);
+    Route::get('blogs/{slug}', [PublicBlogController::class, 'show']);
+
+    Route::get('site/layout', [PublicSiteController::class, 'layout']);
+    Route::get('site/seo', [PublicSiteController::class, 'seoIndex']);
+    Route::get('site/seo/{pageKey}', [PublicSiteController::class, 'seoShow']);
+
+    Route::get('homepage', [PublicHomepageController::class, 'show']);
+
+    Route::get('categories', [PublicCategoryController::class, 'index']);
+
+    Route::get('destinations', [PublicDestinationController::class, 'index']);
+    Route::get('destinations/slugs', [PublicDestinationController::class, 'slugs']);
+    Route::get('destinations/{slug}', [PublicDestinationController::class, 'show']);
+
+    Route::get('trips', [PublicTripController::class, 'index']);
+    Route::get('trips/slugs', [PublicTripController::class, 'slugs']);
+    Route::get('trips/{slug}', [PublicTripController::class, 'show']);
+});
 
 Route::prefix('v1/admin')->group(function () {
     Route::post('login', [AuthController::class, 'login']);

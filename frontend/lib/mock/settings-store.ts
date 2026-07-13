@@ -20,8 +20,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
     linkedin: "https://linkedin.com/company/backpackclan",
   },
   branding: {
-    primaryColor: "#0d9488",
-    secondaryColor: "#f97316",
+    primaryColor: "#F58220",
+    secondaryColor: "#FFD200",
     fontPreset: "default",
   },
   footer: {

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\CamelCase;
+use App\Support\PublicStorageUrl;
 use Illuminate\Database\Eloquent\Model;
 
 class Blog extends Model
@@ -32,6 +33,22 @@ class Blog extends Model
         ];
     }
 
+    public function resolveImageUrl(): ?string
+    {
+        if (! $this->image_id) {
+            return null;
+        }
+
+        $media = Media::query()->find($this->image_id);
+        if (! $media) {
+            return null;
+        }
+
+        $url = PublicStorageUrl::normalize($media->url);
+
+        return $url !== '' ? $url : null;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -44,6 +61,7 @@ class Blog extends Model
             'excerpt' => $this->excerpt,
             'content' => $this->content ?? [],
             'image_id' => $this->image_id,
+            'image_url' => $this->resolveImageUrl(),
             'category' => $this->category,
             'author' => $this->author,
             'author_role' => $this->author_role,

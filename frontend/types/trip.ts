@@ -7,6 +7,8 @@ export interface PublicTrip {
   slug: string;
   title: string;
   destination: string;
+  destinationId?: string;
+  destinationSlug?: string;
   duration: string;
   nights: number;
   route: string;
@@ -14,6 +16,7 @@ export interface PublicTrip {
   originalPrice?: number;
   imageId: string;
   category: string;
+  categoryIds?: string[];
   region: TripRegion;
   badge?: TripBadge;
   rating: number;

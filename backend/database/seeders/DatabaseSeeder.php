@@ -15,9 +15,10 @@ class DatabaseSeeder extends Seeder
             CustomerUserSeeder::class,
             BookingSeeder::class,
             SettingsSeeder::class,
-            CmsSeeder::class,
+            // Catalog first so homepage sections can resolve destination/category IDs.
             CategorySeeder::class,
             DestinationSeeder::class,
+            CmsSeeder::class,
             TripSeeder::class,
             DepartureSeeder::class,
             BlogSeeder::class,

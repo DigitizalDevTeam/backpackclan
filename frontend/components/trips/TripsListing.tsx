@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,111 +16,97 @@ import {
   X,
 } from "lucide-react";
 import type { PublicTrip, TripRegion } from "@/types/trip";
+import type { PaginationMeta } from "@/lib/site/pagination";
 import { formatInr } from "@/lib/site/format";
+import { PaginationControls } from "@/components/site/PaginationControls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const MONTHS = [
-  { key: "jul", label: "Jul-26" },
-  { key: "aug", label: "Aug-26" },
-  { key: "sep", label: "Sep-26" },
-  { key: "oct", label: "Oct-26" },
-  { key: "nov", label: "Nov-26" },
-  { key: "dec", label: "Dec-26" },
-  { key: "jan", label: "Jan-27" },
-  { key: "feb", label: "Feb-27" },
+  { key: "jul", label: "Jul" },
+  { key: "aug", label: "Aug" },
+  { key: "sep", label: "Sep" },
+  { key: "oct", label: "Oct" },
+  { key: "nov", label: "Nov" },
+  { key: "dec", label: "Dec" },
+  { key: "jan", label: "Jan" },
+  { key: "feb", label: "Feb" },
 ];
-
-const DESTINATION_PILLS = [
-  "All",
-  "Leh Ladakh",
-  "Spiti Valley",
-  "Kashmir",
-  "Bhutan",
-  "Nepal",
-  "Manali",
-  "Meghalaya",
-  "Uttarakhand",
-];
-
-const CATEGORY_PILLS = ["All", "Bike Tour", "Trek", "Group Trip", "Weekend", "International"];
 
 interface TripsListingProps {
   trips: PublicTrip[];
   mediaMap: Record<string, string>;
+  meta: PaginationMeta;
+  facets: {
+    destinations: string[];
+    categories: string[];
+  };
 }
 
-function filterTrips(
-  trips: PublicTrip[],
-  opts: {
-    destination: string;
-    category: string;
-    region: TripRegion | "all";
-    month: string | null;
-    minNights: number;
-    maxNights: number;
-    search: string;
-  }
-) {
-  return trips.filter((trip) => {
-    if (opts.destination !== "All" && trip.destination !== opts.destination) return false;
-    if (opts.category !== "All" && trip.category !== opts.category) return false;
-    if (opts.region !== "all" && trip.region !== opts.region) return false;
-    if (opts.month && !trip.availableMonths.includes(opts.month)) return false;
-    if (trip.nights < opts.minNights || trip.nights > opts.maxNights) return false;
-    if (opts.search) {
-      const q = opts.search.toLowerCase();
-      const hay = `${trip.title} ${trip.destination} ${trip.route} ${trip.category}`.toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    return true;
+function buildTripsHref(next: Record<string, string | undefined>): string {
+  const params = new URLSearchParams();
+  Object.entries(next).forEach(([key, value]) => {
+    if (value && value !== "All" && value !== "all") params.set(key, value);
   });
+  const qs = params.toString();
+  return qs ? `/trips?${qs}` : "/trips";
 }
 
-export function TripsListing({ trips, mediaMap }: TripsListingProps) {
+export function TripsListing({
+  trips,
+  mediaMap,
+  meta,
+  facets,
+}: TripsListingProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const initialCategory = searchParams.get("category");
-  const categoryFromUrl =
-    initialCategory === "bike-tour"
-      ? "Bike Tour"
-      : initialCategory === "trek"
-        ? "Trek"
-        : initialCategory === "group"
-          ? "Group Trip"
-          : initialCategory === "weekend"
-            ? "Weekend"
-            : "All";
+  const [isPending, startTransition] = useTransition();
 
-  const [destination, setDestination] = useState("All");
-  const [category, setCategory] = useState(categoryFromUrl);
-  const [region, setRegion] = useState<TripRegion | "all">("all");
-  const [month, setMonth] = useState<string | null>("jul");
-  const [minNights, setMinNights] = useState(2);
-  const [maxNights, setMaxNights] = useState(16);
-  const [search, setSearch] = useState("");
+  const destination = searchParams.get("destination") ?? "All";
+  const category = searchParams.get("category") ?? "All";
+  const region = (searchParams.get("region") as TripRegion | "all") || "all";
+  const month = searchParams.get("month");
+  const minNights = Number(searchParams.get("min_nights") || 2);
+  const maxNights = Number(searchParams.get("max_nights") || 16);
+  const searchFromUrl = searchParams.get("search") ?? "";
+
+  const [search, setSearch] = useState(searchFromUrl);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [monthScroll, setMonthScroll] = useState(0);
 
-  const filtered = useMemo(
-    () =>
-      filterTrips(trips, {
-        destination,
-        category,
-        region,
-        month,
-        minNights,
-        maxNights,
-        search,
-      }),
-    [trips, destination, category, region, month, minNights, maxNights, search]
-  );
+  useEffect(() => {
+    setSearch(searchFromUrl);
+  }, [searchFromUrl]);
 
+  const destinationPills = ["All", ...facets.destinations];
+  const categoryPills = ["All", ...facets.categories];
   const visibleMonths = MONTHS.slice(monthScroll, monthScroll + 5);
 
+  function updateFilters(patch: Record<string, string | undefined>) {
+    const next = {
+      destination: destination !== "All" ? destination : undefined,
+      category: category !== "All" ? category : undefined,
+      region: region !== "all" ? region : undefined,
+      month: month ?? undefined,
+      min_nights: minNights !== 2 ? String(minNights) : undefined,
+      max_nights: maxNights !== 16 ? String(maxNights) : undefined,
+      search: searchFromUrl || undefined,
+      ...patch,
+      page: undefined,
+    };
+    startTransition(() => {
+      router.push(buildTripsHref(next));
+    });
+  }
+
+  function submitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    updateFilters({ search: search.trim() || undefined });
+  }
+
   return (
-    <div className="bg-slate-50">
-      {/* Banner */}
+    <div className={cn("bg-slate-50", isPending && "opacity-80")}>
       <section className="relative h-48 overflow-hidden sm:h-56">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -145,15 +131,18 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
         </div>
       </section>
 
-      {/* Category pills */}
       <section className="border-b bg-white py-4">
         <div className="mx-auto max-w-7xl px-4">
           <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
-            {DESTINATION_PILLS.map((pill) => (
+            {destinationPills.map((pill) => (
               <button
                 key={pill}
                 type="button"
-                onClick={() => setDestination(pill)}
+                onClick={() =>
+                  updateFilters({
+                    destination: pill === "All" ? undefined : pill,
+                  })
+                }
                 className={cn(
                   "shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-all",
                   destination === pill
@@ -169,9 +158,8 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 py-8">
-        {/* Search + mobile filter toggle */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 sm:max-w-md">
+          <form onSubmit={submitSearch} className="relative flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
@@ -180,7 +168,7 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
-          </div>
+          </form>
           <Button
             variant="outline"
             className="lg:hidden"
@@ -192,7 +180,6 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
         </div>
 
         <div className="flex gap-8">
-          {/* Sidebar filters */}
           <aside
             className={cn(
               "w-72 shrink-0",
@@ -216,11 +203,15 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
               <div>
                 <p className="mb-3 text-sm font-semibold text-foreground">Trip Type</p>
                 <div className="space-y-2">
-                  {CATEGORY_PILLS.map((pill) => (
+                  {categoryPills.map((pill) => (
                     <button
                       key={pill}
                       type="button"
-                      onClick={() => setCategory(pill)}
+                      onClick={() =>
+                        updateFilters({
+                          category: pill === "All" ? undefined : pill,
+                        })
+                      }
                       className={cn(
                         "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
                         category === pill
@@ -248,7 +239,11 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setRegion(key)}
+                      onClick={() =>
+                        updateFilters({
+                          region: key === "all" ? undefined : key,
+                        })
+                      }
                       className={cn(
                         "rounded-full border px-3 py-1.5 text-xs font-medium",
                         region === key
@@ -274,7 +269,12 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
                   min={2}
                   max={16}
                   value={maxNights}
-                  onChange={(e) => setMaxNights(Number(e.target.value))}
+                  onChange={(e) =>
+                    updateFilters({
+                      max_nights: e.target.value === "16" ? undefined : e.target.value,
+                      min_nights: minNights !== 2 ? String(minNights) : undefined,
+                    })
+                  }
                   className="w-full accent-primary"
                 />
                 <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
@@ -286,24 +286,14 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => {
-                  setDestination("All");
-                  setCategory("All");
-                  setRegion("all");
-                  setMonth("jul");
-                  setMinNights(2);
-                  setMaxNights(16);
-                  setSearch("");
-                }}
+                onClick={() => startTransition(() => router.push("/trips"))}
               >
                 Clear all filters
               </Button>
             </div>
           </aside>
 
-          {/* Main listing */}
           <div className="min-w-0 flex-1">
-            {/* Month selector */}
             <div className="mb-6 flex items-center gap-2">
               <Button
                 size="icon"
@@ -319,7 +309,11 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
                   <button
                     key={m.key}
                     type="button"
-                    onClick={() => setMonth(month === m.key ? null : m.key)}
+                    onClick={() =>
+                      updateFilters({
+                        month: month === m.key ? undefined : m.key,
+                      })
+                    }
                     className={cn(
                       "flex-1 rounded-xl border py-2.5 text-center text-sm font-medium transition-all",
                       month === m.key
@@ -346,12 +340,12 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
               <h2 className="text-xl font-bold text-foreground">
                 All Upcoming Trips
                 <span className="ml-2 text-base font-normal text-muted-foreground">
-                  ({filtered.length})
+                  ({meta.total})
                 </span>
               </h2>
             </div>
 
-            {filtered.length === 0 ? (
+            {trips.length === 0 ? (
               <div className="rounded-2xl border bg-white py-16 text-center">
                 <p className="text-lg font-medium text-foreground">No trips match your filters</p>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -359,15 +353,35 @@ export function TripsListing({ trips, mediaMap }: TripsListingProps) {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {filtered.map((trip) => (
-                  <TripListCard
-                    key={trip.id}
-                    trip={trip}
-                    imageUrl={mediaMap[trip.imageId] ?? null}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="space-y-4">
+                  {trips.map((trip) => (
+                    <TripListCard
+                      key={trip.id}
+                      trip={trip}
+                      imageUrl={mediaMap[trip.imageId] ?? null}
+                    />
+                  ))}
+                </div>
+                <PaginationControls
+                  meta={meta}
+                  pathname="/trips"
+                  searchParams={{
+                    destination: destination !== "All" ? destination : undefined,
+                    category: category !== "All" ? category : undefined,
+                    region: region !== "all" ? region : undefined,
+                    month: month ?? undefined,
+                    min_nights: minNights !== 2 ? String(minNights) : undefined,
+                    max_nights: maxNights !== 16 ? String(maxNights) : undefined,
+                    search: searchFromUrl || undefined,
+                  }}
+                />
+                {meta.total > 0 ? (
+                  <p className="mt-4 text-center text-xs text-muted-foreground">
+                    Showing {meta.from}–{meta.to} of {meta.total} trips
+                  </p>
+                ) : null}
+              </>
             )}
           </div>
         </div>

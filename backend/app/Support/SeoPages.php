@@ -16,6 +16,8 @@ class SeoPages
             ['pageKey' => 'blog', 'label' => 'Blog Index', 'path' => '/blog'],
             ['pageKey' => 'trips', 'label' => 'Trip Listing', 'path' => '/trips'],
             ['pageKey' => 'destinations', 'label' => 'Destinations', 'path' => '/destinations'],
+            ['pageKey' => 'privacy', 'label' => 'Privacy Policy', 'path' => '/privacy'],
+            ['pageKey' => 'terms', 'label' => 'Terms & Conditions', 'path' => '/terms'],
         ];
     }
 
@@ -90,6 +92,22 @@ class SeoPages
                 'meta_description' => 'Explore Backpackclan destinations including Leh Ladakh, Spiti Valley, Kashmir, Bhutan, and Nepal.',
                 'og_image_id' => '3',
                 'canonical_url' => 'https://backpackclan.com/destinations',
+                'robots' => 'index, follow',
+                'schema_json' => '',
+            ],
+            'privacy' => [
+                'meta_title' => 'Privacy Policy — Backpackclan',
+                'meta_description' => 'How Backpackclan collects, uses, and protects your personal information.',
+                'og_image_id' => null,
+                'canonical_url' => 'https://backpackclan.com/privacy',
+                'robots' => 'index, follow',
+                'schema_json' => '',
+            ],
+            'terms' => [
+                'meta_title' => 'Terms & Conditions — Backpackclan',
+                'meta_description' => 'Terms and conditions for booking trips and using Backpackclan services.',
+                'og_image_id' => null,
+                'canonical_url' => 'https://backpackclan.com/terms',
                 'robots' => 'index, follow',
                 'schema_json' => '',
             ],

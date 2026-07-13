@@ -5,13 +5,15 @@ import { ContactForm } from "@/components/contact/ContactForm";
 import { buildPageMetadata } from "@/lib/site/seo-metadata";
 import { getSiteLayoutData } from "@/lib/site/public-data";
 
-export const metadata = buildPageMetadata("contact", {
-  title: "Contact — Backpackclan",
-  description: "Get in touch with Backpackclan to plan your next adventure.",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata("contact", {
+    title: "Contact — Backpackclan",
+    description: "Get in touch with Backpackclan to plan your next adventure.",
+  });
+}
 
-export default function ContactPage() {
-  const layout = getSiteLayoutData();
+export default async function ContactPage() {
+  const layout = await getSiteLayoutData();
 
   return (
     <SitePageShell seoPageKey="contact">

@@ -15,10 +15,10 @@ interface SitePageShellProps {
   seoPageKey?: string;
 }
 
-export function SitePageShell({ children, seoPageKey }: SitePageShellProps) {
-  const layout = getSiteLayoutData();
+export async function SitePageShell({ children, seoPageKey }: SitePageShellProps) {
+  const layout = await getSiteLayoutData();
   const { settings } = layout;
-  const jsonLd = seoPageKey ? getPageJsonLd(seoPageKey) : null;
+  const jsonLd = seoPageKey ? await getPageJsonLd(seoPageKey) : null;
 
   if (settings.maintenance.enabled) {
     return <MaintenanceScreen settings={settings} mediaMap={layout.mediaMap} />;

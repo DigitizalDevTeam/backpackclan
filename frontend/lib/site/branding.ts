@@ -4,7 +4,7 @@ import type { BrandingSettings, FontPreset } from "@/types/settings";
 export function getFontClassName(preset: FontPreset): string {
   switch (preset) {
     case "modern":
-      return "font-[family-name:var(--font-geist-sans)] tracking-tight";
+      return "font-[family-name:var(--font-outfit)] tracking-tight";
     case "classic":
       return "font-serif";
     default:

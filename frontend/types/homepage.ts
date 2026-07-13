@@ -4,11 +4,13 @@ export type HomepageSectionType =
   | "popular_trips"
   | "why_choose_us"
   | "testimonials"
+  | "youtube_videos"
   | "gallery"
   | "blog_highlights"
   | "newsletter_cta"
   | "partner_logos"
-  | "faq_strip";
+  | "faq_strip"
+  | "category_showcase";
 
 export interface CtaLink {
   label: string;
@@ -21,8 +23,11 @@ export interface HeroContent {
   subheadline: string;
   mediaType: "image" | "video";
   mediaId: string | null;
+  /** Optional poster/fallback image when mediaType is video */
+  posterMediaId?: string | null;
   bannerId: string | null;
   ctas: CtaLink[];
+  eyebrow?: string;
 }
 
 export interface DestinationCard {
@@ -71,11 +76,36 @@ export interface TestimonialCard {
   rating: number;
   text: string;
   avatarId: string | null;
+  /** Link to the related trip or destination page */
+  tripHref?: string;
+  /** Optional media library id for the trip thumbnail */
+  tripImageId?: string | null;
+  /** Optional absolute image URL (used when tripImageId is empty) */
+  tripImageUrl?: string | null;
+  /** External review URL (e.g. Google review) */
+  reviewUrl?: string | null;
 }
 
 export interface TestimonialsContent {
   title: string;
+  /** Small uppercase label above the title (e.g. "Reviews") */
+  eyebrow?: string;
   items: TestimonialCard[];
+}
+
+export interface YoutubeVideoItem {
+  id: string;
+  /** Full YouTube URL or 11-char video id */
+  youtubeUrl: string;
+  title?: string;
+  /** Optional override thumbnail; defaults to YouTube hqdefault */
+  thumbnailUrl?: string | null;
+}
+
+export interface YoutubeVideosContent {
+  title: string;
+  eyebrow?: string;
+  items: YoutubeVideoItem[];
 }
 
 export interface GalleryContent {
@@ -104,6 +134,8 @@ export interface NewsletterCtaContent {
   description: string;
   buttonText: string;
   placeholder: string;
+  secondaryButtonText?: string;
+  secondaryButtonUrl?: string;
 }
 
 export interface PartnerLogo {
@@ -129,17 +161,60 @@ export interface FaqStripContent {
   items: FaqItem[];
 }
 
+/** Manual card inside a category showcase tab (months, contact destinations, etc.) */
+export interface CategoryShowcaseItem {
+  id: string;
+  name: string;
+  href: string;
+  imageId: string | null;
+  tripCount?: number;
+}
+
+export interface CategoryShowcaseTab {
+  id: string;
+  label: string;
+  /** Prefer published destination IDs when available */
+  destinationIds?: string[];
+  /** Freeform items (resolved alongside destinations) */
+  items?: CategoryShowcaseItem[];
+}
+
+export interface CategoryShowcaseContent {
+  title: string;
+  subtitle: string;
+  href: string;
+  layout: "banner-below" | "sidebar";
+  categoryId: string | null;
+  videoMediaId: string | null;
+  posterMediaId: string | null;
+  tabs: CategoryShowcaseTab[];
+  /** Hydrated at render time */
+  resolvedTabs?: {
+    id: string;
+    label: string;
+    destinations: {
+      name: string;
+      href: string;
+      image: string | null;
+      imageId: string | null;
+      trips?: number;
+    }[];
+  }[];
+}
+
 export type HomepageSectionContent =
   | HeroContent
   | FeaturedDestinationsContent
   | PopularTripsContent
   | WhyChooseUsContent
   | TestimonialsContent
+  | YoutubeVideosContent
   | GalleryContent
   | BlogHighlightsContent
   | NewsletterCtaContent
   | PartnerLogosContent
-  | FaqStripContent;
+  | FaqStripContent
+  | CategoryShowcaseContent;
 
 export interface HomepageSection {
   id: string;

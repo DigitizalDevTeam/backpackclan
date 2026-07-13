@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { PageHero } from "@/components/site/PageHero";
+import { buildPageMetadata } from "@/lib/site/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "Terms & Conditions — Backpackclan",
-  description: "Terms and conditions for booking trips and using Backpackclan services.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata("terms", {
+    title: "Terms & Conditions — Backpackclan",
+    description: "Terms and conditions for booking trips and using Backpackclan services.",
+  });
+}
 
 const sections = [
   {
@@ -36,7 +39,7 @@ const sections = [
 
 export default function TermsPage() {
   return (
-    <SitePageShell>
+    <SitePageShell seoPageKey="terms">
       <PageHero
         badge="Legal"
         title="Terms & Conditions"

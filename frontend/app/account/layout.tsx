@@ -19,7 +19,7 @@ export default async function AccountLayout({
     redirect("/admin/dashboard");
   }
 
-  const layout = getSiteLayoutData();
+  const layout = await getSiteLayoutData();
 
   return (
     <AccountShell
