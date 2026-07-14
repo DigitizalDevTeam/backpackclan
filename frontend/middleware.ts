@@ -24,6 +24,7 @@ export function middleware(request: NextRequest) {
   const isAuthApi = authApiPaths.some((path) => pathname.startsWith(path));
   const isAdminPath = pathname.startsWith("/admin");
   const isAccountPath = pathname.startsWith("/account");
+  const isBookPath = pathname.startsWith("/book");
   const isPreviewPath = pathname.startsWith("/preview");
 
   if (isAuthApi) {
@@ -40,13 +41,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/account/dashboard", request.url));
   }
 
-  if (isAccountPath && !session) {
+  if ((isAccountPath || isBookPath) && !session) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    loginUrl.searchParams.set(
+      "redirect",
+      `${pathname}${request.nextUrl.search}`
+    );
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isAccountPath && session && !isCustomerUser(session)) {
+  if ((isAccountPath || isBookPath) && session && !isCustomerUser(session)) {
     return NextResponse.redirect(new URL("/admin/dashboard", request.url));
   }
 
@@ -71,6 +75,7 @@ export const config = {
     "/forgot-password",
     "/admin/:path*",
     "/account/:path*",
+    "/book/:path*",
     "/preview/:path*",
     "/api/auth/:path*",
   ],

@@ -1,9 +1,14 @@
 import type { Booking } from "@/types/booking";
-import type { CustomerUser } from "@/types/customer";
 import { formatDate } from "@/lib/site/format";
 import { formatInr } from "@/lib/site/format";
 
-export function buildInvoiceText(booking: Booking, customer: CustomerUser): string {
+export interface DownloadCustomer {
+  name: string;
+  email: string;
+  phone?: string | null;
+}
+
+export function buildInvoiceText(booking: Booking, customer: DownloadCustomer): string {
   return [
     "BACKPACKCLAN — TAX INVOICE",
     "================================",
@@ -14,7 +19,7 @@ export function buildInvoiceText(booking: Booking, customer: CustomerUser): stri
     "BILLED TO",
     customer.name,
     customer.email,
-    customer.phone,
+    customer.phone ?? "",
     "",
     "TRIP DETAILS",
     booking.tripTitle,
@@ -32,7 +37,7 @@ export function buildInvoiceText(booking: Booking, customer: CustomerUser): stri
   ].join("\n");
 }
 
-export function buildVoucherText(booking: Booking, customer: CustomerUser): string {
+export function buildVoucherText(booking: Booking, customer: DownloadCustomer): string {
   return [
     "BACKPACKCLAN — TRAVEL VOUCHER",
     "================================",

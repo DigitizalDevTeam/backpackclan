@@ -3,6 +3,7 @@ import { getAllSections } from "@/lib/mock/homepage-store";
 import { getAllMedia } from "@/lib/mock/media-store";
 import { getAllMenus } from "@/lib/mock/menu-store";
 import { getRecentActivity } from "@/lib/mock/activity-store";
+import { getAdminBookings } from "@/lib/mock/booking-store";
 import {
   getLowSeatAlerts,
   getPublishedTripCount,
@@ -12,6 +13,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { getSession } from "@/lib/auth/session";
 import { laravelFetch, useLaravelApi } from "@/lib/api/backend";
+import type { AdminBooking } from "@/types/admin-booking";
 
 export interface DashboardStats {
   mediaCount: number;
@@ -22,6 +24,10 @@ export interface DashboardStats {
   totalTrips: number;
   upcomingDepartures: number;
   lowSeatAlerts: number;
+  totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  paidRevenue: number;
 }
 
 export interface DashboardActivity {
@@ -48,6 +54,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const sections = getAllSections();
   const menus = getAllMenus();
   const lowSeatAlerts = getLowSeatAlerts();
+  const bookings = getAdminBookings();
 
   return {
     mediaCount: getAllMedia().length,
@@ -58,7 +65,26 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     totalTrips: getPublishedTripCount(),
     upcomingDepartures: getUpcomingDeparturesCount(),
     lowSeatAlerts: lowSeatAlerts.length,
+    totalBookings: bookings.length,
+    pendingBookings: bookings.filter((b) => b.status === "pending").length,
+    confirmedBookings: bookings.filter((b) => b.status === "confirmed").length,
+    paidRevenue: bookings.reduce((sum, b) => sum + b.paidAmount, 0),
   };
+}
+
+export async function getDashboardRecentBookings() {
+  if (useLaravelApi()) {
+    const session = await getSession();
+    if (session) {
+      const { res, data } = await laravelFetch<{
+        success: boolean;
+        data: AdminBooking[];
+      }>("/v1/admin/dashboard/recent-bookings", { token: session.token });
+      if (res.ok && data.success) return data.data;
+    }
+  }
+
+  return getAdminBookings().slice(0, 8);
 }
 
 export async function getDashboardLowSeatAlerts(): Promise<LowSeatAlert[]> {

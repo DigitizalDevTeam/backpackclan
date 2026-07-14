@@ -11,6 +11,7 @@ import {
   Luggage,
   Calendar,
   AlertTriangle,
+  Ticket,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,12 +20,15 @@ import { Button } from "@/components/ui/button";
 import {
   getDashboardActivity,
   getDashboardLowSeatAlerts,
+  getDashboardRecentBookings,
   getDashboardStats,
 } from "@/lib/admin/dashboard";
 import { useLaravelApi } from "@/lib/api/backend";
 import { getSession } from "@/lib/auth/session";
+import { formatInr } from "@/lib/site/format";
 
 const quickActions = [
+  { title: "Manage Bookings", href: "/admin/bookings", icon: Ticket },
   { title: "Manage Trips", href: "/admin/trips", icon: Luggage },
   { title: "View Departures", href: "/admin/departures", icon: Calendar },
   { title: "Edit Homepage", href: "/admin/homepage", icon: Home },
@@ -45,6 +49,7 @@ const moduleColors: Record<string, string> = {
   departures: "bg-amber-100 text-amber-700",
   categories: "bg-indigo-100 text-indigo-700",
   pricing: "bg-rose-100 text-rose-700",
+  bookings: "bg-cyan-100 text-cyan-700",
 };
 
 function formatDepartureDate(date: string): string {
@@ -58,14 +63,35 @@ function formatDepartureDate(date: string): string {
 export default async function DashboardPage() {
   const session = await getSession();
   const user = session!.user;
-  const [stats, activity, lowSeatAlerts] = await Promise.all([
+  const [stats, activity, lowSeatAlerts, recentBookings] = await Promise.all([
     getDashboardStats(),
     getDashboardActivity(),
     getDashboardLowSeatAlerts(),
+    getDashboardRecentBookings(),
   ]);
   const apiMode = useLaravelApi();
 
   const statCards = [
+    {
+      label: "Total Bookings",
+      value: String(stats.totalBookings ?? 0),
+      sub: "all customer bookings",
+    },
+    {
+      label: "Pending Bookings",
+      value: String(stats.pendingBookings ?? 0),
+      sub: "awaiting payment/action",
+    },
+    {
+      label: "Confirmed Bookings",
+      value: String(stats.confirmedBookings ?? 0),
+      sub: "active confirmed trips",
+    },
+    {
+      label: "Paid Revenue",
+      value: formatInr(stats.paidRevenue ?? 0),
+      sub: "collected so far",
+    },
     {
       label: "Published Trips",
       value: String(stats.totalTrips),
@@ -82,24 +108,9 @@ export default async function DashboardPage() {
       sub: "≤ 5 seats remaining",
     },
     {
-      label: "Media Files",
-      value: String(stats.mediaCount),
-      sub: "images & videos",
-    },
-    {
       label: "Active Banners",
       value: String(stats.activeBanners),
       sub: "currently live",
-    },
-    {
-      label: "Homepage Sections",
-      value: `${stats.enabledSections}/${stats.totalSections}`,
-      sub: "enabled",
-    },
-    {
-      label: "Menu Items",
-      value: String(stats.menuItemCount),
-      sub: "across all menus",
     },
   ];
 
@@ -107,7 +118,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <PageHeader
         title={`Welcome back, ${user?.name}!`}
-        description={`You're signed in as ${user.role}. Travel CMS and content modules at a glance.`}
+        description={`You're signed in as ${user.role}. Travel CMS and bookings at a glance.`}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -125,6 +136,50 @@ export default async function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Ticket className="h-4 w-4 text-primary" />
+            Recent bookings
+          </CardTitle>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/bookings">Manage all</Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {recentBookings.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No bookings yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {recentBookings.map((booking) => (
+                <Link
+                  key={booking.id}
+                  href={`/admin/bookings/${booking.id}`}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-muted"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{booking.tripTitle}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {booking.bookingRef} ·{" "}
+                      {booking.customer?.name ?? "Customer"} ·{" "}
+                      {formatDepartureDate(booking.batchDate)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="secondary" className="capitalize">
+                      {booking.status}
+                    </Badge>
+                    <p className="mt-1 text-xs font-medium">
+                      {formatInr(booking.totalAmount)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

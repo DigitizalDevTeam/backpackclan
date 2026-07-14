@@ -4,12 +4,12 @@ import { SocialIcon, socialHref } from "@/components/site/SocialIcon";
 import { SiteLogo } from "@/components/site/SiteLogo";
 import { RichTextContent } from "@/components/site/RichTextContent";
 import type { MenuItemNode } from "@/types/menu";
-import type { SiteSettings } from "@/types/settings";
+import type { PublicSiteSettings } from "@/types/settings";
 import type { FooterDestinationLink } from "@/lib/site/public-data";
 import { Separator } from "@/components/ui/separator";
 
 interface SiteFooterProps {
-  settings: SiteSettings;
+  settings: PublicSiteSettings;
   menu: MenuItemNode[];
   mediaMap?: Record<string, string>;
   destinationLinks?: FooterDestinationLink[];

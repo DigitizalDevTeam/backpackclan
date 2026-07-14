@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getSession } from "@/lib/auth/session";
 import { isCustomerUser } from "@/lib/auth/user-kind";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { getSiteLayoutData } from "@/lib/site/public-data";
 
 export const metadata: Metadata = {
   title: {
@@ -26,5 +27,19 @@ export default async function AdminLayout({
     redirect("/account/bookings");
   }
 
-  return <AdminShell user={session.user}>{children}</AdminShell>;
+  const layout = await getSiteLayoutData();
+  const { settings, mediaMap } = layout;
+  const logoUrl = settings.general.logoId
+    ? mediaMap[settings.general.logoId] ?? "/logo.png"
+    : "/logo.png";
+
+  return (
+    <AdminShell
+      user={session.user}
+      logoUrl={logoUrl}
+      siteName={settings.general.siteName || "Backpackclan"}
+    >
+      {children}
+    </AdminShell>
+  );
 }

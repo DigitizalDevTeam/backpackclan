@@ -8,7 +8,10 @@ import {
   footerSettingsSchema,
   generalSettingsSchema,
   integrationSettingsSchema,
+  mailSettingsSchema,
   maintenanceSettingsSchema,
+  notificationSettingsSchema,
+  paymentSettingsSchema,
   socialSettingsSchema,
 } from "@/lib/validations/settings";
 import { laravelFetch, useLaravelApi } from "@/lib/api/backend";
@@ -23,6 +26,9 @@ const schemas: Record<SettingsGroup, z.ZodType> = {
   footer: footerSettingsSchema,
   integrations: integrationSettingsSchema,
   maintenance: maintenanceSettingsSchema,
+  mail: mailSettingsSchema,
+  payments: paymentSettingsSchema,
+  notifications: notificationSettingsSchema,
 };
 
 const validGroups: SettingsGroup[] = [
@@ -32,6 +38,9 @@ const validGroups: SettingsGroup[] = [
   "footer",
   "integrations",
   "maintenance",
+  "mail",
+  "payments",
+  "notifications",
 ];
 
 export async function GET(_request: Request, { params }: RouteParams) {

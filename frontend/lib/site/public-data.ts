@@ -15,7 +15,7 @@ import {
 import type { MenuItemNode } from "@/types/menu";
 import type { HomepageSection, PopularTripsContent } from "@/types/homepage";
 import type { PublicTrip } from "@/types/trip";
-import type { SiteSettings } from "@/types/settings";
+import type { PublicSiteSettings } from "@/types/settings";
 import type { Banner } from "@/types/banner";
 
 export interface FooterDestinationLink {
@@ -24,7 +24,7 @@ export interface FooterDestinationLink {
 }
 
 export interface SiteLayoutData {
-  settings: SiteSettings;
+  settings: PublicSiteSettings;
   headerMenu: MenuItemNode[];
   footerMenu: MenuItemNode[];
   mobileMenu: MenuItemNode[];
@@ -45,7 +45,7 @@ export interface HomepageData extends SiteLayoutData {
 type LaravelSiteLayoutResponse = {
   success?: boolean;
   data?: {
-    settings?: SiteSettings;
+    settings?: PublicSiteSettings;
     menus?: {
       header?: MenuItemNode[];
       footer?: MenuItemNode[];

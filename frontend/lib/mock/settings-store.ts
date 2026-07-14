@@ -41,6 +41,36 @@ const DEFAULT_SETTINGS: SiteSettings = {
     message:
       "We're currently performing scheduled maintenance. Please check back soon!",
   },
+  mail: {
+    mailer: "smtp",
+    host: "",
+    port: 587,
+    username: "",
+    password: "",
+    encryption: "tls",
+    fromAddress: "hello@backpackclan.com",
+    fromName: "Backpackclan",
+  },
+  payments: {
+    stripeEnabled: false,
+    stripeKey: "",
+    stripeSecret: "",
+    stripeWebhookSecret: "",
+    stripeCurrency: "inr",
+    depositPercent: 30,
+    razorpayEnabled: false,
+    razorpayKeyId: "",
+    razorpayKeySecret: "",
+    razorpayWebhookSecret: "",
+    razorpayCurrency: "INR",
+  },
+  notifications: {
+    bookingCreated: true,
+    paymentReceived: true,
+    attachInvoice: true,
+    leadConfirmation: true,
+    leadOpsNotify: true,
+  },
   updatedAt: new Date().toISOString(),
 };
 

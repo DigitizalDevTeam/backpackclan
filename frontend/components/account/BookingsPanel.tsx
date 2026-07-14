@@ -142,7 +142,6 @@ export function BookingDetailView({ bookingId }: BookingDetailViewProps) {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [paying, setPaying] = useState(false);
   const [category, setCategory] = useState<DocumentCategory>("passport");
   const [file, setFile] = useState<File | null>(null);
 
@@ -208,26 +207,6 @@ export function BookingDetailView({ bookingId }: BookingDetailViewProps) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
     } finally {
       setUploading(false);
-    }
-  }
-
-  async function handlePayBalance() {
-    if (!booking || booking.balanceDue <= 0) return;
-    setPaying(true);
-    try {
-      const res = await fetch(`/api/customer/bookings/${bookingId}/pay`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: booking.balanceDue }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.errors?.form);
-      toast.success("Payment recorded successfully");
-      setBooking(data.data);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Payment failed");
-    } finally {
-      setPaying(false);
     }
   }
 
@@ -392,31 +371,22 @@ export function BookingDetailView({ bookingId }: BookingDetailViewProps) {
               </div>
             </dl>
             {booking.balanceDue > 0 ? (
-              <Button
-                className="mt-6 w-full bg-orange-500 hover:bg-orange-600"
-                onClick={handlePayBalance}
-                disabled={paying}
-              >
-                {paying ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
+              <div className="mt-6 space-y-3">
+                <Button asChild className="w-full gap-2 bg-orange-500 hover:bg-orange-600">
+                  <Link href={`/book/pay/${booking.id}`}>
                     <Wallet className="h-4 w-4" />
                     Pay {formatInr(booking.balanceDue)}
-                  </>
-                )}
-              </Button>
+                  </Link>
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  Secure card / UPI checkout via Stripe
+                </p>
+              </div>
             ) : (
               <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-center text-sm font-medium text-green-700">
                 Fully paid — you&apos;re all set!
               </p>
             )}
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              Mock payment — no real charge in demo mode.
-            </p>
           </section>
         </div>
       </div>

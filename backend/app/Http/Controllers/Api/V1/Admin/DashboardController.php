@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AdminBookingResource;
 use App\Models\ActivityLog;
 use App\Models\Banner;
+use App\Models\Booking;
 use App\Models\Departure;
 use App\Models\HomepageSection;
 use App\Models\Media;
@@ -42,7 +44,25 @@ class DashboardController extends Controller
                     ->whereDate('start_date', '>=', $today)
                     ->count(),
                 'lowSeatAlerts' => $lowSeatCount,
+                'totalBookings' => Booking::query()->count(),
+                'pendingBookings' => Booking::query()->where('status', 'pending')->count(),
+                'confirmedBookings' => Booking::query()->where('status', 'confirmed')->count(),
+                'paidRevenue' => (int) Booking::query()->sum('paid_amount'),
             ],
+        ]);
+    }
+
+    public function recentBookings(): JsonResponse
+    {
+        $bookings = Booking::query()
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => AdminBookingResource::collection($bookings),
         ]);
     }
 

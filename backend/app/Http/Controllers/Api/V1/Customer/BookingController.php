@@ -6,9 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\BookingDocumentResource;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
+use App\Models\Departure;
+use App\Models\Trip;
+use App\Support\CamelCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class BookingController extends Controller
 {
@@ -24,6 +28,183 @@ class BookingController extends Controller
             'success' => true,
             'data' => BookingResource::collection($bookings),
         ]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'tripSlug' => ['required', 'string', 'max:255'],
+            'departureId' => ['required'],
+            'adults' => ['required', 'integer', 'min:1', 'max:12'],
+            'children' => ['required', 'integer', 'min:0', 'max:6'],
+            'travelers' => ['required', 'array', 'min:1'],
+            'travelers.*.fullName' => ['required', 'string', 'max:120'],
+            'travelers.*.age' => ['required', 'integer', 'min:1', 'max:100'],
+            'travelers.*.gender' => ['required', 'in:male,female,other'],
+            'travelers.*.idType' => ['required', 'in:aadhaar,passport,dl,other'],
+            'travelers.*.idNumber' => ['required', 'string', 'max:50'],
+            'contactPhone' => ['nullable', 'string', 'max:20'],
+            'contactEmail' => ['nullable', 'email', 'max:255'],
+            'acceptedTerms' => ['accepted'],
+            'couponCode' => ['nullable', 'string', 'max:50'],
+            'addonIds' => ['nullable', 'array'],
+            'addonIds.*' => ['string', 'max:50'],
+        ]);
+
+        $pax = (int) $data['adults'] + (int) $data['children'];
+        if (count($data['travelers']) !== $pax) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Traveler details must match the number of adults and children'],
+            ], 422);
+        }
+
+        $trip = Trip::query()
+            ->with('destination')
+            ->where('slug', $data['tripSlug'])
+            ->where('status', 'published')
+            ->first();
+
+        if (! $trip) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Trip not found'],
+            ], 404);
+        }
+
+        try {
+            $booking = DB::transaction(function () use ($request, $data, $trip, $pax) {
+                /** @var Departure|null $departure */
+                $departure = Departure::query()
+                    ->whereKey($data['departureId'])
+                    ->where('trip_id', $trip->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $departure) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['form' => 'Selected batch not found'],
+                    ], 404);
+                }
+
+                $status = $departure->resolveEffectiveStatus();
+                if (in_array($status, ['sold_out', 'cancelled', 'booking_closed'], true)) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['form' => 'This batch is no longer available for booking'],
+                    ], 422);
+                }
+
+                if ($departure->availableSeats() < $pax) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['form' => 'Not enough seats left for this batch'],
+                    ], 422);
+                }
+
+                $pricing = CamelCase::convert($trip->pricing ?? []);
+                $basePrice = (int) ($pricing['salePrice'] ?? $pricing['basePrice'] ?? 0);
+                $override = CamelCase::convert($departure->pricing_override ?? []);
+                $unitPrice = (int) ($override['salePrice'] ?? $override['basePrice'] ?? $basePrice);
+                if ($unitPrice <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['form' => 'Trip pricing is not configured'],
+                    ], 422);
+                }
+
+                $tripSubtotal = $unitPrice * $pax;
+                $catalog = \App\Support\TripAddons::normalize($trip->addons);
+                $addonSelection = \App\Support\TripAddons::resolveSelection(
+                    $data['addonIds'] ?? [],
+                    $catalog,
+                    $pax
+                );
+                $subtotal = $tripSubtotal + $addonSelection['total'];
+
+                $discount = 0;
+                $couponCode = null;
+                if (! empty($data['couponCode'])) {
+                    try {
+                        $couponResult = app(\App\Services\CouponService::class)->validate(
+                            (string) $data['couponCode'],
+                            $subtotal,
+                            $trip->slug
+                        );
+                        $discount = $couponResult['discount'];
+                        $couponCode = $couponResult['code'];
+                        app(\App\Services\CouponService::class)->incrementUsage($couponResult['coupon']);
+                    } catch (\Illuminate\Validation\ValidationException $e) {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'form' => collect($e->errors())->flatten()->first() ?? 'Invalid coupon',
+                            ],
+                        ], 422);
+                    }
+                }
+
+                $total = max(0, $subtotal - $discount);
+                $seq = (int) (Booking::query()->lockForUpdate()->count() + 1001);
+                $year = now()->format('Y');
+                $bookingRef = 'BC-'.$year.'-'.$seq;
+                $invoiceNumber = 'INV-'.$year.'-'.$seq;
+                $voucherCode = 'VCH-'.Str::upper(Str::substr(Str::slug($trip->slug), 0, 3)).'-'.$seq;
+
+                $departure->booked_seats = (int) $departure->booked_seats + $pax;
+                $departure->save();
+
+                return Booking::query()->create([
+                    'user_id' => $request->user()->id,
+                    'trip_id' => $trip->id,
+                    'departure_id' => $departure->id,
+                    'booking_ref' => $bookingRef,
+                    'trip_slug' => $trip->slug,
+                    'trip_title' => $trip->title,
+                    'destination' => $trip->destination?->name ?? '',
+                    'batch_date' => $departure->start_date,
+                    'travelers' => $pax,
+                    'adults' => (int) $data['adults'],
+                    'children' => (int) $data['children'],
+                    'traveler_details' => $data['travelers'],
+                    'contact_phone' => $data['contactPhone'] ?? $request->user()->phone,
+                    'contact_email' => $data['contactEmail'] ?? $request->user()->email,
+                    'status' => 'pending',
+                    'subtotal_amount' => $tripSubtotal,
+                    'addons_total' => $addonSelection['total'],
+                    'discount_amount' => $discount,
+                    'selected_addons' => $addonSelection['items'],
+                    'coupon_code' => $couponCode,
+                    'total_amount' => $total,
+                    'paid_amount' => 0,
+                    'balance_due' => $total,
+                    'invoice_number' => $invoiceNumber,
+                    'voucher_code' => $voucherCode,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Could not create booking. Please try again.'],
+            ], 500);
+        }
+
+        if ($booking instanceof JsonResponse) {
+            return $booking;
+        }
+
+        $booking->load('documents');
+
+        app(\App\Services\BookingNotificationService::class)
+            ->sendBookingCreated($booking->loadMissing('user'));
+
+        return response()->json([
+            'success' => true,
+            'data' => new BookingResource($booking),
+        ], 201);
     }
 
     public function show(Request $request, Booking $booking): JsonResponse
@@ -66,12 +247,27 @@ class BookingController extends Controller
         $booking->paid_amount += $data['amount'];
         $booking->balance_due -= $data['amount'];
 
-        if ($booking->balance_due === 0 && $booking->status === 'pending') {
+        if ($booking->paid_amount > 0 && $booking->status === 'pending') {
             $booking->status = 'confirmed';
         }
 
         $booking->save();
         $booking->load('documents');
+
+        $payment = \App\Models\Payment::query()->create([
+            'booking_id' => $booking->id,
+            'user_id' => $request->user()->id,
+            'amount' => $data['amount'],
+            'currency' => config('stripe.currency', 'inr'),
+            'status' => 'succeeded',
+            'provider' => 'manual',
+            'mode' => 'balance',
+            'paid_at' => now(),
+            'meta' => ['source' => 'legacy_pay'],
+        ]);
+
+        app(\App\Services\BookingNotificationService::class)
+            ->sendPaymentReceived($booking->loadMissing('user'), $payment);
 
         return response()->json([
             'success' => true,
@@ -119,12 +315,14 @@ class BookingController extends Controller
         }
 
         $user = $request->user();
-        $content = $this->buildInvoiceText($booking, $user);
-
-        return response($content, 200, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="'.$booking->invoice_number.'.txt"',
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
+            'booking' => $booking,
+            'customerName' => $user->name,
+            'customerEmail' => $user->email,
+            'customerPhone' => $user->phone,
         ]);
+
+        return $pdf->download($booking->invoice_number.'.pdf');
     }
 
     public function voucher(Request $request, Booking $booking)
@@ -137,62 +335,11 @@ class BookingController extends Controller
         }
 
         $user = $request->user();
-        $content = $this->buildVoucherText($booking, $user);
-
-        return response($content, 200, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="'.$booking->voucher_code.'.txt"',
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.voucher', [
+            'booking' => $booking,
+            'customerName' => $user->name,
         ]);
-    }
 
-    private function buildInvoiceText(Booking $booking, $user): string
-    {
-        return implode("\n", [
-            'BACKPACKCLAN — TAX INVOICE',
-            '================================',
-            'Invoice No: '.$booking->invoice_number,
-            'Booking Ref: '.$booking->booking_ref,
-            'Date: '.$booking->created_at?->toDateString(),
-            '',
-            'BILLED TO',
-            $user->name,
-            $user->email,
-            $user->phone ?? '',
-            '',
-            'TRIP DETAILS',
-            $booking->trip_title,
-            'Destination: '.$booking->destination,
-            'Batch Date: '.$booking->batch_date?->toDateString(),
-            'Travelers: '.$booking->travelers,
-            '',
-            'PAYMENT SUMMARY',
-            'Total Amount: INR '.$booking->total_amount,
-            'Paid: INR '.$booking->paid_amount,
-            'Balance Due: INR '.$booking->balance_due,
-            '',
-            'Thank you for choosing Backpackclan!',
-        ]);
-    }
-
-    private function buildVoucherText(Booking $booking, $user): string
-    {
-        return implode("\n", [
-            'BACKPACKCLAN — TRAVEL VOUCHER',
-            '================================',
-            'Voucher Code: '.$booking->voucher_code,
-            'Booking Ref: '.$booking->booking_ref,
-            'Status: '.strtoupper($booking->status),
-            '',
-            'GUEST',
-            $user->name,
-            'Travelers: '.$booking->travelers,
-            '',
-            'TRIP',
-            $booking->trip_title,
-            $booking->destination,
-            'Departure: '.$booking->batch_date?->toDateString(),
-            '',
-            'Present this voucher at check-in.',
-        ]);
+        return $pdf->download($booking->voucher_code.'.pdf');
     }
 }

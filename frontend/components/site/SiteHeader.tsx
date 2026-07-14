@@ -12,7 +12,7 @@ import {
 import { SocialIcon, socialHref } from "@/components/site/SocialIcon";
 import { SiteLogo } from "@/components/site/SiteLogo";
 import type { MenuItemNode } from "@/types/menu";
-import type { SiteSettings } from "@/types/settings";
+import type { PublicSiteSettings } from "@/types/settings";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,7 +25,7 @@ import { HeaderAuthMenu } from "@/components/site/HeaderAuthMenu";
 import { hexToRgb } from "@/lib/site/branding";
 
 interface SiteHeaderProps {
-  settings: SiteSettings;
+  settings: PublicSiteSettings;
   menu: MenuItemNode[];
   mobileMenu?: MenuItemNode[];
   mediaMap?: Record<string, string>;

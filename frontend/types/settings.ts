@@ -42,6 +42,44 @@ export interface MaintenanceSettings {
   message: string;
 }
 
+export interface MailSettings {
+  mailer: "smtp" | "log" | "sendmail" | "array";
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  passwordSet?: boolean;
+  encryption: "tls" | "ssl" | "null" | "";
+  fromAddress: string;
+  fromName: string;
+}
+
+export interface PaymentSettings {
+  stripeEnabled: boolean;
+  stripeKey: string;
+  stripeSecret: string;
+  stripeSecretSet?: boolean;
+  stripeWebhookSecret: string;
+  stripeWebhookSecretSet?: boolean;
+  stripeCurrency: string;
+  depositPercent: number;
+  razorpayEnabled: boolean;
+  razorpayKeyId: string;
+  razorpayKeySecret: string;
+  razorpayKeySecretSet?: boolean;
+  razorpayWebhookSecret: string;
+  razorpayWebhookSecretSet?: boolean;
+  razorpayCurrency: string;
+}
+
+export interface NotificationSettings {
+  bookingCreated: boolean;
+  paymentReceived: boolean;
+  attachInvoice: boolean;
+  leadConfirmation: boolean;
+  leadOpsNotify: boolean;
+}
+
 export interface SiteSettings {
   general: GeneralSettings;
   social: SocialSettings;
@@ -49,8 +87,17 @@ export interface SiteSettings {
   footer: FooterSettings;
   integrations: IntegrationSettings;
   maintenance: MaintenanceSettings;
+  mail: MailSettings;
+  payments: PaymentSettings;
+  notifications: NotificationSettings;
   updatedAt: string;
 }
+
+/** Public layout may omit admin-only groups. */
+export type PublicSiteSettings = Pick<
+  SiteSettings,
+  "general" | "social" | "branding" | "footer" | "integrations" | "maintenance"
+> & { updatedAt: string };
 
 export type SettingsGroup = keyof Omit<SiteSettings, "updatedAt">;
 
@@ -59,6 +106,9 @@ export const SETTINGS_TABS: { id: SettingsGroup; label: string }[] = [
   { id: "social", label: "Social" },
   { id: "branding", label: "Branding" },
   { id: "footer", label: "Footer" },
+  { id: "mail", label: "Email / SMTP" },
+  { id: "payments", label: "Payments" },
+  { id: "notifications", label: "Notifications" },
   { id: "integrations", label: "Integrations" },
   { id: "maintenance", label: "Maintenance" },
 ];

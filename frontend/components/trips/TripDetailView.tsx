@@ -55,7 +55,13 @@ export function TripDetailView({
   similarTrips,
 }: TripDetailViewProps) {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
-  const [selectedBatch, setSelectedBatch] = useState(detail.batches[0]?.id ?? "");
+  const [selectedBatch, setSelectedBatch] = useState(
+    detail.batches.find((b) => b.status !== "sold_out")?.id ??
+      detail.batches[0]?.id ??
+      ""
+  );
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +70,13 @@ export function TripDetailView({
     .filter(Boolean) as string[];
   const mainImage = galleryUrls[0] ?? mediaMap[trip.imageId] ?? null;
   const selectedBatchData = detail.batches.find((b) => b.id === selectedBatch);
+  const bookHref = selectedBatch
+    ? `/book/${trip.slug}?departure=${encodeURIComponent(selectedBatch)}&adults=${adults}&children=${children}`
+    : `/book/${trip.slug}`;
+  const canBook =
+    Boolean(selectedBatchData) && selectedBatchData?.status !== "sold_out";
+  const pax = adults + children;
+  const estimatedTotal = (selectedBatchData?.price ?? trip.price) * pax;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -497,9 +510,15 @@ export function TripDetailView({
                     <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
                       Adults
                     </label>
-                    <select className="w-full rounded-xl border px-3 py-2.5 text-sm">
-                      {[1, 2, 3, 4].map((n) => (
-                        <option key={n}>{n}</option>
+                    <select
+                      value={adults}
+                      onChange={(e) => setAdults(Number(e.target.value))}
+                      className="w-full rounded-xl border px-3 py-2.5 text-sm"
+                    >
+                      {[1, 2, 3, 4, 5, 6].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -507,24 +526,49 @@ export function TripDetailView({
                     <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
                       Children
                     </label>
-                    <select className="w-full rounded-xl border px-3 py-2.5 text-sm">
-                      {[0, 1, 2].map((n) => (
-                        <option key={n}>{n}</option>
+                    <select
+                      value={children}
+                      onChange={(e) => setChildren(Number(e.target.value))}
+                      className="w-full rounded-xl border px-3 py-2.5 text-sm"
+                    >
+                      {[0, 1, 2, 3, 4].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
                       ))}
                     </select>
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Est. total{" "}
+                  <span className="font-semibold text-foreground">
+                    {formatInr(estimatedTotal)}
+                  </span>{" "}
+                  for {pax} traveler{pax > 1 ? "s" : ""}
+                </p>
               </div>
 
-              <Button className="mt-5 w-full rounded-xl bg-primary py-3 text-base font-semibold hover:bg-primary/90">
-                Book Now
-              </Button>
+              {canBook ? (
+                <Button
+                  asChild
+                  className="mt-5 w-full rounded-xl bg-primary py-3 text-base font-semibold hover:bg-primary/90"
+                >
+                  <Link href={bookHref}>Book Now</Link>
+                </Button>
+              ) : (
+                <Button
+                  disabled
+                  className="mt-5 w-full rounded-xl bg-primary py-3 text-base font-semibold"
+                >
+                  Sold out
+                </Button>
+              )}
               <Button
                 asChild
                 variant="outline"
                 className="mt-2 w-full rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
               >
-                <Link href="/contact">Enquire Now</Link>
+                <Link href="/inquire/custom-trip">Enquire Now</Link>
               </Button>
 
               <div className="mt-5 space-y-2 border-t pt-4 text-xs text-muted-foreground">

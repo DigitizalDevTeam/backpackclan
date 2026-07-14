@@ -20,6 +20,9 @@ import {
   IndianRupee,
   Compass,
   Newspaper,
+  Ticket,
+  Percent,
+  Inbox,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -42,6 +45,24 @@ export const adminNavGroups: NavGroup[] = [
   {
     items: [
       { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+      {
+        title: "Bookings",
+        href: "/admin/bookings",
+        icon: Ticket,
+        permission: "bookings.view",
+      },
+      {
+        title: "Coupons",
+        href: "/admin/coupons",
+        icon: Percent,
+        permission: "coupons.view",
+      },
+      {
+        title: "Leads",
+        href: "/admin/leads",
+        icon: Inbox,
+        permission: "leads.view",
+      },
     ],
   },
   {

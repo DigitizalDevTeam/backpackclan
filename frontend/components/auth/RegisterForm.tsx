@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -16,6 +16,7 @@ import type { AuthUser } from "@/types/auth";
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -56,7 +57,9 @@ export function RegisterForm() {
 
       const user = result.data.user as AuthUser;
       toast.success(`Welcome, ${user.name}! Your account is ready.`);
-      router.push(getAuthHomePath(user));
+      const redirect =
+        searchParams.get("redirect") || getAuthHomePath(user);
+      router.push(redirect);
       router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");

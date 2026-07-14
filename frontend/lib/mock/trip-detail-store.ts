@@ -5,6 +5,7 @@ import type {
   TripItineraryDay,
   TripReview,
 } from "@/types/trip";
+import { DEFAULT_TRIP_ADDONS } from "@/lib/booking/pricing";
 
 const LADAKH_ITINERARY: TripItineraryDay[] = [
   {
@@ -302,6 +303,7 @@ export function getTripDetail(trip: PublicTrip): TripDetailContent {
     ],
     batches: override?.batches ?? defaultBatches(trip),
     reviews: override?.reviews ?? DEFAULT_REVIEWS,
+    addons: override?.addons ?? DEFAULT_TRIP_ADDONS,
   };
 }
 

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Link from "next/link";
 import { AuthPageLayout } from "@/components/auth/AuthPageLayout";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { RegisterCta } from "@/components/auth/RegisterCta";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
@@ -33,13 +33,8 @@ export default function LoginPage() {
         }
       >
         <LoginForm />
+        <RegisterCta />
       </Suspense>
-      <p className="mt-6 border-t pt-6 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="font-medium text-primary hover:underline">
-          Create one free
-        </Link>
-      </p>
     </AuthPageLayout>
   );
 }

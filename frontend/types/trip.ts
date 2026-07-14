@@ -75,6 +75,15 @@ export interface TripDetailContent {
   refundPolicy: string[];
   batches: TripBatch[];
   reviews: TripReview[];
+  addons?: TripAddon[];
+}
+
+export interface TripAddon {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  pricingType: "per_person" | "flat";
 }
 
 export interface TripFilters {

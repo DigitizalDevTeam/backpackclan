@@ -47,3 +47,41 @@ export const maintenanceSettingsSchema = z.object({
   enabled: z.boolean(),
   message: z.string().min(1, "Maintenance message is required when enabled").or(z.literal("")),
 });
+
+export const mailSettingsSchema = z.object({
+  mailer: z.enum(["smtp", "log", "sendmail", "array"]),
+  host: z.string(),
+  port: z.coerce.number().int().min(1).max(65535),
+  username: z.string(),
+  password: z.string(),
+  passwordSet: z.boolean().optional(),
+  encryption: z.enum(["tls", "ssl", "null", ""]),
+  fromAddress: z.string().email("Valid from address required"),
+  fromName: z.string().min(1, "From name is required"),
+});
+
+export const paymentSettingsSchema = z.object({
+  stripeEnabled: z.boolean(),
+  stripeKey: z.string(),
+  stripeSecret: z.string(),
+  stripeSecretSet: z.boolean().optional(),
+  stripeWebhookSecret: z.string(),
+  stripeWebhookSecretSet: z.boolean().optional(),
+  stripeCurrency: z.string().min(1),
+  depositPercent: z.coerce.number().int().min(1).max(100),
+  razorpayEnabled: z.boolean(),
+  razorpayKeyId: z.string(),
+  razorpayKeySecret: z.string(),
+  razorpayKeySecretSet: z.boolean().optional(),
+  razorpayWebhookSecret: z.string(),
+  razorpayWebhookSecretSet: z.boolean().optional(),
+  razorpayCurrency: z.string().min(1),
+});
+
+export const notificationSettingsSchema = z.object({
+  bookingCreated: z.boolean(),
+  paymentReceived: z.boolean(),
+  attachInvoice: z.boolean(),
+  leadConfirmation: z.boolean(),
+  leadOpsNotify: z.boolean(),
+});

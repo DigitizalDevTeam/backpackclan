@@ -14,7 +14,7 @@ const SEED_BANNERS: Banner[] = [
     linkUrl: "/trips",
     ctaButtons: [
       { id: "cta1", label: "Explore Trips", url: "/trips", style: "primary" },
-      { id: "cta2", label: "Custom Trip", url: "/contact", style: "outline" },
+      { id: "cta2", label: "Custom Trip", url: "/inquire/custom-trip", style: "outline" },
     ],
     startsAt: "2026-04-01T00:00:00.000Z",
     endsAt: "2026-09-30T23:59:59.000Z",

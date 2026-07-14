@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Mountain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,8 @@ interface AdminSidebarProps {
   onToggle: () => void;
   mobile?: boolean;
   onNavigate?: () => void;
+  logoUrl?: string;
+  siteName?: string;
 }
 
 function isNavItemActive(pathname: string, href: string): boolean {
@@ -169,6 +170,8 @@ export function AdminSidebar({
   onToggle,
   mobile = false,
   onNavigate,
+  logoUrl = "/logo.png",
+  siteName = "Backpackclan",
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const navGroups = getNavGroupsForUser(user);
@@ -229,20 +232,22 @@ export function AdminSidebar({
       <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
         <Link
           href="/admin/dashboard"
-          className="flex items-center gap-3 overflow-hidden"
-          onClick={onNavigate}
-        >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-active">
-            <Mountain className="h-5 w-5 text-white" />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">
-                Backpackclan
-              </p>
-              <p className="truncate text-xs text-sidebar-muted">Admin Panel</p>
-            </div>
+          className={cn(
+            "flex items-center overflow-hidden",
+            collapsed ? "justify-center" : "min-w-0 flex-1 pr-2"
           )}
+          onClick={onNavigate}
+          title={siteName}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={logoUrl}
+            alt={siteName}
+            className={cn(
+              "object-contain object-left",
+              collapsed ? "h-8 w-8" : "h-auto w-full"
+            )}
+          />
         </Link>
         {!mobile && (
           <Button

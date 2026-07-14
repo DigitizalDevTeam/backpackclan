@@ -4,26 +4,20 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Mail, MapPin, Phone, Send } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { SiteSettings } from "@/types/settings";
-import { z } from "zod";
-
-const contactSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().min(1, "Email is required").email("Invalid email"),
-  phone: z.string().min(10, "Valid phone required"),
-  destination: z.string().optional(),
-  message: z.string().min(10, "Please share a few details about your trip"),
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
+import type { PublicSiteSettings } from "@/types/settings";
+import {
+  contactLeadSchema,
+  type ContactLeadData,
+} from "@/lib/validations/leads";
 
 interface ContactFormProps {
-  settings: SiteSettings;
+  settings: PublicSiteSettings;
 }
 
 export function ContactForm({ settings }: ContactFormProps) {
@@ -35,8 +29,8 @@ export function ContactForm({ settings }: ContactFormProps) {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
+  } = useForm<ContactLeadData>({
+    resolver: zodResolver(contactLeadSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -46,12 +40,35 @@ export function ContactForm({ settings }: ContactFormProps) {
     },
   });
 
-  async function onSubmit(_data: ContactFormData) {
+  async function onSubmit(data: ContactLeadData) {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    toast.success("Thanks! Our team will reach out within 24 hours.");
-    reset();
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "contact",
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          sourceUrl: typeof window !== "undefined" ? window.location.pathname : "/contact",
+          payload: {
+            destination: data.destination || undefined,
+            message: data.message,
+          },
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.errors?.form || "Could not send inquiry");
+      }
+      toast.success(result.data?.message || "Thanks! Our team will reach out within 24 hours.");
+      reset();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not send inquiry");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -90,6 +107,23 @@ export function ContactForm({ settings }: ContactFormProps) {
             </div>
           </li>
         </ul>
+        <div className="flex flex-col gap-2 text-sm">
+          <Link href="/request-callback" className="text-primary hover:underline">
+            Request a callback
+          </Link>
+          <Link href="/inquire/custom-trip" className="text-primary hover:underline">
+            Plan a custom trip
+          </Link>
+          <Link href="/inquire/corporate" className="text-primary hover:underline">
+            Corporate / group inquiry
+          </Link>
+          <Link href="/partners/register" className="text-primary hover:underline">
+            Partner with us
+          </Link>
+          <Link href="/careers/apply" className="text-primary hover:underline">
+            Careers
+          </Link>
+        </div>
         {social.whatsapp ? (
           <Button asChild variant="outline" className="border-green-600 text-green-700 hover:bg-green-50">
             <a

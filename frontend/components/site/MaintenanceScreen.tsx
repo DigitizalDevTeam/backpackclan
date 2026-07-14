@@ -1,9 +1,9 @@
 import { Mountain, Wrench } from "lucide-react";
-import type { SiteSettings } from "@/types/settings";
+import type { PublicSiteSettings } from "@/types/settings";
 import { SiteLogo } from "@/components/site/SiteLogo";
 
 interface MaintenanceScreenProps {
-  settings: SiteSettings;
+  settings: PublicSiteSettings;
   mediaMap: Record<string, string>;
 }
 

@@ -49,8 +49,20 @@ final class Permissions
     public const DEPARTURES_CREATE = 'departures.create';
     public const DEPARTURES_UPDATE = 'departures.update';
     public const DEPARTURES_DELETE = 'departures.delete';
+    public const BOOKINGS_VIEW = 'bookings.view';
+    public const BOOKINGS_CREATE = 'bookings.create';
+    public const BOOKINGS_UPDATE = 'bookings.update';
+    public const BOOKINGS_DELETE = 'bookings.delete';
     public const PRICING_VIEW = 'pricing.view';
     public const PRICING_UPDATE = 'pricing.update';
+    public const COUPONS_VIEW = 'coupons.view';
+    public const COUPONS_CREATE = 'coupons.create';
+    public const COUPONS_UPDATE = 'coupons.update';
+    public const COUPONS_DELETE = 'coupons.delete';
+    public const LEADS_VIEW = 'leads.view';
+    public const LEADS_CREATE = 'leads.create';
+    public const LEADS_UPDATE = 'leads.update';
+    public const LEADS_DELETE = 'leads.delete';
     public const BLOGS_VIEW = 'blogs.view';
     public const BLOGS_CREATE = 'blogs.create';
     public const BLOGS_UPDATE = 'blogs.update';
@@ -302,6 +314,30 @@ final class Permissions
                 'group' => 'departures',
                 'description' => 'Delete departures',
             ],
+            self::BOOKINGS_VIEW => [
+                'slug' => self::BOOKINGS_VIEW,
+                'name' => 'View Bookings',
+                'group' => 'bookings',
+                'description' => 'View customer bookings and payments',
+            ],
+            self::BOOKINGS_CREATE => [
+                'slug' => self::BOOKINGS_CREATE,
+                'name' => 'Create Bookings',
+                'group' => 'bookings',
+                'description' => 'Create bookings on behalf of customers',
+            ],
+            self::BOOKINGS_UPDATE => [
+                'slug' => self::BOOKINGS_UPDATE,
+                'name' => 'Update Bookings',
+                'group' => 'bookings',
+                'description' => 'Edit booking status, payments, and details',
+            ],
+            self::BOOKINGS_DELETE => [
+                'slug' => self::BOOKINGS_DELETE,
+                'name' => 'Delete Bookings',
+                'group' => 'bookings',
+                'description' => 'Cancel or delete bookings',
+            ],
             self::PRICING_VIEW => [
                 'slug' => self::PRICING_VIEW,
                 'name' => 'View Pricing',
@@ -313,6 +349,54 @@ final class Permissions
                 'name' => 'Update Pricing',
                 'group' => 'pricing',
                 'description' => 'Edit trip and departure pricing',
+            ],
+            self::COUPONS_VIEW => [
+                'slug' => self::COUPONS_VIEW,
+                'name' => 'View Coupons',
+                'group' => 'coupons',
+                'description' => 'View discount coupons',
+            ],
+            self::COUPONS_CREATE => [
+                'slug' => self::COUPONS_CREATE,
+                'name' => 'Create Coupons',
+                'group' => 'coupons',
+                'description' => 'Create discount coupons',
+            ],
+            self::COUPONS_UPDATE => [
+                'slug' => self::COUPONS_UPDATE,
+                'name' => 'Update Coupons',
+                'group' => 'coupons',
+                'description' => 'Edit coupons, dates, and activation',
+            ],
+            self::COUPONS_DELETE => [
+                'slug' => self::COUPONS_DELETE,
+                'name' => 'Delete Coupons',
+                'group' => 'coupons',
+                'description' => 'Delete discount coupons',
+            ],
+            self::LEADS_VIEW => [
+                'slug' => self::LEADS_VIEW,
+                'name' => 'View Leads',
+                'group' => 'leads',
+                'description' => 'View inquiry and lead submissions',
+            ],
+            self::LEADS_CREATE => [
+                'slug' => self::LEADS_CREATE,
+                'name' => 'Create Leads',
+                'group' => 'leads',
+                'description' => 'Manually create lead and inquiry records',
+            ],
+            self::LEADS_UPDATE => [
+                'slug' => self::LEADS_UPDATE,
+                'name' => 'Update Leads',
+                'group' => 'leads',
+                'description' => 'Update lead status, notes, and assignment',
+            ],
+            self::LEADS_DELETE => [
+                'slug' => self::LEADS_DELETE,
+                'name' => 'Delete Leads',
+                'group' => 'leads',
+                'description' => 'Delete lead submissions',
             ],
             self::BLOGS_VIEW => [
                 'slug' => self::BLOGS_VIEW,

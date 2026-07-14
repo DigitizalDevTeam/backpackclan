@@ -21,7 +21,10 @@ import {
   footerSettingsSchema,
   generalSettingsSchema,
   integrationSettingsSchema,
+  mailSettingsSchema,
   maintenanceSettingsSchema,
+  notificationSettingsSchema,
+  paymentSettingsSchema,
   socialSettingsSchema,
 } from "@/lib/validations/settings";
 import {
@@ -38,6 +41,9 @@ const schemaMap = {
   footer: footerSettingsSchema,
   integrations: integrationSettingsSchema,
   maintenance: maintenanceSettingsSchema,
+  mail: mailSettingsSchema,
+  payments: paymentSettingsSchema,
+  notifications: notificationSettingsSchema,
 };
 
 export function SettingsManager() {
@@ -98,7 +104,7 @@ export function SettingsManager() {
     <div className="space-y-6">
       <PageHeader
         title="Global Settings"
-        description="Configure site branding, contact info, social links, and system preferences."
+        description="Configure branding, email (SMTP), Stripe, Razorpay, and notification preferences."
       />
 
       <div className="flex flex-col gap-6 lg:flex-row">
@@ -157,6 +163,8 @@ function SettingsTabForm({
 
   const primaryColor = watch("primaryColor" as never) as unknown as string | undefined;
   const secondaryColor = watch("secondaryColor" as never) as unknown as string | undefined;
+  const stripeEnabled = watch("stripeEnabled" as never) as unknown as boolean | undefined;
+  const razorpayEnabled = watch("razorpayEnabled" as never) as unknown as boolean | undefined;
 
   async function onSubmit(formData: unknown) {
     setSubmitting(true);
@@ -305,6 +313,188 @@ function SettingsTabForm({
             />
             <span className="text-sm">Show payment icons in footer</span>
           </label>
+        </>
+      )}
+
+      {group === "mail" && (
+        <>
+          <p className="text-sm text-muted-foreground">
+            SMTP credentials used for booking, payment, and lead emails. Leave password blank to keep the current value.
+          </p>
+          <div className="space-y-2">
+            <Label>Mailer</Label>
+            <Controller
+              name="mailer"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onChange={field.onChange}>
+                  <option value="smtp">SMTP</option>
+                  <option value="log">Log (dev)</option>
+                  <option value="sendmail">Sendmail</option>
+                  <option value="array">Array (testing)</option>
+                </Select>
+              )}
+            />
+          </div>
+          <Field label="SMTP host" name="host" register={register} placeholder="smtp.gmail.com" />
+          <Field label="Port" name="port" type="number" register={register} />
+          <div className="space-y-2">
+            <Label>Encryption</Label>
+            <Controller
+              name="encryption"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onChange={field.onChange}>
+                  <option value="tls">TLS</option>
+                  <option value="ssl">SSL</option>
+                  <option value="null">None</option>
+                </Select>
+              )}
+            />
+          </div>
+          <Field label="Username" name="username" register={register} />
+          <div className="space-y-2">
+            <Label>Password</Label>
+            <Input type="password" placeholder={(data as SiteSettings["mail"]).passwordSet ? "•••••••• (leave blank to keep)" : "SMTP password"} {...register("password")} />
+          </div>
+          <Field label="From address" name="fromAddress" type="email" register={register} />
+          <Field label="From name" name="fromName" register={register} />
+        </>
+      )}
+
+      {group === "payments" && (
+        <>
+          <p className="text-sm text-muted-foreground">
+            Enable gateways and paste keys here. Leave secret fields blank to keep existing values.
+          </p>
+
+          <label className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Enable Stripe</p>
+              <p className="text-xs text-muted-foreground">Card payments via Stripe</p>
+            </div>
+            <Controller
+              name="stripeEnabled"
+              control={control}
+              render={({ field }) => (
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4 accent-primary"
+                />
+              )}
+            />
+          </label>
+
+          {stripeEnabled ? (
+            <div className="space-y-4 rounded-lg border bg-slate-50 p-4">
+              <Field label="Publishable key" name="stripeKey" register={register} placeholder="pk_live_…" />
+              <div className="space-y-2">
+                <Label>Secret key</Label>
+                <Input type="password" placeholder={(data as SiteSettings["payments"]).stripeSecretSet ? "•••••••• (leave blank to keep)" : "sk_live_…"} {...register("stripeSecret")} />
+              </div>
+              <div className="space-y-2">
+                <Label>Webhook secret</Label>
+                <Input type="password" placeholder={(data as SiteSettings["payments"]).stripeWebhookSecretSet ? "•••••••• (leave blank to keep)" : "whsec_…"} {...register("stripeWebhookSecret")} />
+              </div>
+              <Field label="Currency" name="stripeCurrency" register={register} placeholder="inr" />
+              <Field label="Deposit percent" name="depositPercent" type="number" register={register} />
+            </div>
+          ) : null}
+
+          <label className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Enable Razorpay</p>
+              <p className="text-xs text-muted-foreground">UPI / cards via Razorpay</p>
+            </div>
+            <Controller
+              name="razorpayEnabled"
+              control={control}
+              render={({ field }) => (
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4 accent-primary"
+                />
+              )}
+            />
+          </label>
+
+          {razorpayEnabled ? (
+            <div className="space-y-4 rounded-lg border bg-slate-50 p-4">
+              <Field label="Key ID" name="razorpayKeyId" register={register} placeholder="rzp_live_…" />
+              <div className="space-y-2">
+                <Label>Key secret</Label>
+                <Input type="password" placeholder={(data as SiteSettings["payments"]).razorpayKeySecretSet ? "•••••••• (leave blank to keep)" : "Secret"} {...register("razorpayKeySecret")} />
+              </div>
+              <div className="space-y-2">
+                <Label>Webhook secret</Label>
+                <Input type="password" placeholder={(data as SiteSettings["payments"]).razorpayWebhookSecretSet ? "•••••••• (leave blank to keep)" : "Webhook secret"} {...register("razorpayWebhookSecret")} />
+              </div>
+              <Field label="Currency" name="razorpayCurrency" register={register} placeholder="INR" />
+            </div>
+          ) : null}
+        </>
+      )}
+
+      {group === "notifications" && (
+        <>
+          <p className="text-sm text-muted-foreground">
+            Control which emails customers and ops receive.
+          </p>
+          {(
+            [
+              {
+                name: "bookingCreated" as const,
+                label: "Booking created email",
+                hint: "Sent to customer when a booking is placed",
+              },
+              {
+                name: "paymentReceived" as const,
+                label: "Payment received email",
+                hint: "Sent after a successful payment",
+              },
+              {
+                name: "attachInvoice" as const,
+                label: "Attach invoice PDF",
+                hint: "Include the invoice PDF on payment emails",
+              },
+              {
+                name: "leadConfirmation" as const,
+                label: "Lead confirmation email",
+                hint: "Confirmation sent to the person who submitted a form",
+              },
+              {
+                name: "leadOpsNotify" as const,
+                label: "Lead ops notification",
+                hint: "Notify the contact email when a new lead arrives",
+              },
+            ] as const
+          ).map(({ name, label, hint }) => (
+            <label
+              key={name}
+              className="flex items-center justify-between gap-4 rounded-lg border p-4"
+            >
+              <div>
+                <p className="text-sm font-medium">{label}</p>
+                <p className="text-xs text-muted-foreground">{hint}</p>
+              </div>
+              <Controller
+                name={name}
+                control={control}
+                render={({ field }) => (
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4 accent-primary"
+                  />
+                )}
+              />
+            </label>
+          ))}
         </>
       )}
 

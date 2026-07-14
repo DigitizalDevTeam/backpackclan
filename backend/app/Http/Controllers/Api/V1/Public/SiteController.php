@@ -17,12 +17,10 @@ class SiteController extends Controller
 {
     public function layout(SettingsService $settings): JsonResponse
     {
-        $allSettings = $settings->all();
-
         return response()->json([
             'success' => true,
             'data' => [
-                'settings' => $allSettings,
+                'settings' => $settings->publicAll(),
                 'menus' => [
                     'header' => $this->activeMenuTree('header'),
                     'footer' => $this->activeMenuTree('footer'),

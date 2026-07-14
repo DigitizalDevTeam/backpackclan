@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import type { MenuItemNode } from "@/types/menu";
-import type { SiteSettings } from "@/types/settings";
+import type { PublicSiteSettings } from "@/types/settings";
 import type { FooterDestinationLink } from "@/lib/site/public-data";
 import { AccountSidebar } from "@/components/account/AccountSidebar";
 import { BackToTop } from "@/components/site/BackToTop";
@@ -15,7 +15,7 @@ import { WhatsAppWidget } from "@/components/site/WhatsAppWidget";
 import { Button } from "@/components/ui/button";
 
 interface AccountShellProps {
-  settings: SiteSettings;
+  settings: PublicSiteSettings;
   headerMenu: MenuItemNode[];
   footerMenu: MenuItemNode[];
   mobileMenu: MenuItemNode[];

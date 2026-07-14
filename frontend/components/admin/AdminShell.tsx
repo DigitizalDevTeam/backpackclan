@@ -9,9 +9,16 @@ import type { AuthUser } from "@/types/auth";
 interface AdminShellProps {
   user: AuthUser;
   children: React.ReactNode;
+  logoUrl?: string;
+  siteName?: string;
 }
 
-export function AdminShell({ user, children }: AdminShellProps) {
+export function AdminShell({
+  user,
+  children,
+  logoUrl = "/logo.png",
+  siteName = "Backpackclan",
+}: AdminShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -22,6 +29,8 @@ export function AdminShell({ user, children }: AdminShellProps) {
           user={user}
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed((prev) => !prev)}
+          logoUrl={logoUrl}
+          siteName={siteName}
         />
       </div>
 
@@ -38,6 +47,8 @@ export function AdminShell({ user, children }: AdminShellProps) {
               onToggle={() => setMobileOpen(false)}
               mobile
               onNavigate={() => setMobileOpen(false)}
+              logoUrl={logoUrl}
+              siteName={siteName}
             />
           </div>
         </div>

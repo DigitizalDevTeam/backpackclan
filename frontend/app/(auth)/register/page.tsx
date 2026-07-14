@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AuthPageLayout } from "@/components/auth/AuthPageLayout";
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Create Account — Backpackclan",
@@ -20,7 +22,17 @@ export default function RegisterPage() {
         "Access deals before they go public",
       ]}
     >
-      <RegisterForm />
+      <Suspense
+        fallback={
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        }
+      >
+        <RegisterForm />
+      </Suspense>
     </AuthPageLayout>
   );
 }

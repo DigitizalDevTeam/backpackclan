@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\SettingsService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +20,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        try {
+            $this->app->make(SettingsService::class)->applyToRuntime();
+        } catch (\Throwable) {
+            // Ignore during install / migrate before tables exist.
+        }
     }
 }

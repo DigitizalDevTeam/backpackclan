@@ -34,6 +34,8 @@ export async function laravelFetch<T = unknown>(
     ...fetchOptions,
     headers,
     cache: "no-store",
+    // Prevent build/runtime hangs when API is down or slow
+    signal: fetchOptions.signal ?? AbortSignal.timeout(15_000),
   });
 
   const data = (await res.json().catch(() => ({}))) as T;

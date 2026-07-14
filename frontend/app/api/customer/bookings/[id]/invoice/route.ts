@@ -18,7 +18,7 @@ export async function GET(_request: Request, context: RouteContext) {
   if (useLaravelApi()) {
     const res = await fetch(`${getLaravelApiUrl()}/v1/customer/bookings/${id}/invoice`, {
       headers: {
-        Accept: "text/plain",
+        Accept: "application/pdf",
         Authorization: `Bearer ${auth.session!.token}`,
       },
       cache: "no-store",
@@ -31,14 +31,15 @@ export async function GET(_request: Request, context: RouteContext) {
       );
     }
 
-    const content = await res.text();
+    const buffer = await res.arrayBuffer();
     const disposition = res.headers.get("Content-Disposition") ?? "";
-    const match = disposition.match(/filename="(.+)"/);
-    const filename = match?.[1] ?? `invoice-${id}.txt`;
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    const filename = match?.[1] ?? `invoice-${id}.pdf`;
+    const contentType = res.headers.get("Content-Type") ?? "application/pdf";
 
-    return new NextResponse(content, {
+    return new NextResponse(buffer, {
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": contentType,
         "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });

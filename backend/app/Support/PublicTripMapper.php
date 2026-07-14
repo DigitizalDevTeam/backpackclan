@@ -211,6 +211,7 @@ class PublicTripMapper
             ],
             'batches' => $batches,
             'reviews' => $reviews,
+            'addons' => \App\Support\TripAddons::normalize($trip->addons),
         ];
     }
 }

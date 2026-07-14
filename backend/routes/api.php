@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\V1\Admin\AuthController;
 use App\Http\Controllers\Api\V1\Admin\BannerController;
 use App\Http\Controllers\Api\V1\Admin\BlogController;
+use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Api\V1\Admin\CouponController as AdminCouponController;
+use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\DestinationController;
 use App\Http\Controllers\Api\V1\Admin\DepartureController;
@@ -20,15 +23,23 @@ use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Customer\AuthController as CustomerAuthController;
 use App\Http\Controllers\Api\V1\Customer\BookingController as CustomerBookingController;
+use App\Http\Controllers\Api\V1\Customer\BookingPaymentController as CustomerBookingPaymentController;
+use App\Http\Controllers\Api\V1\Customer\CouponController as CustomerCouponController;
+use App\Http\Controllers\Api\V1\Webhooks\StripeWebhookController;
+use App\Http\Controllers\Api\V1\Webhooks\RazorpayWebhookController;
 use App\Http\Controllers\Api\V1\Public\BlogController as PublicBlogController;
 use App\Http\Controllers\Api\V1\Public\CategoryController as PublicCategoryController;
 use App\Http\Controllers\Api\V1\Public\DestinationController as PublicDestinationController;
 use App\Http\Controllers\Api\V1\Public\HomepageController as PublicHomepageController;
+use App\Http\Controllers\Api\V1\Public\LeadController as PublicLeadController;
 use App\Http\Controllers\Api\V1\Public\SiteController as PublicSiteController;
 use App\Http\Controllers\Api\V1\Public\TripController as PublicTripController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    Route::post('webhooks/stripe', [StripeWebhookController::class, 'handle']);
+    Route::post('webhooks/razorpay', [RazorpayWebhookController::class, 'handle']);
+
     Route::get('blogs', [PublicBlogController::class, 'index']);
     Route::get('blogs/slugs', [PublicBlogController::class, 'slugs']);
     Route::get('blogs/{slug}', [PublicBlogController::class, 'show']);
@@ -48,6 +59,8 @@ Route::prefix('v1')->group(function () {
     Route::get('trips', [PublicTripController::class, 'index']);
     Route::get('trips/slugs', [PublicTripController::class, 'slugs']);
     Route::get('trips/{slug}', [PublicTripController::class, 'show']);
+
+    Route::post('leads', [PublicLeadController::class, 'store']);
 });
 
 Route::prefix('v1/admin')->group(function () {
@@ -62,6 +75,29 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('dashboard/stats', [DashboardController::class, 'stats']);
         Route::get('dashboard/low-seat-alerts', [DashboardController::class, 'lowSeatAlerts']);
         Route::get('dashboard/activity', [DashboardController::class, 'activity']);
+        Route::get('dashboard/recent-bookings', [DashboardController::class, 'recentBookings']);
+
+        Route::middleware('permission:bookings.view')->get('bookings', [AdminBookingController::class, 'index']);
+        Route::middleware('permission:bookings.view')->get('bookings/{booking}', [AdminBookingController::class, 'show']);
+        Route::middleware('permission:bookings.view')->get('bookings/{booking}/invoice', [AdminBookingController::class, 'invoice']);
+        Route::middleware('permission:bookings.view')->get('bookings/{booking}/voucher', [AdminBookingController::class, 'voucher']);
+        Route::middleware('permission:bookings.create')->post('bookings', [AdminBookingController::class, 'store']);
+        Route::middleware('permission:bookings.update')->put('bookings/{booking}', [AdminBookingController::class, 'update']);
+        Route::middleware('permission:bookings.delete')->delete('bookings/{booking}', [AdminBookingController::class, 'destroy']);
+
+        Route::middleware('permission:coupons.view')->get('coupons', [AdminCouponController::class, 'index']);
+        Route::middleware('permission:coupons.view')->get('coupons/{coupon}', [AdminCouponController::class, 'show']);
+        Route::middleware('permission:coupons.create')->post('coupons', [AdminCouponController::class, 'store']);
+        Route::middleware('permission:coupons.update')->put('coupons/{coupon}', [AdminCouponController::class, 'update']);
+        Route::middleware('permission:coupons.update')->patch('coupons/{coupon}', [AdminCouponController::class, 'patch']);
+        Route::middleware('permission:coupons.delete')->delete('coupons/{coupon}', [AdminCouponController::class, 'destroy']);
+
+        Route::middleware('permission:leads.view')->get('leads', [AdminLeadController::class, 'index']);
+        Route::middleware('permission:leads.create')->post('leads', [AdminLeadController::class, 'store']);
+        Route::middleware('permission:leads.view')->get('leads/{lead}', [AdminLeadController::class, 'show']);
+        Route::middleware('permission:leads.view')->get('leads/{lead}/resume', [AdminLeadController::class, 'downloadResume']);
+        Route::middleware('permission:leads.update')->put('leads/{lead}', [AdminLeadController::class, 'update']);
+        Route::middleware('permission:leads.delete')->delete('leads/{lead}', [AdminLeadController::class, 'destroy']);
 
         Route::get('settings/maintenance-status', [SettingsController::class, 'maintenanceStatus']);
         Route::middleware('permission:settings.view')->get('settings', [SettingsController::class, 'index']);
@@ -184,8 +220,13 @@ Route::prefix('v1/customer')->group(function () {
         Route::get('me', [CustomerAuthController::class, 'me']);
 
         Route::get('bookings', [CustomerBookingController::class, 'index']);
+        Route::post('bookings', [CustomerBookingController::class, 'store']);
+        Route::post('coupons/validate', [CustomerCouponController::class, 'validateCode']);
         Route::get('bookings/{booking}', [CustomerBookingController::class, 'show']);
         Route::post('bookings/{booking}/pay', [CustomerBookingController::class, 'pay']);
+        Route::get('bookings/{booking}/payment-options', [CustomerBookingPaymentController::class, 'options']);
+        Route::post('bookings/{booking}/payments/intent', [CustomerBookingPaymentController::class, 'createIntent']);
+        Route::post('bookings/{booking}/payments/confirm', [CustomerBookingPaymentController::class, 'confirm']);
         Route::post('bookings/{booking}/documents', [CustomerBookingController::class, 'uploadDocument']);
         Route::get('bookings/{booking}/invoice', [CustomerBookingController::class, 'invoice']);
         Route::get('bookings/{booking}/voucher', [CustomerBookingController::class, 'voucher']);
