@@ -16,7 +16,16 @@ function itemId(prefix: string): string {
 }
 
 function seedTrip(
-  partial: AdminTripInput,
+  partial: Omit<
+    AdminTripInput,
+    "maxAltitude" | "thingsToCarry" | "cancellationPolicy" | "refundPolicy"
+  > &
+    Partial<
+      Pick<
+        AdminTripInput,
+        "maxAltitude" | "thingsToCarry" | "cancellationPolicy" | "refundPolicy"
+      >
+    >,
   id: string,
   departuresCount = 0
 ): AdminTrip {
@@ -24,6 +33,10 @@ function seedTrip(
   return {
     id,
     departuresCount,
+    maxAltitude: null,
+    thingsToCarry: [],
+    cancellationPolicy: [],
+    refundPolicy: [],
     ...partial,
     createdAt: now,
     updatedAt: now,
@@ -89,6 +102,18 @@ const SEED_ADMIN_TRIPS: AdminTrip[] = [
         { id: "e1", text: "Personal expenses" },
         { id: "e2", text: "Travel insurance" },
         { id: "e3", text: "Damage to bike beyond normal wear" },
+      ],
+      maxAltitude: "5,359m (Khardung La)",
+      thingsToCarry: [
+        { id: "tc1", text: "Riding jacket and gloves" },
+        { id: "tc2", text: "Warm layers for high passes" },
+      ],
+      cancellationPolicy: [
+        { id: "cp1", text: "30+ days before departure: Full refund minus processing fee" },
+        { id: "cp2", text: "Less than 15 days: No refund" },
+      ],
+      refundPolicy: [
+        { id: "rp1", text: "Refunds processed within 7–10 business days" },
       ],
       faqs: [
         {

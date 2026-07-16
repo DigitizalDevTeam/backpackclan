@@ -78,6 +78,38 @@ function normalizeTrip(trip: PublicTrip): PublicTrip {
   };
 }
 
+function filterRelatedTrips(trips: PublicTrip[], current: PublicTrip, limit = 3): PublicTrip[] {
+  const minPrice = current.price;
+  const maxPrice = current.price * 2;
+
+  const matched = trips.filter(
+    (t) =>
+      t.slug !== current.slug &&
+      (t.destination === current.destination || t.category === current.category) &&
+      t.price >= minPrice &&
+      t.price <= maxPrice
+  );
+
+  if (matched.length >= limit) {
+    return matched.slice(0, limit);
+  }
+
+  const fallback = trips.filter(
+    (t) =>
+      t.slug !== current.slug &&
+      (t.destination === current.destination || t.category === current.category)
+  );
+
+  const seen = new Set<string>();
+  return [...matched, ...fallback]
+    .filter((t) => {
+      if (seen.has(t.slug)) return false;
+      seen.add(t.slug);
+      return true;
+    })
+    .slice(0, limit);
+}
+
 function buildTripQuery(params?: TripListParams): string {
   const query = new URLSearchParams();
   if (params?.page) query.set("page", String(params.page));
@@ -235,13 +267,7 @@ export async function getPublicTripDetail(
   return {
     trip,
     detail: getMockTripDetail(trip),
-    related: getMockTrips()
-      .filter(
-        (t) =>
-          t.slug !== slug &&
-          (t.destination === trip.destination || t.category === trip.category)
-      )
-      .slice(0, 3),
+    related: filterRelatedTrips(getMockTrips(), trip),
   };
 }
 

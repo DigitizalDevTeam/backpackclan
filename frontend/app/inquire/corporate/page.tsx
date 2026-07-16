@@ -2,15 +2,18 @@ import type { Metadata } from "next";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { PageHero } from "@/components/site/PageHero";
 import { CorporateLeadForm } from "@/components/leads/CorporateLeadForm";
+import { buildPageMetadata } from "@/lib/site/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "Corporate inquiry — Backpackclan",
-  description: "Corporate offsites and group expeditions with Backpackclan.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata("inquire_corporate", {
+    title: "Corporate inquiry — Backpackclan",
+    description: "Corporate offsites and group expeditions with Backpackclan.",
+  });
+}
 
 export default function CorporateInquirePage() {
   return (
-    <SitePageShell seoPageKey="contact">
+    <SitePageShell seoPageKey="inquire_corporate">
       <PageHero
         badge="Corporate"
         title="Team trips that actually inspire"

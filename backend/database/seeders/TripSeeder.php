@@ -348,6 +348,22 @@ class TripSeeder extends Seeder
                 ['id' => 'e2', 'text' => 'Personal expenses & tips'],
                 ['id' => 'e3', 'text' => 'Travel insurance'],
             ];
+            $row['things_to_carry'] = $row['things_to_carry'] ?? [
+                'Valid government ID / passport',
+                'Warm layers & rain jacket',
+                'Sunscreen, sunglasses & lip balm',
+                'Personal medicines & basic first-aid',
+            ];
+            $row['cancellation_policy'] = $row['cancellation_policy'] ?? [
+                '30+ days before departure: Full refund minus processing fee',
+                '15–30 days: 50% refund',
+                'Less than 15 days: No refund',
+            ];
+            $row['refund_policy'] = $row['refund_policy'] ?? [
+                'Refunds processed within 7–10 business days',
+                'Date change allowed once, subject to availability',
+            ];
+            $row['max_altitude'] = $row['max_altitude'] ?? null;
             $row['faqs'] = $row['faqs'] ?? [
                 [
                     'id' => 'f1',

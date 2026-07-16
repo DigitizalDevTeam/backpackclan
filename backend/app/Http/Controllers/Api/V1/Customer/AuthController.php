@@ -107,4 +107,46 @@ class AuthController extends Controller
             'data' => new UserResource($user),
         ]);
     }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:120'],
+            'phone' => ['required', 'string', 'min:10', 'max:20'],
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'name' => $data['name'],
+            'phone' => $data['phone'],
+        ]);
+
+        $user->load('role.permissions');
+
+        return response()->json([
+            'success' => true,
+            'data' => new UserResource($user),
+        ]);
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'currentPassword' => ['required', 'string'],
+            'newPassword' => ['required', 'string', Password::defaults()],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($data['currentPassword'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Current password is incorrect'],
+            ], 400);
+        }
+
+        $user->update(['password' => $data['newPassword']]);
+
+        return response()->json(['success' => true]);
+    }
 }

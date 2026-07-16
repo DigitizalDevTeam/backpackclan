@@ -19,6 +19,20 @@ export async function POST(request: Request, context: RouteContext) {
     const amount = Number(body.amount);
 
     if (useLaravelApi()) {
+      const allowDemoPay = process.env.ALLOW_DEMO_PAYMENTS === "true";
+
+      if (!allowDemoPay) {
+        return NextResponse.json(
+          {
+            success: false,
+            errors: {
+              form: "Demo payment is disabled. Configure Stripe or Razorpay in admin settings.",
+            },
+          },
+          { status: 403 }
+        );
+      }
+
       const res = await fetch(`${getLaravelApiUrl()}/v1/customer/bookings/${id}/pay`, {
         method: "POST",
         headers: {

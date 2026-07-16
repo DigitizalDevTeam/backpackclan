@@ -115,6 +115,10 @@ class TripController extends Controller
                 'itinerary' => $trip->itinerary,
                 'inclusions' => $trip->inclusions,
                 'exclusions' => $trip->exclusions,
+                'things_to_carry' => $trip->things_to_carry,
+                'cancellation_policy' => $trip->cancellation_policy,
+                'refund_policy' => $trip->refund_policy,
+                'max_altitude' => $trip->max_altitude,
                 'faqs' => $trip->faqs,
                 'testimonials' => $trip->testimonials,
                 'pricing' => $trip->pricing,
@@ -188,6 +192,7 @@ class TripController extends Controller
             'difficulty' => ['required', 'string'],
             'maxGroupSize' => ['required', 'integer', 'min:1'],
             'minAge' => ['nullable', 'integer', 'min:0'],
+            'maxAltitude' => ['nullable', 'string', 'max:120'],
             'summary' => ['nullable', 'string'],
             'coverImageId' => ['nullable', 'string'],
             'gallery' => ['nullable', 'array'],
@@ -195,6 +200,9 @@ class TripController extends Controller
             'itinerary' => ['nullable', 'array'],
             'inclusions' => ['nullable', 'array'],
             'exclusions' => ['nullable', 'array'],
+            'thingsToCarry' => ['nullable', 'array'],
+            'cancellationPolicy' => ['nullable', 'array'],
+            'refundPolicy' => ['nullable', 'array'],
             'faqs' => ['nullable', 'array'],
             'testimonials' => ['nullable', 'array'],
             'pricing' => ['nullable', 'array'],
@@ -215,6 +223,7 @@ class TripController extends Controller
             'difficulty' => $data['difficulty'],
             'max_group_size' => $data['maxGroupSize'],
             'min_age' => $data['minAge'] ?? null,
+            'max_altitude' => $data['maxAltitude'] ?? null,
             'summary' => $data['summary'] ?? '',
             'cover_image_id' => $data['coverImageId'] ?? null,
             'gallery' => $data['gallery'] ?? [],
@@ -222,6 +231,9 @@ class TripController extends Controller
             'itinerary' => $data['itinerary'] ?? [],
             'inclusions' => $data['inclusions'] ?? [],
             'exclusions' => $data['exclusions'] ?? [],
+            'things_to_carry' => $this->mapRepeaterLines($data['thingsToCarry'] ?? []),
+            'cancellation_policy' => $this->mapRepeaterLines($data['cancellationPolicy'] ?? []),
+            'refund_policy' => $this->mapRepeaterLines($data['refundPolicy'] ?? []),
             'faqs' => $data['faqs'] ?? [],
             'testimonials' => $data['testimonials'] ?? [],
             'pricing' => $this->mapPricing($data['pricing'] ?? []),
@@ -276,5 +288,18 @@ class TripController extends Controller
             'canonical_url' => $seo['canonicalUrl'] ?? $seo['canonical_url'] ?? '',
             'robots' => $seo['robots'] ?? 'index, follow',
         ];
+    }
+
+    /**
+     * @param  array<int, mixed>  $items
+     * @return list<string>
+     */
+    private function mapRepeaterLines(array $items): array
+    {
+        return collect($items)
+            ->map(fn ($item) => is_array($item) ? (string) ($item['text'] ?? '') : (string) $item)
+            ->filter()
+            ->values()
+            ->all();
     }
 }

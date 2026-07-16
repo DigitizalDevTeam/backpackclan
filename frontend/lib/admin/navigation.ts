@@ -23,6 +23,7 @@ import {
   Ticket,
   Percent,
   Inbox,
+  Star,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -49,6 +50,12 @@ export const adminNavGroups: NavGroup[] = [
         title: "Bookings",
         href: "/admin/bookings",
         icon: Ticket,
+        permission: "bookings.view",
+      },
+      {
+        title: "Reviews",
+        href: "/admin/reviews",
+        icon: Star,
         permission: "bookings.view",
       },
       {

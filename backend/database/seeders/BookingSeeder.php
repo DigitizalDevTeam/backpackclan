@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Booking;
 use App\Models\BookingDocument;
+use App\Models\Trip;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -82,6 +83,11 @@ class BookingSeeder extends Seeder
             $documents = $data['documents'];
             unset($data['documents']);
 
+            $trip = Trip::query()->where('slug', $data['trip_slug'])->first();
+            if ($trip) {
+                $data['trip_id'] = $trip->id;
+            }
+
             $booking = Booking::query()->updateOrCreate(
                 ['booking_ref' => $data['booking_ref']],
                 array_merge($data, ['user_id' => $amit->id])
@@ -99,10 +105,13 @@ class BookingSeeder extends Seeder
         }
 
         if ($priya) {
+            $bhutanTrip = Trip::query()->where('slug', 'bhutan-cultural-escape')->first();
+
             Booking::query()->updateOrCreate(
                 ['booking_ref' => 'BC-2026-1105'],
                 [
                     'user_id' => $priya->id,
+                    'trip_id' => $bhutanTrip?->id,
                     'trip_slug' => 'bhutan-cultural-escape',
                     'trip_title' => 'Bhutan Cultural Escape — 5N/6D',
                     'destination' => 'Bhutan',

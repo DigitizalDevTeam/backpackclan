@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { MapPin } from "lucide-react";
 import { PageHero } from "@/components/site/PageHero";
+import { HighlightIcon } from "@/components/site/HighlightIcon";
 import { Button } from "@/components/ui/button";
 import { formatInr } from "@/lib/site/format";
 import type { Destination } from "@/types/destination";
@@ -46,7 +46,7 @@ export function DestinationDetailView({
                     key={h.id}
                     className="flex items-start gap-2 text-sm text-foreground"
                   >
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <HighlightIcon icon={h.icon} className="mt-0.5 h-4 w-4" />
                     {h.text}
                   </li>
                 ))}

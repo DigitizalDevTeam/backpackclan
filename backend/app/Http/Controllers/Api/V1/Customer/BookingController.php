@@ -134,7 +134,6 @@ class BookingController extends Controller
                         );
                         $discount = $couponResult['discount'];
                         $couponCode = $couponResult['code'];
-                        app(\App\Services\CouponService::class)->incrementUsage($couponResult['coupon']);
                     } catch (\Illuminate\Validation\ValidationException $e) {
                         return response()->json([
                             'success' => false,
@@ -224,8 +223,79 @@ class BookingController extends Controller
         ]);
     }
 
+    public function cancel(Request $request, Booking $booking): JsonResponse
+    {
+        if ($booking->user_id !== $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Booking not found'],
+            ], 404);
+        }
+
+        if ($booking->status === 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'This booking is already cancelled'],
+            ], 422);
+        }
+
+        if ($booking->status === 'completed') {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Completed bookings cannot be cancelled online'],
+            ], 422);
+        }
+
+        if ((int) $booking->paid_amount > 0) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Bookings with payments must be cancelled via support. Contact us for refund assistance.'],
+            ], 422);
+        }
+
+        DB::transaction(function () use ($booking) {
+            /** @var Booking $locked */
+            $locked = Booking::query()->whereKey($booking->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->status !== 'cancelled' && $locked->departure_id) {
+                $departure = Departure::query()
+                    ->whereKey($locked->departure_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($departure) {
+                    $departure->booked_seats = max(
+                        0,
+                        (int) $departure->booked_seats - (int) $locked->travelers
+                    );
+                    $departure->save();
+                }
+            }
+
+            $locked->status = 'cancelled';
+            $locked->save();
+        });
+
+        $booking->refresh()->load('documents');
+
+        return response()->json([
+            'success' => true,
+            'data' => new BookingResource($booking),
+        ]);
+    }
+
     public function pay(Request $request, Booking $booking): JsonResponse
     {
+        $allowDemoPay = config('app.debug')
+            || filter_var(env('ALLOW_DEMO_PAYMENTS', false), FILTER_VALIDATE_BOOLEAN);
+
+        if (! $allowDemoPay) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Direct payment is disabled. Use the payment gateway.'],
+            ], 403);
+        }
+
         if ($booking->user_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
@@ -268,6 +338,8 @@ class BookingController extends Controller
 
         app(\App\Services\BookingNotificationService::class)
             ->sendPaymentReceived($booking->loadMissing('user'), $payment);
+
+        app(\App\Services\CouponService::class)->commitOnFirstPayment($booking, $payment);
 
         return response()->json([
             'success' => true,

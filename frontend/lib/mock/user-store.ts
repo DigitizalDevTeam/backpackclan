@@ -233,6 +233,29 @@ export function findUserByEmail(email: string): AdminUser | null {
   return user ? toPublicUser(user) : null;
 }
 
+export function resetStaffPasswordByEmail(
+  email: string,
+  password: string
+): boolean {
+  const index = getUsers().findIndex(
+    (u) => u.email.toLowerCase() === email.toLowerCase()
+  );
+  if (index === -1) return false;
+
+  const user = getUsers()[index];
+  users = [
+    ...getUsers().slice(0, index),
+    {
+      ...user,
+      password,
+      updatedAt: new Date().toISOString(),
+    },
+    ...getUsers().slice(index + 1),
+  ];
+  persistUsers();
+  return true;
+}
+
 export function resetUserStore(): void {
   users = structuredClone(SEED_USERS);
   persistUsers();

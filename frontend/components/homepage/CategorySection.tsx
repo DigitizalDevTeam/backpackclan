@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import type { PublicTrip } from "@/types/trip";
 import type { ResolvedCategory } from "@/lib/site/home-categories";
+import { TripCard } from "@/components/homepage/homepage-parts";
 import { cn } from "@/lib/utils";
 
 function regionFromTabId(tabId: string): "domestic" | "international" | null {
@@ -33,9 +35,13 @@ function withRegionParam(href: string, tabId: string): string {
 export function CategorySection({
   category,
   index,
+  internationalTrips = [],
+  mediaMap = {},
 }: {
   category: ResolvedCategory;
   index: number;
+  internationalTrips?: PublicTrip[];
+  mediaMap?: Record<string, string>;
 }) {
   const [activeTab, setActiveTab] = useState(category.tabs[0]?.id ?? "");
   const tab = category.tabs.find((t) => t.id === activeTab) ?? category.tabs[0];
@@ -151,6 +157,31 @@ export function CategorySection({
             </Link>
           ))}
         </div>
+
+        {activeTab === "international" && internationalTrips.length > 0 ? (
+          <div className="mt-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
+                International departures
+              </h3>
+              <Link
+                href="/trips?region=international"
+                className="text-xs font-semibold text-[#F58220] hover:underline"
+              >
+                View all international trips
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {internationalTrips.slice(0, 4).map((trip) => (
+                <TripCard
+                  key={trip.id}
+                  trip={trip}
+                  imageUrl={mediaMap[trip.imageId] ?? null}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Star } from "lucide-react";
-import { HeroSearchBar } from "@/components/homepage/homepage-parts";
+import { ArrowRight } from "lucide-react";
+import { DestinationTripSearchBar } from "@/components/homepage/DestinationTripSearchBar";
+import { HomeTrustStrip } from "@/components/homepage/HomeTrustStrip";
 import type { ResolvedHero } from "@/lib/site/home-categories";
 import { cn } from "@/lib/utils";
 
@@ -76,7 +77,7 @@ export function HeroVideoBanner({ hero }: { hero: ResolvedHero }) {
           <p className="homepage-fade-up mt-4 max-w-xl text-base text-white/80 sm:text-lg [animation-delay:140ms]">
             {hero.subheadline}
           </p>
-          <HeroSearchBar className="mt-8" />
+          <DestinationTripSearchBar className="mt-8" />
           <div className="homepage-fade-up mt-6 flex flex-col gap-3 sm:flex-row [animation-delay:220ms]">
             {hero.ctas.map((cta) => (
               <Link
@@ -99,28 +100,7 @@ export function HeroVideoBanner({ hero }: { hero: ResolvedHero }) {
         </div>
       </div>
 
-      <div className="relative z-10 -mt-6 px-4 sm:-mt-8">
-        <div className="mx-auto grid max-w-4xl grid-cols-1 overflow-hidden rounded-2xl bg-white shadow-xl sm:grid-cols-3">
-          {[
-            { label: "Google", rating: "4.8" },
-            { label: "TripAdvisor", rating: "4.9" },
-            { label: "Happy Travelers", rating: "12K+" },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-center gap-3 border-b border-slate-100 px-5 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50">
-                <Star className="h-5 w-5 fill-[#F58220] text-[#F58220]" />
-              </div>
-              <div className="text-left">
-                <p className="text-lg font-bold text-slate-900">{item.rating}</p>
-                <p className="text-xs font-medium text-slate-500">{item.label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <HomeTrustStrip />
     </section>
   );
 }

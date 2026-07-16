@@ -105,23 +105,26 @@ export function TripDetailView({
 
   return (
     <>
-      {/* Gallery hero */}
+      {/* Gallery — 4 equal tiles */}
       <section className="relative bg-slate-100">
-        <div className="mx-auto grid max-w-7xl gap-2 p-2 sm:grid-cols-4 sm:p-4">
-          <div className="relative aspect-[16/10] overflow-hidden rounded-2xl sm:col-span-2 sm:row-span-2 sm:aspect-auto sm:min-h-[420px]">
-            {mainImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={mainImage} alt={trip.title} className="h-full w-full object-cover" />
-            ) : (
-              <div className="h-full bg-muted" />
-            )}
-          </div>
-          {galleryUrls.slice(1, 5).map((url, i) => (
-            <div key={i} className="relative hidden aspect-[4/3] overflow-hidden rounded-xl sm:block">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-2 p-2 sm:grid-cols-4 sm:p-4">
+          {(galleryUrls.length > 0 ? galleryUrls : [mainImage]).filter(Boolean).slice(0, 4).map((url, i) => (
+            <button
+              key={`${url}-${i}`}
+              type="button"
+              onClick={() => setGalleryOpen(true)}
+              className="group relative aspect-square overflow-hidden rounded-xl bg-muted"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" className="h-full w-full object-cover" />
-            </div>
+              <img
+                src={url!}
+                alt={i === 0 ? trip.title : `Gallery image ${i + 1}`}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            </button>
           ))}
+        </div>
+        {galleryUrls.length > 0 ? (
           <button
             type="button"
             onClick={() => setGalleryOpen(true)}
@@ -129,7 +132,7 @@ export function TripDetailView({
           >
             View Gallery
           </button>
-        </div>
+        ) : null}
       </section>
 
       {/* Title + quick info */}
@@ -389,13 +392,25 @@ export function TripDetailView({
             {/* Reviews */}
             <section id="section-reviews" className="scroll-mt-44">
               <h2 className="mb-4 text-xl font-bold">What Our Travelers Say</h2>
+              {detail.reviews.length === 0 ? (
+                <p className="rounded-2xl border border-dashed bg-slate-50 px-5 py-8 text-sm text-muted-foreground">
+                  No reviews yet. Be the first to share your experience after your trip.
+                </p>
+              ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 {detail.reviews.map((review) => (
                   <div key={review.id} className="rounded-2xl border bg-white p-5 shadow-sm">
-                    <div className="mb-2 flex gap-1">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div className="flex gap-1">
                       {Array.from({ length: review.rating }).map((_, i) => (
                         <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                       ))}
+                      </div>
+                      {review.source === "customer" ? (
+                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-green-700">
+                          Verified traveler
+                        </span>
+                      ) : null}
                     </div>
                     <p className="text-sm leading-relaxed text-muted-foreground">
                       &ldquo;{review.text}&rdquo;
@@ -420,6 +435,7 @@ export function TripDetailView({
                   </div>
                 ))}
               </div>
+              )}
             </section>
 
             {/* FAQ */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, Controller, type Resolver } from "react-hook-form";
@@ -28,11 +28,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   DESTINATION_TABS,
+  DESTINATION_TAB_FIELD_RULES,
+  DESTINATION_TAB_LABELS,
   defaultDestinationFormValues,
   destinationFormSchema,
   type DestinationFormValues,
   type DestinationTabId,
 } from "@/lib/validations/destination";
+import {
+  createOnInvalidHandler,
+  getTabsWithErrors,
+} from "@/lib/forms/multi-tab-validation";
 import { hasPermission } from "@/lib/auth/permissions";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { MONTH_NAMES } from "@/types/travel";
@@ -42,6 +48,11 @@ import type { AuthUser } from "@/types/auth";
 interface DestinationFormProps {
   destinationId?: string;
   user: AuthUser;
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item));
 }
 
 function normalizeDestination(data: Record<string, unknown>): DestinationFormValues {
@@ -63,8 +74,10 @@ function normalizeDestination(data: Record<string, unknown>): DestinationFormVal
     status: (data.status as DestinationFormValues["status"]) ?? "draft",
     overview: {
       content: String(overview.content ?? ""),
-      highlights: (overview.highlights as DestinationFormValues["overview"]["highlights"]) ?? [],
-      gallery: (overview.gallery as string[]) ?? [],
+      highlights: Array.isArray(overview.highlights)
+        ? (overview.highlights as DestinationFormValues["overview"]["highlights"])
+        : [],
+      gallery: asStringArray(overview.gallery),
     },
     banner: {
       headline: String(banner.headline ?? ""),
@@ -73,7 +86,7 @@ function normalizeDestination(data: Record<string, unknown>): DestinationFormVal
       ctaUrl: String(banner.ctaUrl ?? banner.cta_url ?? ""),
       mediaId: (banner.mediaId as string | null) ?? (banner.media_id as string | null) ?? null,
     },
-    linkedTripIds: (data.linkedTripIds as string[]) ?? [],
+    linkedTripIds: asStringArray(data.linkedTripIds ?? data.linked_trip_ids),
     faqs: (data.faqs as DestinationFormValues["faqs"]) ?? [],
     bestTime: {
       content: String(bestTime.content ?? ""),
@@ -113,11 +126,13 @@ export function DestinationForm({ destinationId, user }: DestinationFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<DestinationTabId>("basics");
   const [trips, setTrips] = useState<PublicTrip[]>([]);
+  const [tripsLoading, setTripsLoading] = useState(false);
   const [previewSlug, setPreviewSlug] = useState("");
 
   const form = useForm<DestinationFormValues>({
     resolver: zodResolver(destinationFormSchema) as Resolver<DestinationFormValues>,
     defaultValues: defaultDestinationFormValues(),
+    shouldFocusError: false,
   });
 
   const {
@@ -127,8 +142,23 @@ export function DestinationForm({ destinationId, user }: DestinationFormProps) {
     reset,
     watch,
     setValue,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, isSubmitted },
   } = form;
+
+  const onInvalid = useCallback(
+    createOnInvalidHandler({
+      rules: DESTINATION_TAB_FIELD_RULES,
+      fallbackTab: "basics",
+      setActiveTab,
+      tabLabels: DESTINATION_TAB_LABELS,
+    }),
+    []
+  );
+
+  const tabsWithErrors = useMemo(
+    () => getTabsWithErrors(errors, DESTINATION_TAB_FIELD_RULES, "basics"),
+    [errors]
+  );
 
   const name = watch("name");
   const watchedSeoTitle = watch("seo.metaTitle");
@@ -138,12 +168,23 @@ export function DestinationForm({ destinationId, user }: DestinationFormProps) {
 
   useEffect(() => {
     async function loadTrips() {
+      setTripsLoading(true);
       try {
-        const res = await fetch("/api/public/trips");
+        const res = await fetch("/api/public/trips?per_page=48");
         const result = await res.json();
-        if (result.success) setTrips(result.data);
+        if (result.success) {
+          const payload = result.data;
+          const items = Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.items)
+              ? payload.items
+              : [];
+          setTrips(items);
+        }
       } catch {
         // non-blocking
+      } finally {
+        setTripsLoading(false);
       }
     }
     loadTrips();
@@ -203,15 +244,16 @@ export function DestinationForm({ destinationId, user }: DestinationFormProps) {
   }
 
   function toggleTrip(tripId: string) {
-    const current = watch("linkedTripIds");
-    if (current.includes(tripId)) {
+    const current = asStringArray(watch("linkedTripIds"));
+    const id = String(tripId);
+    if (current.includes(id)) {
       setValue(
         "linkedTripIds",
-        current.filter((id) => id !== tripId),
+        current.filter((item) => item !== id),
         { shouldDirty: true }
       );
     } else {
-      setValue("linkedTripIds", [...current, tripId], { shouldDirty: true });
+      setValue("linkedTripIds", [...current, id], { shouldDirty: true });
     }
   }
 
@@ -257,18 +299,22 @@ export function DestinationForm({ destinationId, user }: DestinationFormProps) {
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               activeTab === tab.id
                 ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
+                : "text-muted-foreground hover:bg-muted",
+              tabsWithErrors.has(tab.id) && activeTab !== tab.id && "text-destructive"
             )}
           >
             {tab.label}
+            {tabsWithErrors.has(tab.id) && (
+              <span className="h-2 w-2 rounded-full bg-destructive" aria-hidden="true" />
+            )}
           </button>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-3xl">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6 max-w-3xl">
         {activeTab === "basics" && (
           <Card>
             <CardContent className="pt-6 space-y-4">
@@ -475,32 +521,39 @@ export function DestinationForm({ destinationId, user }: DestinationFormProps) {
           <Card>
             <CardContent className="pt-6 space-y-4">
               <p className="text-sm text-muted-foreground">
-                Link published trips to this destination. Full trip management arrives in Phase 3.
+                Link published trips to this destination. Selected trips appear on the
+                public destination page.
               </p>
-              {trips.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No trips available yet.</p>
+              {tripsLoading ? (
+                <p className="text-sm text-muted-foreground">Loading trips...</p>
+              ) : trips.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No published trips available yet.</p>
               ) : (
                 <div className="space-y-2">
-                  {trips.map((trip) => (
-                    <label
-                      key={trip.id}
-                      className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/30"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={watch("linkedTripIds").includes(trip.id)}
-                        onChange={() => toggleTrip(trip.id)}
-                        disabled={readOnly}
-                        className="rounded border-input"
-                      />
-                      <div>
-                        <p className="font-medium text-sm">{trip.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {trip.destination} · {trip.duration}
-                        </p>
-                      </div>
-                    </label>
-                  ))}
+                  {trips.map((trip) => {
+                    const linkedIds = asStringArray(watch("linkedTripIds"));
+                    const tripId = String(trip.id);
+                    return (
+                      <label
+                        key={tripId}
+                        className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/30"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={linkedIds.includes(tripId)}
+                          onChange={() => toggleTrip(tripId)}
+                          disabled={readOnly}
+                          className="rounded border-input"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm">{trip.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {trip.destination} · {trip.duration}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -681,14 +734,22 @@ export function DestinationForm({ destinationId, user }: DestinationFormProps) {
         )}
 
         {!readOnly && (
-          <div className="flex gap-3">
-            <Button type="submit" disabled={submitting}>
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isEdit ? "Save Changes" : "Create Destination"}
-            </Button>
-            <Button type="button" variant="outline" asChild>
-              <Link href="/admin/destinations">Cancel</Link>
-            </Button>
+          <div className="space-y-3">
+            {isSubmitted && tabsWithErrors.size > 0 && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                Please fix the required fields highlighted in red. Tabs with errors are
+                marked with a red dot.
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button type="submit" disabled={submitting}>
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEdit ? "Save Changes" : "Create Destination"}
+              </Button>
+              <Button type="button" variant="outline" asChild>
+                <Link href="/admin/destinations">Cancel</Link>
+              </Button>
+            </div>
           </div>
         )}
       </form>

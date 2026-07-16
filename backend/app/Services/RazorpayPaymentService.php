@@ -152,6 +152,11 @@ class RazorpayPaymentService
         if ($justSucceeded && $payment->booking) {
             app(\App\Services\BookingNotificationService::class)
                 ->sendPaymentReceived($payment->booking->loadMissing('user'), $payment);
+
+            app(\App\Services\CouponService::class)->commitOnFirstPayment(
+                $payment->booking,
+                $payment
+            );
         }
 
         return $payment;

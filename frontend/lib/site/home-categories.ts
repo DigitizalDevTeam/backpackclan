@@ -98,6 +98,8 @@ export type MarketingHomepageView = {
   reviews: ResolvedTestimonials | null;
   videos: ResolvedYoutubeVideos | null;
   inquiry: ResolvedInquiry | null;
+  internationalTrips: PublicTrip[];
+  mediaMap: Record<string, string>;
 };
 
 const FALLBACK_POSTER =
@@ -385,5 +387,19 @@ export function buildMarketingHomepageView(
       ctaLabel: banner.ctaButtons?.[0]?.label?.trim() || "View Offer",
     }));
 
-  return { hero, categories, quickDestinations, offers, reviews, videos, inquiry };
+  const internationalTrips = (catalog?.trips ?? [])
+    .filter((t) => t.region === "international")
+    .slice(0, 8);
+
+  return {
+    hero,
+    categories,
+    quickDestinations,
+    offers,
+    reviews,
+    videos,
+    inquiry,
+    internationalTrips,
+    mediaMap,
+  };
 }

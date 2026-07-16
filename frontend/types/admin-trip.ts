@@ -30,6 +30,7 @@ export interface AdminTrip {
   difficulty: TripDifficulty;
   maxGroupSize: number;
   minAge: number | null;
+  maxAltitude: string | null;
   summary: string;
   coverImageId: string | null;
   gallery: string[];
@@ -37,6 +38,9 @@ export interface AdminTrip {
   itinerary: ItineraryDay[];
   inclusions: RepeaterItem[];
   exclusions: RepeaterItem[];
+  thingsToCarry: RepeaterItem[];
+  cancellationPolicy: RepeaterItem[];
+  refundPolicy: RepeaterItem[];
   faqs: FaqItem[];
   testimonials: TestimonialItem[];
   pricing: TripPricing;

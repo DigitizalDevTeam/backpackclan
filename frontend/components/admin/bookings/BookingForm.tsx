@@ -35,6 +35,7 @@ export function BookingForm({ mode, booking }: BookingFormProps) {
   const [loadingMeta, setLoadingMeta] = useState(true);
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState<"invoice" | "voucher" | null>(null);
+  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
 
   const [customerId, setCustomerId] = useState(booking?.customerId ?? "");
   const [tripId, setTripId] = useState(booking?.tripId ?? "");
@@ -175,6 +176,32 @@ export function BookingForm({ mode, booking }: BookingFormProps) {
       toast.error("Download failed");
     } finally {
       setDownloading(null);
+    }
+  }
+
+  async function handleDocumentDownload(documentId: string, name: string) {
+    if (!booking) return;
+    setDownloadingDocId(documentId);
+    try {
+      const res = await fetch(
+        `/api/admin/bookings/${booking.id}/documents/${documentId}/download`
+      );
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] ?? name;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Document downloaded");
+    } catch {
+      toast.error("Download failed");
+    } finally {
+      setDownloadingDocId(null);
     }
   }
 
@@ -574,15 +601,30 @@ export function BookingForm({ mode, booking }: BookingFormProps) {
                   {booking.documents.map((doc) => (
                     <li
                       key={doc.id}
-                      className="flex items-center gap-2 rounded-lg border px-3 py-2"
+                      className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
                     >
-                      <FileText className="h-4 w-4 text-primary" />
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{doc.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {doc.category.replace("_", " ")}
-                        </p>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <FileText className="h-4 w-4 shrink-0 text-primary" />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{doc.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {doc.category.replace("_", " ")}
+                          </p>
+                        </div>
                       </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDocumentDownload(doc.id, doc.name)}
+                        disabled={downloadingDocId === doc.id}
+                      >
+                        {downloadingDocId === doc.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                      </Button>
                     </li>
                   ))}
                 </ul>

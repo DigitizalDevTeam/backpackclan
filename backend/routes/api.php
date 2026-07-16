@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\V1\Admin\AuthController;
 use App\Http\Controllers\Api\V1\Admin\BannerController;
 use App\Http\Controllers\Api\V1\Admin\BlogController;
@@ -9,7 +10,7 @@ use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\DestinationController;
 use App\Http\Controllers\Api\V1\Admin\DepartureController;
-use App\Http\Controllers\Api\V1\Admin\TripController;
+use App\Http\Controllers\Api\V1\Admin\TripReviewController as AdminTripReviewController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\HomepageSectionController;
 use App\Http\Controllers\Api\V1\Admin\MediaController;
@@ -24,7 +25,7 @@ use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Customer\AuthController as CustomerAuthController;
 use App\Http\Controllers\Api\V1\Customer\BookingController as CustomerBookingController;
 use App\Http\Controllers\Api\V1\Customer\BookingPaymentController as CustomerBookingPaymentController;
-use App\Http\Controllers\Api\V1\Customer\CouponController as CustomerCouponController;
+use App\Http\Controllers\Api\V1\Customer\TripReviewController as CustomerTripReviewController;
 use App\Http\Controllers\Api\V1\Webhooks\StripeWebhookController;
 use App\Http\Controllers\Api\V1\Webhooks\RazorpayWebhookController;
 use App\Http\Controllers\Api\V1\Public\BlogController as PublicBlogController;
@@ -37,6 +38,11 @@ use App\Http\Controllers\Api\V1\Public\TripController as PublicTripController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    Route::post('auth/forgot-password', [PasswordResetController::class, 'forgotPassword'])
+        ->middleware('throttle:5,1');
+    Route::post('auth/reset-password', [PasswordResetController::class, 'resetPassword'])
+        ->middleware('throttle:5,1');
+
     Route::post('webhooks/stripe', [StripeWebhookController::class, 'handle']);
     Route::post('webhooks/razorpay', [RazorpayWebhookController::class, 'handle']);
 
@@ -60,14 +66,14 @@ Route::prefix('v1')->group(function () {
     Route::get('trips/slugs', [PublicTripController::class, 'slugs']);
     Route::get('trips/{slug}', [PublicTripController::class, 'show']);
 
-    Route::post('leads', [PublicLeadController::class, 'store']);
+    Route::post('leads', [PublicLeadController::class, 'store'])->middleware('throttle:20,1');
 });
 
 Route::prefix('v1/admin')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
-    Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'staff'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
         Route::post('profile/password', [AuthController::class, 'changePassword']);
@@ -77,6 +83,7 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('dashboard/activity', [DashboardController::class, 'activity']);
         Route::get('dashboard/recent-bookings', [DashboardController::class, 'recentBookings']);
 
+        Route::middleware('permission:bookings.view')->get('bookings/{booking}/documents/{document}/download', [AdminBookingController::class, 'downloadDocument']);
         Route::middleware('permission:bookings.view')->get('bookings', [AdminBookingController::class, 'index']);
         Route::middleware('permission:bookings.view')->get('bookings/{booking}', [AdminBookingController::class, 'show']);
         Route::middleware('permission:bookings.view')->get('bookings/{booking}/invoice', [AdminBookingController::class, 'invoice']);
@@ -84,6 +91,9 @@ Route::prefix('v1/admin')->group(function () {
         Route::middleware('permission:bookings.create')->post('bookings', [AdminBookingController::class, 'store']);
         Route::middleware('permission:bookings.update')->put('bookings/{booking}', [AdminBookingController::class, 'update']);
         Route::middleware('permission:bookings.delete')->delete('bookings/{booking}', [AdminBookingController::class, 'destroy']);
+
+        Route::middleware('permission:bookings.view')->get('reviews', [AdminTripReviewController::class, 'index']);
+        Route::middleware('permission:bookings.update')->patch('reviews/{review}', [AdminTripReviewController::class, 'update']);
 
         Route::middleware('permission:coupons.view')->get('coupons', [AdminCouponController::class, 'index']);
         Route::middleware('permission:coupons.view')->get('coupons/{coupon}', [AdminCouponController::class, 'show']);
@@ -212,17 +222,20 @@ Route::prefix('v1/admin')->group(function () {
 });
 
 Route::prefix('v1/customer')->group(function () {
-    Route::post('register', [CustomerAuthController::class, 'register']);
-    Route::post('login', [CustomerAuthController::class, 'login']);
+    Route::post('register', [CustomerAuthController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('login', [CustomerAuthController::class, 'login'])->middleware('throttle:10,1');
 
     Route::middleware(['auth:sanctum', 'customer'])->group(function () {
         Route::post('logout', [CustomerAuthController::class, 'logout']);
         Route::get('me', [CustomerAuthController::class, 'me']);
+        Route::put('profile', [CustomerAuthController::class, 'updateProfile']);
+        Route::post('profile/password', [CustomerAuthController::class, 'changePassword']);
 
         Route::get('bookings', [CustomerBookingController::class, 'index']);
         Route::post('bookings', [CustomerBookingController::class, 'store']);
         Route::post('coupons/validate', [CustomerCouponController::class, 'validateCode']);
         Route::get('bookings/{booking}', [CustomerBookingController::class, 'show']);
+        Route::post('bookings/{booking}/cancel', [CustomerBookingController::class, 'cancel']);
         Route::post('bookings/{booking}/pay', [CustomerBookingController::class, 'pay']);
         Route::get('bookings/{booking}/payment-options', [CustomerBookingPaymentController::class, 'options']);
         Route::post('bookings/{booking}/payments/intent', [CustomerBookingPaymentController::class, 'createIntent']);
@@ -230,5 +243,7 @@ Route::prefix('v1/customer')->group(function () {
         Route::post('bookings/{booking}/documents', [CustomerBookingController::class, 'uploadDocument']);
         Route::get('bookings/{booking}/invoice', [CustomerBookingController::class, 'invoice']);
         Route::get('bookings/{booking}/voucher', [CustomerBookingController::class, 'voucher']);
+        Route::get('bookings/{booking}/review', [CustomerTripReviewController::class, 'show']);
+        Route::post('bookings/{booking}/review', [CustomerTripReviewController::class, 'store'])->middleware('throttle:10,1');
     });
 });

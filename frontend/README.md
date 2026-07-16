@@ -24,6 +24,8 @@ Open [http://localhost:3000/admin](http://localhost:3000/admin)
 |----------|-------------|
 | `USE_LARAVEL_API` | `true` = proxy to Laravel; `false` = mock data mode |
 | `LARAVEL_API_URL` | Laravel API base, e.g. `http://backpackclan.test/backend/api` |
+| `NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS` | `true` = show demo logins on sign-in page (dev only) |
+| `ALLOW_DEMO_PAYMENTS` | `true` = allow demo pay without gateway (must match backend) |
 
 ## Demo logins
 
@@ -66,12 +68,37 @@ ASSET_URL=http://backpackclan.test/backend/public
 - TipTap rich text for CMS content fields
 - Forgot password API (reset link logged in Laravel debug mode)
 
+## Production build (low-RAM VPS)
+
+`SIGKILL` during `npm run build` usually means the server ran out of RAM (OOM killer).
+
+**On the server (2 GB RAM or less):**
+
+```bash
+cd frontend
+npm run build:lowmem
+```
+
+**If it still fails**, add swap then rebuild:
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+free -h
+npm run build:lowmem
+```
+
+**Alternative:** build on your local machine or CI, then deploy the `.next` folder and run `npm run start` on the server (no rebuild needed there).
+
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start dev server |
 | `npm run build` | Production build |
+| `npm run build:lowmem` | Production build for low-RAM VPS (1.5 GB Node heap cap) |
 | `npm run lint` | ESLint |
 
 ## Documentation

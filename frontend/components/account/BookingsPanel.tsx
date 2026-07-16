@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { BookingReviewSection } from "@/components/account/BookingReviewSection";
 
 const statusStyles: Record<Booking["status"], string> = {
   confirmed: "bg-green-100 text-green-800",
@@ -142,6 +143,7 @@ export function BookingDetailView({ bookingId }: BookingDetailViewProps) {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [category, setCategory] = useState<DocumentCategory>("passport");
   const [file, setFile] = useState<File | null>(null);
 
@@ -180,6 +182,29 @@ export function BookingDetailView({ bookingId }: BookingDetailViewProps) {
       toast.success(`${type === "invoice" ? "Invoice" : "Voucher"} downloaded`);
     } catch {
       toast.error("Download failed");
+    }
+  }
+
+  async function handleCancel() {
+    if (!confirm("Cancel this booking? Your reserved seats will be released.")) {
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/customer/bookings/${bookingId}/cancel`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.errors?.form || "Could not cancel booking");
+      }
+      setBooking(data.data);
+      toast.success("Booking cancelled");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not cancel booking");
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -255,6 +280,22 @@ export function BookingDetailView({ bookingId }: BookingDetailViewProps) {
               <Download className="h-4 w-4" />
               Download Voucher
             </Button>
+            {booking.status !== "cancelled" &&
+            booking.status !== "completed" &&
+            booking.paidAmount === 0 ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleCancel}
+                disabled={cancelling}
+              >
+                {cancelling ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Cancel booking"
+                )}
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -349,6 +390,8 @@ export function BookingDetailView({ bookingId }: BookingDetailViewProps) {
               </Button>
             </form>
           </section>
+
+          <BookingReviewSection bookingId={bookingId} />
         </div>
 
         <div className="space-y-6">

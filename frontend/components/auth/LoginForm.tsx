@@ -95,12 +95,14 @@ export function LoginForm() {
         ) : null}
       </div>
 
-      <div className="rounded-xl border border-dashed bg-slate-50 p-4 text-xs text-muted-foreground">
-        <p className="font-medium text-foreground">Demo customer</p>
-        <p>customer@demo.com / password</p>
-        <p className="mt-2 font-medium text-foreground">Demo staff (admin)</p>
-        <p>admin@backpackclan.com / password</p>
-      </div>
+      {process.env.NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS === "true" ? (
+        <div className="rounded-xl border border-dashed bg-slate-50 p-4 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">Demo customer</p>
+          <p>customer@demo.com / password</p>
+          <p className="mt-2 font-medium text-foreground">Demo staff (admin)</p>
+          <p>admin@backpackclan.com / password</p>
+        </div>
+      ) : null}
 
       <Button
         type="submit"

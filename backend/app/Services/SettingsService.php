@@ -464,7 +464,30 @@ class SettingsService
             });
         }
 
+        if ($group === 'integrations') {
+            $validator->after(function ($v) use ($data) {
+                $gtm = trim((string) ($data['gtmId'] ?? ''));
+                if ($gtm !== '' && ! preg_match('/^GTM-[A-Z0-9]+$/i', $gtm)) {
+                    $v->errors()->add('gtmId', 'Use a valid GTM container ID (e.g. GTM-XXXXXXX)');
+                }
+
+                $tawk = trim((string) ($data['tawkToId'] ?? ''));
+                $tawkEnabled = (bool) ($data['tawkToEnabled'] ?? false);
+
+                if ($tawkEnabled && $tawk === '') {
+                    $v->errors()->add('tawkToId', 'Tawk.to Property/Widget ID is required when live chat is enabled');
+                } elseif ($tawk !== '' && ! preg_match('/^[a-f0-9]{20,32}\/[a-f0-9]{1,32}$/i', $tawk)) {
+                    $v->errors()->add('tawkToId', 'Use format propertyId/widgetId from your Tawk.to embed code');
+                }
+            });
+        }
+
         $validated = $validator->validate();
+
+        if ($group === 'integrations') {
+            $validated['gtmId'] = strtoupper(trim((string) ($validated['gtmId'] ?? '')));
+            $validated['tawkToId'] = strtolower(trim((string) ($validated['tawkToId'] ?? '')));
+        }
 
         // Strip ephemeral *Set flags if present
         foreach (array_keys($validated) as $key) {

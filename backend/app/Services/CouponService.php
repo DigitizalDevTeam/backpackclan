@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Booking;
 use App\Models\Coupon;
+use App\Models\Payment;
 use Illuminate\Validation\ValidationException;
 
 class CouponService
@@ -81,5 +83,30 @@ class CouponService
     public function incrementUsage(Coupon $coupon): void
     {
         $coupon->increment('used_count');
+    }
+
+    public function commitOnFirstPayment(Booking $booking, Payment $payment): void
+    {
+        if (empty($booking->coupon_code)) {
+            return;
+        }
+
+        $priorSucceeded = Payment::query()
+            ->where('booking_id', $booking->id)
+            ->where('status', 'succeeded')
+            ->where('id', '!=', $payment->id)
+            ->exists();
+
+        if ($priorSucceeded) {
+            return;
+        }
+
+        $coupon = Coupon::query()
+            ->whereRaw('UPPER(code) = ?', [strtoupper((string) $booking->coupon_code)])
+            ->first();
+
+        if ($coupon) {
+            $this->incrementUsage($coupon);
+        }
     }
 }

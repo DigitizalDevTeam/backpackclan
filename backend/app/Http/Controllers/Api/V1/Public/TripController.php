@@ -121,7 +121,15 @@ class TripController extends Controller
     public function show(string $slug): JsonResponse
     {
         $trip = Trip::query()
-            ->with(['destination', 'categories', 'departures'])
+            ->with([
+                'destination',
+                'categories',
+                'departures',
+                'tripReviews' => fn ($q) => $q
+                    ->where('status', 'approved')
+                    ->with('user')
+                    ->orderByDesc('created_at'),
+            ])
             ->where('slug', $slug)
             ->where('status', 'published')
             ->first();
@@ -133,7 +141,11 @@ class TripController extends Controller
             ], 404);
         }
 
-        $related = Trip::query()
+        $card = PublicTripMapper::toCard($trip);
+        $minPrice = (int) $card['price'];
+        $maxPrice = $minPrice > 0 ? $minPrice * 2 : PHP_INT_MAX;
+
+        $candidates = Trip::query()
             ->with(['destination', 'categories', 'departures'])
             ->where('status', 'published')
             ->where('id', '!=', $trip->id)
@@ -145,8 +157,27 @@ class TripController extends Controller
                 }
             })
             ->orderBy('sort_order')
-            ->limit(3)
-            ->get()
+            ->limit(12)
+            ->get();
+
+        $related = $candidates
+            ->filter(function (Trip $t) use ($minPrice, $maxPrice) {
+                if ($minPrice <= 0) {
+                    return true;
+                }
+                $price = (int) (PublicTripMapper::toCard($t)['price'] ?? 0);
+
+                return $price >= $minPrice && $price <= $maxPrice;
+            })
+            ->values();
+
+        if ($related->count() < 3) {
+            $related = $candidates->take(3);
+        } else {
+            $related = $related->take(3);
+        }
+
+        $related = $related
             ->map(fn (Trip $t) => PublicTripMapper::toCard($t))
             ->values();
 

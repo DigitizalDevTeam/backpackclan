@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { getSiteLayoutData } from "@/lib/site/public-data";
 import {
   getPublicTripDetail,
-  getPublicTripSlugs,
 } from "@/lib/site/trip-data";
 import { formatInr } from "@/lib/site/format";
 
@@ -17,11 +16,7 @@ interface TripDetailPageProps {
 }
 
 export const dynamic = "force-dynamic";
-
-export async function generateStaticParams() {
-  const slugs = await getPublicTripSlugs();
-  return slugs.map((slug) => ({ slug }));
-}
+export const dynamicParams = true;
 
 export async function generateMetadata({
   params,

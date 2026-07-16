@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, Controller, type Resolver } from "react-hook-form";
@@ -31,12 +31,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   TRIP_TABS,
+  TRIP_TAB_FIELD_RULES,
+  TRIP_TAB_LABELS,
   adminTripFormSchema,
   defaultAdminTripFormValues,
   publishTripSchema,
   type AdminTripFormValues,
   type TripTabId,
 } from "@/lib/validations/admin-trip";
+import {
+  createOnInvalidHandler,
+  getTabsWithErrors,
+  resolveTabForField,
+  showValidationToast,
+} from "@/lib/forms/multi-tab-validation";
 import { hasPermission } from "@/lib/auth/permissions";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import {
@@ -53,14 +61,19 @@ interface TripFormProps {
   user: AuthUser;
 }
 
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item));
+}
+
 function normalizeTrip(data: Record<string, unknown>): AdminTripFormValues {
   const overview = (data.overview ?? {}) as Record<string, unknown>;
   const pricing = (data.pricing ?? {}) as Record<string, unknown>;
   const seo = (data.seo ?? {}) as Record<string, unknown>;
 
   return {
-    destinationId: String(data.destinationId ?? ""),
-    categoryIds: (data.categoryIds as string[]) ?? [],
+    destinationId: String(data.destinationId ?? data.destination_id ?? ""),
+    categoryIds: asStringArray(data.categoryIds ?? data.category_ids),
     title: String(data.title ?? ""),
     slug: String(data.slug ?? ""),
     tripType: (data.tripType as AdminTripFormValues["tripType"]) ?? "bike",
@@ -69,9 +82,15 @@ function normalizeTrip(data: Record<string, unknown>): AdminTripFormValues {
     difficulty: (data.difficulty as AdminTripFormValues["difficulty"]) ?? "moderate",
     maxGroupSize: Number(data.maxGroupSize ?? 15),
     minAge: data.minAge != null ? Number(data.minAge) : null,
+    maxAltitude: (data.maxAltitude as string | null) ?? null,
     summary: String(data.summary ?? ""),
-    coverImageId: (data.coverImageId as string | null) ?? null,
-    gallery: (data.gallery as string[]) ?? [],
+    coverImageId:
+      data.coverImageId != null
+        ? String(data.coverImageId)
+        : data.cover_image_id != null
+          ? String(data.cover_image_id)
+          : null,
+    gallery: asStringArray(data.gallery),
     overview: {
       content: String(overview.content ?? ""),
       highlights: (overview.highlights as AdminTripFormValues["overview"]["highlights"]) ?? [],
@@ -84,6 +103,10 @@ function normalizeTrip(data: Record<string, unknown>): AdminTripFormValues {
     itinerary: (data.itinerary as AdminTripFormValues["itinerary"]) ?? [],
     inclusions: (data.inclusions as AdminTripFormValues["inclusions"]) ?? [],
     exclusions: (data.exclusions as AdminTripFormValues["exclusions"]) ?? [],
+    thingsToCarry: (data.thingsToCarry as AdminTripFormValues["thingsToCarry"]) ?? [],
+    cancellationPolicy:
+      (data.cancellationPolicy as AdminTripFormValues["cancellationPolicy"]) ?? [],
+    refundPolicy: (data.refundPolicy as AdminTripFormValues["refundPolicy"]) ?? [],
     faqs: (data.faqs as AdminTripFormValues["faqs"]) ?? [],
     testimonials: (data.testimonials as AdminTripFormValues["testimonials"]) ?? [],
     pricing: {
@@ -137,6 +160,7 @@ export function TripForm({ tripId, user }: TripFormProps) {
   const form = useForm<AdminTripFormValues>({
     resolver: zodResolver(adminTripFormSchema) as Resolver<AdminTripFormValues>,
     defaultValues: defaultAdminTripFormValues(),
+    shouldFocusError: false,
   });
 
   const {
@@ -146,8 +170,24 @@ export function TripForm({ tripId, user }: TripFormProps) {
     reset,
     watch,
     setValue,
-    formState: { errors, isDirty },
+    setError,
+    formState: { errors, isDirty, isSubmitted },
   } = form;
+
+  const onInvalid = useCallback(
+    createOnInvalidHandler({
+      rules: TRIP_TAB_FIELD_RULES,
+      fallbackTab: "basics",
+      setActiveTab,
+      tabLabels: TRIP_TAB_LABELS,
+    }),
+    []
+  );
+
+  const tabsWithErrors = useMemo(
+    () => getTabsWithErrors(errors, TRIP_TAB_FIELD_RULES, "basics"),
+    [errors]
+  );
 
   const title = watch("title");
   const watchedSeoTitle = watch("seo.metaTitle");
@@ -199,7 +239,15 @@ export function TripForm({ tripId, user }: TripFormProps) {
       if (options?.publish) {
         const check = publishTripSchema.safeParse(data);
         if (!check.success) {
-          toast.error(check.error.issues[0]?.message ?? "Cannot publish — missing required fields");
+          const issue = check.error.issues[0];
+          const message = issue?.message ?? "Cannot publish — missing required fields";
+          const fieldPath = issue?.path.join(".") ?? "";
+          const tab = resolveTabForField(fieldPath, TRIP_TAB_FIELD_RULES, "basics");
+          setActiveTab(tab);
+          if (issue?.path[0] === "coverImageId") {
+            setError("coverImageId", { type: "manual", message });
+          }
+          showValidationToast(message, TRIP_TAB_LABELS[tab]);
           setSubmitting(false);
           return;
         }
@@ -301,13 +349,17 @@ export function TripForm({ tripId, user }: TripFormProps) {
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               activeTab === tab.id
                 ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
+                : "text-muted-foreground hover:bg-muted",
+              tabsWithErrors.has(tab.id) && activeTab !== tab.id && "text-destructive"
             )}
           >
             {tab.label}
+            {tabsWithErrors.has(tab.id) && (
+              <span className="h-2 w-2 rounded-full bg-destructive" aria-hidden="true" />
+            )}
           </button>
         ))}
       </div>
@@ -438,6 +490,17 @@ export function TripForm({ tripId, user }: TripFormProps) {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="maxAltitude">Max altitude (optional)</Label>
+                <Input
+                  id="maxAltitude"
+                  {...register("maxAltitude", {
+                    setValueAs: (v) => (v === "" || v == null ? null : String(v)),
+                  })}
+                  disabled={readOnly}
+                  placeholder="e.g. 5,359m (Khardung La)"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="summary">Short summary</Label>
                 <Textarea
                   id="summary"
@@ -463,18 +526,23 @@ export function TripForm({ tripId, user }: TripFormProps) {
                   />
                 )}
               />
-              <Controller
-                control={control}
-                name="gallery"
-                render={({ field }) => (
-                  <MediaGalleryPicker
-                    value={field.value}
-                    onChange={field.onChange}
-                    label="Gallery"
-                    disabled={readOnly}
-                  />
-                )}
-              />
+              {errors.coverImageId && (
+                <p className="text-sm text-destructive">{errors.coverImageId.message}</p>
+              )}
+              <div className="space-y-2 border-t pt-4">
+                <Controller
+                  control={control}
+                  name="gallery"
+                  render={({ field }) => (
+                    <MediaGalleryPicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      label="Gallery"
+                      disabled={readOnly}
+                    />
+                  )}
+                />
+              </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
@@ -635,6 +703,52 @@ export function TripForm({ tripId, user }: TripFormProps) {
           </Card>
         )}
 
+        {activeTab === "policies" && (
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <Controller
+                control={control}
+                name="thingsToCarry"
+                render={({ field }) => (
+                  <RepeaterField
+                    label="Things to carry"
+                    items={field.value}
+                    onChange={field.onChange}
+                    disabled={readOnly}
+                    placeholder="Item travelers should pack"
+                  />
+                )}
+              />
+              <Controller
+                control={control}
+                name="cancellationPolicy"
+                render={({ field }) => (
+                  <RepeaterField
+                    label="Cancellation policy"
+                    items={field.value}
+                    onChange={field.onChange}
+                    disabled={readOnly}
+                    placeholder="Cancellation rule"
+                  />
+                )}
+              />
+              <Controller
+                control={control}
+                name="refundPolicy"
+                render={({ field }) => (
+                  <RepeaterField
+                    label="Refund policy"
+                    items={field.value}
+                    onChange={field.onChange}
+                    disabled={readOnly}
+                    placeholder="Refund rule"
+                  />
+                )}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {activeTab === "faqs" && (
           <Card>
             <CardContent className="pt-6">
@@ -748,31 +862,42 @@ export function TripForm({ tripId, user }: TripFormProps) {
         )}
 
         {!readOnly && (
-          <div className="flex flex-wrap gap-3">
-            <Button
-              type="button"
-              disabled={submitting}
-              onClick={handleSubmit((data) => saveTrip(data, { stay: true }))}
-            >
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Save draft
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={submitting}
-              onClick={handleSubmit((data) => saveTrip(data, { publish: true, stay: true }))}
-            >
-              Publish
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={submitting}
-              onClick={handleSubmit((data) => saveTrip(data))}
-            >
-              Save & close
-            </Button>
+          <div className="space-y-3">
+            {isSubmitted && tabsWithErrors.size > 0 && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                Please fix the required fields highlighted in red. Tabs with errors are
+                marked with a red dot.
+              </div>
+            )}
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                disabled={submitting}
+                onClick={handleSubmit((data) => saveTrip(data, { stay: true }), onInvalid)}
+              >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Save draft
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={submitting}
+                onClick={handleSubmit(
+                  (data) => saveTrip(data, { publish: true, stay: true }),
+                  onInvalid
+                )}
+              >
+                Publish
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={handleSubmit((data) => saveTrip(data), onInvalid)}
+              >
+                Save & close
+              </Button>
+            </div>
           </div>
         )}
       </form>

@@ -4,6 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { IconPicker } from "@/components/forms/travel/IconPicker";
 import type { RepeaterItem } from "@/types/travel";
 
 interface RepeaterFieldProps {
@@ -28,7 +29,10 @@ export function RepeaterField({
   showIcon = false,
 }: RepeaterFieldProps) {
   function addItem() {
-    onChange([...items, { id: generateId(), text: "" }]);
+    onChange([
+      ...items,
+      { id: generateId(), text: "", ...(showIcon ? { icon: "" } : {}) },
+    ]);
   }
 
   function updateItem(id: string, text: string) {
@@ -65,12 +69,10 @@ export function RepeaterField({
                 {index + 1}.
               </span>
               {showIcon && (
-                <Input
+                <IconPicker
                   value={item.icon ?? ""}
-                  onChange={(e) => updateIcon(item.id, e.target.value)}
+                  onChange={(icon) => updateIcon(item.id, icon)}
                   disabled={disabled}
-                  placeholder="Icon"
-                  className="w-24 shrink-0"
                 />
               )}
               <Input

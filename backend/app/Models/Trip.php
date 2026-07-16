@@ -23,6 +23,7 @@ class Trip extends Model
         'difficulty',
         'max_group_size',
         'min_age',
+        'max_altitude',
         'summary',
         'cover_image_id',
         'gallery',
@@ -30,6 +31,9 @@ class Trip extends Model
         'itinerary',
         'inclusions',
         'exclusions',
+        'things_to_carry',
+        'cancellation_policy',
+        'refund_policy',
         'faqs',
         'testimonials',
         'pricing',
@@ -48,6 +52,9 @@ class Trip extends Model
             'itinerary' => 'array',
             'inclusions' => 'array',
             'exclusions' => 'array',
+            'things_to_carry' => 'array',
+            'cancellation_policy' => 'array',
+            'refund_policy' => 'array',
             'faqs' => 'array',
             'testimonials' => 'array',
             'pricing' => 'array',
@@ -75,6 +82,11 @@ class Trip extends Model
     public function departures(): HasMany
     {
         return $this->hasMany(Departure::class);
+    }
+
+    public function tripReviews(): HasMany
+    {
+        return $this->hasMany(TripReview::class);
     }
 
     /**
@@ -106,6 +118,10 @@ class Trip extends Model
             'itinerary' => $this->itinerary ?? [],
             'inclusions' => $this->inclusions ?? [],
             'exclusions' => $this->exclusions ?? [],
+            'things_to_carry' => self::linesToRepeater($this->things_to_carry),
+            'cancellation_policy' => self::linesToRepeater($this->cancellation_policy),
+            'refund_policy' => self::linesToRepeater($this->refund_policy),
+            'max_altitude' => $this->max_altitude,
             'faqs' => $this->faqs ?? [],
             'testimonials' => $this->testimonials ?? [],
             'pricing' => $this->pricing ?? [
@@ -128,5 +144,26 @@ class Trip extends Model
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ]);
+    }
+
+    /**
+     * @param  array<int, mixed>|null  $lines
+     * @return list<array{id: string, text: string}>
+     */
+    private static function linesToRepeater(?array $lines): array
+    {
+        if (! $lines) {
+            return [];
+        }
+
+        return collect($lines)
+            ->values()
+            ->map(fn ($line, $index) => [
+                'id' => 'l'.($index + 1),
+                'text' => is_array($line) ? (string) ($line['text'] ?? '') : (string) $line,
+            ])
+            ->filter(fn (array $item) => $item['text'] !== '')
+            ->values()
+            ->all();
     }
 }

@@ -49,6 +49,7 @@ export interface TripReview {
   date: string;
   rating: number;
   text: string;
+  source?: "curated" | "customer";
 }
 
 export interface TripQuickFact {

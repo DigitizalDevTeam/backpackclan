@@ -22,6 +22,12 @@ const weatherMonthSchema = z.object({
   note: z.string(),
 });
 
+const nullableNumber = z.preprocess((value) => {
+  if (value === "" || value === null || value === undefined) return null;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}, z.number().nullable());
+
 export const destinationFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z
@@ -56,8 +62,8 @@ export const destinationFormSchema = z.object({
   weather: z.array(weatherMonthSchema),
   map: z.object({
     embedUrl: z.string(),
-    latitude: z.number().nullable(),
-    longitude: z.number().nullable(),
+    latitude: nullableNumber,
+    longitude: nullableNumber,
   }),
   seo: z.object({
     metaTitle: z.string(),
@@ -83,6 +89,24 @@ export const DESTINATION_TABS = [
 ] as const;
 
 export type DestinationTabId = (typeof DESTINATION_TABS)[number]["id"];
+
+export const DESTINATION_TAB_FIELD_RULES: {
+  prefix: string;
+  tab: DestinationTabId;
+}[] = [
+  { prefix: "banner", tab: "banner" },
+  { prefix: "overview", tab: "overview" },
+  { prefix: "linkedTripIds", tab: "packages" },
+  { prefix: "faqs", tab: "faqs" },
+  { prefix: "bestTime", tab: "bestTime" },
+  { prefix: "weather", tab: "weather" },
+  { prefix: "map", tab: "map" },
+  { prefix: "seo", tab: "seo" },
+];
+
+export const DESTINATION_TAB_LABELS = Object.fromEntries(
+  DESTINATION_TABS.map((tab) => [tab.id, tab.label])
+) as Record<DestinationTabId, string>;
 
 export function defaultDestinationFormValues(): DestinationFormValues {
   return {

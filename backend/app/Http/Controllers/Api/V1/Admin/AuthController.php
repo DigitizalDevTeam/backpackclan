@@ -102,29 +102,7 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        $user = User::query()->where('email', $data['email'])->first();
-
-        if ($user) {
-            $token = \Illuminate\Support\Str::random(64);
-
-            \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $user->email],
-                [
-                    'token' => Hash::make($token),
-                    'created_at' => now(),
-                ]
-            );
-
-            if (config('app.debug')) {
-                \Illuminate\Support\Facades\Log::info(
-                    'Password reset link (local dev)',
-                    [
-                        'email' => $user->email,
-                        'url' => rtrim(config('app.url'), '/').'/reset-password?token='.$token.'&email='.urlencode($user->email),
-                    ]
-                );
-            }
-        }
+        app(\App\Services\PasswordResetService::class)->sendResetLink($data['email']);
 
         return response()->json([
             'success' => true,

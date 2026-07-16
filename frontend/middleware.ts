@@ -6,11 +6,12 @@ import {
 } from "@/lib/auth/session-cookie";
 import { getAuthHomePath, isCustomerUser } from "@/lib/auth/user-kind";
 
-const publicPaths = ["/login", "/register", "/forgot-password"];
+const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
 const authApiPaths = [
   "/api/auth/login",
   "/api/auth/register",
   "/api/auth/forgot-password",
+  "/api/auth/reset-password",
 ];
 
 export function middleware(request: NextRequest) {
@@ -73,6 +74,7 @@ export const config = {
     "/login",
     "/register",
     "/forgot-password",
+    "/reset-password",
     "/admin/:path*",
     "/account/:path*",
     "/book/:path*",

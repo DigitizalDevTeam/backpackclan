@@ -94,6 +94,8 @@ class CmsSeeder extends Seeder
             ['label' => 'Blog', 'url' => '/blog', 'icon' => 'BookOpen', 'sort_order' => 3],
             ['label' => 'About', 'url' => '/about', 'icon' => 'Info', 'sort_order' => 4],
             ['label' => 'Contact', 'url' => '/contact', 'icon' => 'Phone', 'sort_order' => 5],
+            ['label' => 'Custom Trip', 'url' => '/inquire/custom-trip', 'icon' => 'Sparkles', 'sort_order' => 6],
+            ['label' => 'Request Callback', 'url' => '/request-callback', 'icon' => 'PhoneCall', 'sort_order' => 7],
         ];
         foreach ($headerItems as $item) {
             MenuItem::query()->create(array_merge($item, ['menu_id' => $header->id, 'target' => '_self', 'is_active' => true]));
@@ -126,6 +128,11 @@ class CmsSeeder extends Seeder
             ['label' => 'All Trips', 'url' => '/trips'],
             ['label' => 'Blog', 'url' => '/blog'],
             ['label' => 'Contact', 'url' => '/contact'],
+            ['label' => 'Custom Trip', 'url' => '/inquire/custom-trip'],
+            ['label' => 'Corporate Trips', 'url' => '/inquire/corporate'],
+            ['label' => 'Request Callback', 'url' => '/request-callback'],
+            ['label' => 'Partner With Us', 'url' => '/partners/register'],
+            ['label' => 'Careers', 'url' => '/careers/apply'],
             ['label' => 'Privacy Policy', 'url' => '/privacy'],
             ['label' => 'Terms & Conditions', 'url' => '/terms'],
         ];
@@ -145,6 +152,7 @@ class CmsSeeder extends Seeder
                 ['label' => 'Home', 'url' => '/', 'icon' => 'Home'],
                 ['label' => 'Destinations', 'url' => '/destinations', 'icon' => 'MapPin'],
                 ['label' => 'Trips', 'url' => '/trips', 'icon' => 'Compass'],
+                ['label' => 'Custom Trip', 'url' => '/inquire/custom-trip', 'icon' => 'Sparkles'],
                 ['label' => 'Contact', 'url' => '/contact', 'icon' => 'Phone'],
             ] as $i => $item
         ) {

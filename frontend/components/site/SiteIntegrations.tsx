@@ -1,4 +1,5 @@
 import type { IntegrationSettings } from "@/types/settings";
+import { sanitizeGtmId, sanitizeTawkToId } from "@/lib/site/integrations";
 import Script from "next/script";
 
 interface SiteIntegrationsProps {
@@ -6,7 +7,10 @@ interface SiteIntegrationsProps {
 }
 
 export function SiteIntegrations({ integrations }: SiteIntegrationsProps) {
-  const { gtmId, tawkToEnabled, tawkToId } = integrations;
+  const gtmId = sanitizeGtmId(integrations.gtmId);
+  const tawkToId = integrations.tawkToEnabled
+    ? sanitizeTawkToId(integrations.tawkToId)
+    : null;
 
   return (
     <>
@@ -31,7 +35,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </>
       ) : null}
 
-      {tawkToEnabled && tawkToId ? (
+      {tawkToId ? (
         <Script id="tawk-script" strategy="lazyOnload">
           {`var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 (function(){

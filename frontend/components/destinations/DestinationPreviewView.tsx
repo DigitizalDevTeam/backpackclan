@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MapPin, Star } from "lucide-react";
 import { PageHero } from "@/components/site/PageHero";
+import { HighlightIcon } from "@/components/site/HighlightIcon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -88,7 +89,15 @@ export function DestinationPreviewView({ slug, mediaMap: initialMediaMap }: Dest
         }
 
         const tripsData = await tripsRes.json();
-        if (tripsData.success) setTrips(tripsData.data);
+        if (tripsData.success) {
+          const payload = tripsData.data;
+          const items = Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.items)
+              ? payload.items
+              : [];
+          setTrips(items);
+        }
 
         if (mediaRes) {
           const mediaData = await mediaRes.json();
@@ -187,7 +196,7 @@ export function DestinationPreviewView({ slug, mediaMap: initialMediaMap }: Dest
                     key={h.id}
                     className="flex items-start gap-2 rounded-lg border p-4"
                   >
-                    {h.icon && <span className="text-xl">{h.icon}</span>}
+                    <HighlightIcon icon={h.icon} className="h-5 w-5" />
                     <p className="text-sm">{h.text}</p>
                   </div>
                 ))}

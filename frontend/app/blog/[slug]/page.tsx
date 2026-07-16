@@ -7,7 +7,6 @@ import {
   buildBlogPostJsonLd,
   buildBlogPostMetadata,
   getBlogDetailData,
-  getBlogSlugs,
 } from "@/lib/site/blog-data";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +14,6 @@ export const dynamicParams = true;
 
 interface BlogDetailPageProps {
   params: Promise<{ slug: string }>;
-}
-
-export async function generateStaticParams() {
-  const slugs = await getBlogSlugs();
-  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({

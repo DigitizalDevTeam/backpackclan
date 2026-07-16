@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidGtmId, isValidTawkToId } from "@/lib/site/integrations";
 
 export const generalSettingsSchema = z.object({
   siteName: z.string().min(1, "Site name is required"),
@@ -36,12 +37,46 @@ export const footerSettingsSchema = z.object({
   showPaymentIcons: z.boolean(),
 });
 
-export const integrationSettingsSchema = z.object({
-  whatsappWidget: z.boolean(),
-  tawkToEnabled: z.boolean(),
-  tawkToId: z.string(),
-  gtmId: z.string(),
-});
+export const integrationSettingsSchema = z
+  .object({
+    whatsappWidget: z.boolean(),
+    tawkToEnabled: z.boolean(),
+    tawkToId: z.string(),
+    gtmId: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    const gtm = data.gtmId.trim();
+    if (gtm && !isValidGtmId(gtm)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["gtmId"],
+        message: "Use a valid GTM container ID (e.g. GTM-XXXXXXX)",
+      });
+    }
+
+    if (data.tawkToEnabled) {
+      const tawk = data.tawkToId.trim();
+      if (!tawk) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["tawkToId"],
+          message: "Tawk.to Property/Widget ID is required when live chat is enabled",
+        });
+      } else if (!isValidTawkToId(tawk)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["tawkToId"],
+          message: "Use format propertyId/widgetId from your Tawk.to embed code",
+        });
+      }
+    } else if (data.tawkToId.trim() && !isValidTawkToId(data.tawkToId.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["tawkToId"],
+        message: "Use format propertyId/widgetId from your Tawk.to embed code",
+      });
+    }
+  });
 
 export const maintenanceSettingsSchema = z.object({
   enabled: z.boolean(),

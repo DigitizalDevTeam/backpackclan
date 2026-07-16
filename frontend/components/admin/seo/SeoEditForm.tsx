@@ -153,7 +153,6 @@ export function SeoEditForm({ pageKey, userRole }: SeoEditFormProps) {
         description={`SEO settings for ${pagePath}`}
         action={
           <div className="flex items-center gap-2">
-            {isPlaceholder && <Badge variant="warning">Milestone 3</Badge>}
             <Button variant="outline" asChild>
               <Link href="/admin/seo">
                 <ArrowLeft className="h-4 w-4" />

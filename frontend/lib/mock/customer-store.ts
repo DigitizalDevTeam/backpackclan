@@ -122,3 +122,79 @@ export function emailExistsGlobally(email: string): boolean {
     (c) => c.email.toLowerCase() === email.toLowerCase()
   );
 }
+
+export function updateCustomerProfile(
+  id: string,
+  data: { name: string; phone: string }
+): CustomerUser {
+  const index = getCustomers().findIndex((c) => c.id === id);
+  if (index === -1) {
+    throw new Error("Customer not found");
+  }
+
+  const updated: CustomerUserWithPassword = {
+    ...getCustomers()[index],
+    name: data.name,
+    phone: data.phone,
+    updatedAt: new Date().toISOString(),
+  };
+
+  customers = [
+    ...getCustomers().slice(0, index),
+    updated,
+    ...getCustomers().slice(index + 1),
+  ];
+  persistCustomers();
+
+  return toPublicCustomer(updated);
+}
+
+export function changeCustomerPassword(
+  id: string,
+  currentPassword: string,
+  newPassword: string
+): void {
+  const index = getCustomers().findIndex((c) => c.id === id);
+  if (index === -1) {
+    throw new Error("Customer not found");
+  }
+
+  const user = getCustomers()[index];
+  if (user.password !== currentPassword) {
+    throw new Error("Current password is incorrect");
+  }
+
+  customers = [
+    ...getCustomers().slice(0, index),
+    {
+      ...user,
+      password: newPassword,
+      updatedAt: new Date().toISOString(),
+    },
+    ...getCustomers().slice(index + 1),
+  ];
+  persistCustomers();
+}
+
+export function resetCustomerPasswordByEmail(
+  email: string,
+  password: string
+): boolean {
+  const index = getCustomers().findIndex(
+    (c) => c.email.toLowerCase() === email.toLowerCase()
+  );
+  if (index === -1) return false;
+
+  const user = getCustomers()[index];
+  customers = [
+    ...getCustomers().slice(0, index),
+    {
+      ...user,
+      password,
+      updatedAt: new Date().toISOString(),
+    },
+    ...getCustomers().slice(index + 1),
+  ];
+  persistCustomers();
+  return true;
+}

@@ -544,3 +544,49 @@ export function adminCancelBooking(
 ): { ok: true; booking: AdminBooking } | { ok: false; error: string; status: number } {
   return adminUpdateBooking(id, { status: "cancelled" });
 }
+
+export function cancelBookingForCustomer(
+  id: string,
+  customerId: string
+): { ok: true; booking: Booking } | { ok: false; error: string; status: number } {
+  const booking = getBookingForCustomer(id, customerId);
+  if (!booking) {
+    return { ok: false, error: "Booking not found", status: 404 };
+  }
+
+  if (booking.status === "cancelled") {
+    return { ok: false, error: "This booking is already cancelled", status: 422 };
+  }
+
+  if (booking.status === "completed") {
+    return {
+      ok: false,
+      error: "Completed bookings cannot be cancelled online",
+      status: 422,
+    };
+  }
+
+  if (booking.paidAmount > 0) {
+    return {
+      ok: false,
+      error: "Bookings with payments must be cancelled via support. Contact us for refund assistance.",
+      status: 422,
+    };
+  }
+
+  const index = getBookings().findIndex((b) => b.id === id);
+  const updated: Booking = {
+    ...getBookings()[index],
+    status: "cancelled",
+    updatedAt: new Date().toISOString(),
+  };
+
+  bookings = [
+    ...getBookings().slice(0, index),
+    updated,
+    ...getBookings().slice(index + 1),
+  ];
+  persistBookings();
+
+  return { ok: true, booking: updated };
+}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { mockDelay } from "@/lib/mock/api-client";
-import { findUserByEmail } from "@/lib/mock/user-store";
+import { issueMockResetToken } from "@/lib/mock/password-reset-store";
 import { laravelFetch, useLaravelApi } from "@/lib/api/backend";
 
 export async function POST(request: Request) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     if (useLaravelApi()) {
-      const { res, data } = await laravelFetch("/v1/admin/forgot-password", {
+      const { res, data } = await laravelFetch("/v1/auth/forgot-password", {
         method: "POST",
         body: JSON.stringify({ email }),
       });
@@ -24,8 +24,7 @@ export async function POST(request: Request) {
     }
 
     await mockDelay(600);
-    // Simulate reset flow without revealing whether the email exists
-    void findUserByEmail(email);
+    void issueMockResetToken(email);
 
     return NextResponse.json({
       success: true,

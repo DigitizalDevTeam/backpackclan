@@ -2,15 +2,18 @@ import type { Metadata } from "next";
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { PageHero } from "@/components/site/PageHero";
 import { PartnerLeadForm } from "@/components/leads/PartnerLeadForm";
+import { buildPageMetadata } from "@/lib/site/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "Partner registration — Backpackclan",
-  description: "Register as a Backpackclan travel partner.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata("partners_register", {
+    title: "Partner registration — Backpackclan",
+    description: "Register as a Backpackclan travel partner.",
+  });
+}
 
 export default function PartnerRegisterPage() {
   return (
-    <SitePageShell seoPageKey="contact">
+    <SitePageShell seoPageKey="partners_register">
       <PageHero
         badge="Partners"
         title="Grow with Backpackclan"

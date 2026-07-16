@@ -1,6 +1,7 @@
 export { MediaGalleryPicker } from "./MediaGalleryPicker";
 export { SlugField } from "./SlugField";
 export { RepeaterField } from "./RepeaterField";
+export { IconPicker } from "./IconPicker";
 export { FaqRepeater } from "./FaqRepeater";
 export { DayItineraryEditor } from "./DayItineraryEditor";
 export { TestimonialPicker } from "./TestimonialPicker";

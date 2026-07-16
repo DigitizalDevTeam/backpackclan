@@ -59,11 +59,12 @@ export const adminTripFormSchema = z.object({
     .min(1, "Slug is required")
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase with hyphens"),
   tripType: tripTypeEnum,
-  durationDays: z.coerce.number().min(1),
-  durationNights: z.coerce.number().min(0),
+  durationDays: z.coerce.number().min(1, "Days must be at least 1"),
+  durationNights: z.coerce.number().min(0, "Nights cannot be negative"),
   difficulty: difficultyEnum,
-  maxGroupSize: z.coerce.number().min(1),
+  maxGroupSize: z.coerce.number().min(1, "Max group size must be at least 1"),
   minAge: z.union([z.coerce.number().min(0), z.null()]),
+  maxAltitude: z.string().nullable().optional(),
   summary: z.string().min(1, "Summary is required"),
   coverImageId: z.string().nullable(),
   gallery: z.array(z.string()),
@@ -76,6 +77,9 @@ export const adminTripFormSchema = z.object({
   itinerary: z.array(itineraryDaySchema),
   inclusions: z.array(repeaterItemSchema),
   exclusions: z.array(repeaterItemSchema),
+  thingsToCarry: z.array(repeaterItemSchema),
+  cancellationPolicy: z.array(repeaterItemSchema),
+  refundPolicy: z.array(repeaterItemSchema),
   faqs: z.array(faqSchema),
   testimonials: z.array(testimonialSchema),
   pricing: pricingSchema,
@@ -98,6 +102,7 @@ export const TRIP_TABS = [
   { id: "overview", label: "Overview" },
   { id: "itinerary", label: "Itinerary" },
   { id: "inclusions", label: "Inclusions" },
+  { id: "policies", label: "Policies" },
   { id: "faqs", label: "FAQs" },
   { id: "testimonials", label: "Testimonials" },
   { id: "pricing", label: "Pricing" },
@@ -105,6 +110,24 @@ export const TRIP_TABS = [
 ] as const;
 
 export type TripTabId = (typeof TRIP_TABS)[number]["id"];
+
+export const TRIP_TAB_FIELD_RULES: { prefix: string; tab: TripTabId }[] = [
+  { prefix: "overview", tab: "overview" },
+  { prefix: "itinerary", tab: "itinerary" },
+  { prefix: "inclusions", tab: "inclusions" },
+  { prefix: "exclusions", tab: "inclusions" },
+  { prefix: "thingsToCarry", tab: "inclusions" },
+  { prefix: "cancellationPolicy", tab: "policies" },
+  { prefix: "refundPolicy", tab: "policies" },
+  { prefix: "faqs", tab: "faqs" },
+  { prefix: "testimonials", tab: "testimonials" },
+  { prefix: "pricing", tab: "pricing" },
+  { prefix: "seo", tab: "seo" },
+];
+
+export const TRIP_TAB_LABELS = Object.fromEntries(
+  TRIP_TABS.map((tab) => [tab.id, tab.label])
+) as Record<TripTabId, string>;
 
 export function defaultAdminTripFormValues(): AdminTripFormValues {
   return {
@@ -118,6 +141,7 @@ export function defaultAdminTripFormValues(): AdminTripFormValues {
     difficulty: "moderate",
     maxGroupSize: 15,
     minAge: null,
+    maxAltitude: null,
     summary: "",
     coverImageId: null,
     gallery: [],
@@ -130,6 +154,9 @@ export function defaultAdminTripFormValues(): AdminTripFormValues {
     itinerary: [],
     inclusions: [],
     exclusions: [],
+    thingsToCarry: [],
+    cancellationPolicy: [],
+    refundPolicy: [],
     faqs: [],
     testimonials: [],
     pricing: {

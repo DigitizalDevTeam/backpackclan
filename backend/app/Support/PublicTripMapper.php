@@ -4,11 +4,102 @@ namespace App\Support;
 
 use App\Models\Departure;
 use App\Models\Trip;
+use App\Models\TripReview;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class PublicTripMapper
 {
+    /**
+     * @return array{rating: float, reviewCount: int}
+     */
+    private static function reviewStats(Trip $trip): array
+    {
+        $testimonials = collect($trip->testimonials ?? []);
+        $customerReviews = $trip->relationLoaded('tripReviews')
+            ? $trip->tripReviews->where('status', TripReview::STATUS_APPROVED)
+            : collect();
+
+        $ratings = $testimonials
+            ->map(fn ($t) => (int) (is_array($t) ? ($t['rating'] ?? 5) : 5))
+            ->merge($customerReviews->pluck('rating')->map(fn ($r) => (int) $r));
+
+        $count = $testimonials->count() + $customerReviews->count();
+        $rating = $ratings->isNotEmpty() ? round((float) $ratings->avg(), 1) : 4.8;
+        $reviewCount = max($count, $count > 0 ? $count : 20);
+
+        return [
+            'rating' => $rating,
+            'reviewCount' => $reviewCount,
+        ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function mapCustomerReviews(Trip $trip): array
+    {
+        if (! $trip->relationLoaded('tripReviews')) {
+            return [];
+        }
+
+        return $trip->tripReviews
+            ->where('status', TripReview::STATUS_APPROVED)
+            ->sortByDesc('created_at')
+            ->values()
+            ->map(function (TripReview $review) {
+                $name = $review->relationLoaded('user') && $review->user
+                    ? $review->user->name
+                    : 'Traveler';
+
+                return [
+                    'id' => 'cr-'.$review->id,
+                    'name' => $name,
+                    'date' => $review->created_at?->format('Y-m-d') ?? now()->format('Y-m-d'),
+                    'rating' => (int) $review->rating,
+                    'text' => $review->text,
+                    'source' => 'customer',
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function defaultCancellationPolicy(): array
+    {
+        return [
+            '30+ days before departure: Full refund minus processing fee',
+            '15–30 days: 50% refund',
+            'Less than 15 days: No refund',
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function defaultRefundPolicy(): array
+    {
+        return [
+            'Refunds processed within 7–10 business days',
+            'Date change allowed once, subject to availability',
+        ];
+    }
+
+    /**
+     * @param  array<int, mixed>|null  $items
+     * @return list<string>
+     */
+    private static function mapLines(?array $items): array
+    {
+        return collect($items ?? [])
+            ->map(fn ($item) => is_array($item) ? (string) ($item['text'] ?? '') : (string) $item)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -55,9 +146,7 @@ class PublicTripMapper
             ->values()
             ->all();
 
-        $testimonials = $trip->testimonials ?? [];
-        $reviewCount = max(count($testimonials) * 40 + 20, 20);
-        $rating = collect($testimonials)->avg('rating') ?: 4.8;
+        $stats = self::reviewStats($trip);
 
         return [
             'id' => (string) $trip->id,
@@ -75,8 +164,8 @@ class PublicTripMapper
             'category' => $primaryCategory,
             'categoryIds' => $trip->categories->pluck('id')->map(fn ($id) => (string) $id)->values()->all(),
             'region' => $region,
-            'rating' => round((float) $rating, 1),
-            'reviewCount' => $reviewCount,
+            'rating' => $stats['rating'],
+            'reviewCount' => $stats['reviewCount'],
             'isFeatured' => (bool) $trip->is_featured,
             'departureDates' => $departureDates,
             'extraBatches' => max($futureDepartures->count() - 3, 0) ?: null,
@@ -150,8 +239,13 @@ class PublicTripMapper
                 'date' => Carbon::parse($t['createdAt'] ?? $t['date'] ?? now())->format('Y-m-d'),
                 'rating' => (int) ($t['rating'] ?? 5),
                 'text' => (string) ($t['text'] ?? ''),
+                'source' => 'curated',
             ];
-        })->values()->all();
+        })
+            ->merge(self::mapCustomerReviews($trip))
+            ->sortByDesc('date')
+            ->values()
+            ->all();
 
         $batches = $trip->departures
             ->filter(fn (Departure $d) => ! $d->is_cancelled && $d->start_date && $d->start_date->isFuture())
@@ -193,22 +287,17 @@ class PublicTripMapper
             ],
             'startPoint' => $card['destination'],
             'endPoint' => $card['destination'],
-            'maxAltitude' => null,
+            'maxAltitude' => $trip->max_altitude ?: null,
             'difficulty' => $difficulty,
             'itinerary' => $itinerary,
             'inclusions' => $mapRepeater($trip->inclusions),
             'exclusions' => $mapRepeater($trip->exclusions),
-            'thingsToCarry' => [],
+            'thingsToCarry' => self::mapLines($trip->things_to_carry),
             'faqs' => $faqs,
-            'cancellationPolicy' => [
-                '30+ days before departure: Full refund minus processing fee',
-                '15–30 days: 50% refund',
-                'Less than 15 days: No refund',
-            ],
-            'refundPolicy' => [
-                'Refunds processed within 7–10 business days',
-                'Date change allowed once, subject to availability',
-            ],
+            'cancellationPolicy' => self::mapLines($trip->cancellation_policy)
+                ?: self::defaultCancellationPolicy(),
+            'refundPolicy' => self::mapLines($trip->refund_policy)
+                ?: self::defaultRefundPolicy(),
             'batches' => $batches,
             'reviews' => $reviews,
             'addons' => \App\Support\TripAddons::normalize($trip->addons),

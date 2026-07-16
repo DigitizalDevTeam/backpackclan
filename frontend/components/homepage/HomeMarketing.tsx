@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { HeroVideoBanner } from "@/components/homepage/HeroVideoBanner";
 import { HomeCategoryNav } from "@/components/homepage/HomeCategoryNav";
-import { HomeOffersSlider } from "@/components/homepage/HomeOffersSlider";
+import { HomePromoBanners } from "@/components/homepage/HomePromoBanners";
+import { HomeCertifications } from "@/components/homepage/HomeCertifications";
 import { CategorySection } from "@/components/homepage/CategorySection";
 import { HomeReviewsSection } from "@/components/homepage/HomeReviewsSection";
 import { HomeVideosSection } from "@/components/homepage/HomeVideosSection";
@@ -50,6 +51,8 @@ export function HomeMarketing({ view: initialView, fetchOnClient = false }: Home
         setView(
           buildMarketingHomepageView(sections, mediaMap, {
             offerBanners: Array.isArray(payload) ? [] : (payload.offerBanners ?? []),
+            trips: Array.isArray(payload) ? [] : (payload.trips ?? []),
+            destinations: Array.isArray(payload) ? [] : (payload.destinations ?? []),
           })
         );
       } finally {
@@ -75,12 +78,22 @@ export function HomeMarketing({ view: initialView, fetchOnClient = false }: Home
         destinations={view.quickDestinations}
         categories={view.categories}
       />
-      {view.offers.length > 0 ? <HomeOffersSlider offers={view.offers} /> : null}
       {view.categories.map((category, index) => (
-        <div key={category.id} id={category.slug}>
-          <CategorySection category={category} index={index} />
+        <div key={category.id}>
+          <div id={category.slug}>
+            <CategorySection
+              category={category}
+              index={index}
+              internationalTrips={view.internationalTrips}
+              mediaMap={view.mediaMap}
+            />
+          </div>
+          {index === 1 && view.offers.length > 0 ? (
+            <HomePromoBanners offers={view.offers} />
+          ) : null}
         </div>
       ))}
+      <HomeCertifications />
       {view.reviews ? <HomeReviewsSection reviews={view.reviews} /> : null}
       {view.videos ? <HomeVideosSection videos={view.videos} /> : null}
       {view.inquiry ? <HomeInquiryCta inquiry={view.inquiry} /> : null}

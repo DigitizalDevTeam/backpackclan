@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminBookingResource;
 use App\Models\Booking;
+use App\Models\BookingDocument;
 use App\Models\Departure;
 use App\Models\Payment;
 use App\Models\Trip;
@@ -14,6 +15,7 @@ use App\Support\CamelCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -370,6 +372,11 @@ class BookingController extends Controller
         if ($recordedPayment) {
             app(\App\Services\BookingNotificationService::class)
                 ->sendPaymentReceived($booking, $recordedPayment);
+
+            app(\App\Services\CouponService::class)->commitOnFirstPayment(
+                $booking,
+                $recordedPayment
+            );
         }
 
         return response()->json([
@@ -425,6 +432,25 @@ class BookingController extends Controller
         ]);
 
         return $pdf->download($booking->voucher_code.'.pdf');
+    }
+
+    public function downloadDocument(Booking $booking, BookingDocument $document)
+    {
+        if ($document->booking_id !== $booking->id) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'Document not found'],
+            ], 404);
+        }
+
+        if (! Storage::disk('local')->exists($document->file_path)) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['form' => 'File not found'],
+            ], 404);
+        }
+
+        return Storage::disk('local')->download($document->file_path, $document->name);
     }
 
     private function syncSeatsOnUpdate(

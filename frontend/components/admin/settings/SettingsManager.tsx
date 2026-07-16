@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useForm, Controller, type FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { LoadingSkeleton } from "@/components/admin/LoadingSkeleton";
@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
@@ -104,7 +103,7 @@ export function SettingsManager() {
     <div className="space-y-6">
       <PageHeader
         title="Global Settings"
-        description="Configure branding, email (SMTP), Stripe, Razorpay, and notification preferences."
+        description="Configure branding, email, payments, notifications, and third-party integrations."
       />
 
       <div className="flex flex-col gap-6 lg:flex-row">
@@ -165,6 +164,8 @@ function SettingsTabForm({
   const secondaryColor = watch("secondaryColor" as never) as unknown as string | undefined;
   const stripeEnabled = watch("stripeEnabled" as never) as unknown as boolean | undefined;
   const razorpayEnabled = watch("razorpayEnabled" as never) as unknown as boolean | undefined;
+  const whatsappWidget = watch("whatsappWidget" as never) as unknown as boolean | undefined;
+  const tawkToEnabled = watch("tawkToEnabled" as never) as unknown as boolean | undefined;
 
   async function onSubmit(formData: unknown) {
     setSubmitting(true);
@@ -499,39 +500,80 @@ function SettingsTabForm({
       )}
 
       {group === "integrations" && (
-        <div className="space-y-4 opacity-75">
-          <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            Integrations will be available in Milestone 4
-          </div>
-          {[
-            { name: "whatsappWidget" as const, label: "WhatsApp widget" },
-            { name: "tawkToEnabled" as const, label: "Tawk.to live chat" },
-          ].map(({ name, label }) => (
-            <label
-              key={name}
-              className="flex items-center justify-between rounded-lg border p-4"
-            >
-              <span className="text-sm font-medium">{label}</span>
-              <div className="flex items-center gap-2">
-                <Badge variant="warning">M4</Badge>
-                <Controller
-                  name={name}
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      type="checkbox"
-                      checked={field.value}
-                      disabled
-                      className="h-4 w-4"
-                    />
-                  )}
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Connect analytics and support widgets. Scripts load on the public site and customer
+            account pages only — not in the admin panel.
+          </p>
+
+          <label className="flex items-center justify-between gap-4 rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">WhatsApp floating widget</p>
+              <p className="text-xs text-muted-foreground">
+                Shows a chat button using the WhatsApp number from Social settings
+              </p>
+            </div>
+            <Controller
+              name="whatsappWidget"
+              control={control}
+              render={({ field }) => (
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4 accent-primary"
                 />
-              </div>
-            </label>
-          ))}
-          <Field label="Tawk.to Property ID" name="tawkToId" register={register} disabled />
-          <Field label="Google Tag Manager ID" name="gtmId" register={register} disabled />
+              )}
+            />
+          </label>
+          {whatsappWidget ? (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+              Set your WhatsApp number under the <strong>Social</strong> tab if the widget does not
+              appear.
+            </p>
+          ) : null}
+
+          <label className="flex items-center justify-between gap-4 rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Tawk.to live chat</p>
+              <p className="text-xs text-muted-foreground">
+                Embed the Tawk.to widget for real-time visitor support
+              </p>
+            </div>
+            <Controller
+              name="tawkToEnabled"
+              control={control}
+              render={({ field }) => (
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4 accent-primary"
+                />
+              )}
+            />
+          </label>
+          <Field
+            label="Tawk.to Property / Widget ID"
+            name="tawkToId"
+            register={register}
+            placeholder="5f1a2b3c4d5e6f7a8b9c0d1e/1a2b3c4d"
+            disabled={!tawkToEnabled}
+          />
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Copy the two IDs from your Tawk.to embed snippet:
+            <code className="mx-1 rounded bg-muted px-1">embed.tawk.to/PROPERTY_ID/WIDGET_ID</code>
+          </p>
+
+          <Field
+            label="Google Tag Manager container ID"
+            name="gtmId"
+            register={register}
+            placeholder="GTM-XXXXXXX"
+          />
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Leave blank to disable GTM. Configure GA4, Meta Pixel, and other tags inside GTM.
+          </p>
         </div>
       )}
 
@@ -573,7 +615,7 @@ function SettingsTabForm({
         </>
       )}
 
-      {group !== "integrations" && (
+      {group !== "integrations" ? (
         <Button type="submit" disabled={submitting}>
           {submitting ? (
             <>
@@ -582,6 +624,17 @@ function SettingsTabForm({
             </>
           ) : (
             "Save Settings"
+          )}
+        </Button>
+      ) : (
+        <Button type="submit" disabled={submitting}>
+          {submitting ? (
+            <>
+              <Loader2 className="animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save integrations"
           )}
         </Button>
       )}

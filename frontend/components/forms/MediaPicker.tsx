@@ -22,6 +22,8 @@ interface MediaPickerProps {
   accept?: MediaType | "all";
   label?: string;
   disabled?: boolean;
+  /** Small tile trigger only — no preview card (for galleries, grids). */
+  compact?: boolean;
 }
 
 function PickerThumbnail({ item }: { item: MediaItem }) {
@@ -55,6 +57,7 @@ export function MediaPicker({
   accept = "image",
   label = "Select media",
   disabled = false,
+  compact = false,
 }: MediaPickerProps) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -102,11 +105,95 @@ export function MediaPicker({
       item.filename.toLowerCase().includes(search.toLowerCase())
   );
 
-  const preview = selected ?? (value ? items.find((m) => m.id === value) : null);
+  const preview = value
+    ? items.find((m) => m.id === value) ?? selected
+    : null;
 
   function handleConfirm() {
     onChange(selected);
+    if (!value) {
+      setSelected(null);
+    }
     setOpen(false);
+  }
+
+  const pickerDialog = (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setSelected(null);
+      }}
+    >
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{label || "Select media"}</DialogTitle>
+          <DialogDescription>
+            Choose from your media library
+          </DialogDescription>
+        </DialogHeader>
+
+        <Input
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {loading ? (
+            <LoadingSkeleton variant="cards" />
+          ) : (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {filtered.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelected(item)}
+                  className={cn(
+                    "overflow-hidden rounded-lg border text-left transition-all hover:shadow-md",
+                    selected?.id === item.id && "ring-2 ring-primary"
+                  )}
+                >
+                  <div className="aspect-square">
+                    <PickerThumbnail item={item} />
+                  </div>
+                  <p className="truncate p-1.5 text-xs font-medium">
+                    {item.title}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} disabled={!selected}>
+            Select
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  if (compact) {
+    return (
+      <div className="relative h-full min-h-[5rem] w-full">
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-full min-h-[5rem] w-full flex-col gap-1.5 rounded-lg border-0 shadow-none hover:bg-muted/50"
+          onClick={() => setOpen(true)}
+          disabled={disabled}
+        >
+          <ImagePlus className="h-6 w-6 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">{label || "Add"}</span>
+        </Button>
+        {pickerDialog}
+      </div>
+    );
   }
 
   return (
@@ -156,58 +243,7 @@ export function MediaPicker({
         </Button>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{label}</DialogTitle>
-            <DialogDescription>
-              Choose from your media library
-            </DialogDescription>
-          </DialogHeader>
-
-          <Input
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <div className="flex-1 overflow-y-auto min-h-0">
-            {loading ? (
-              <LoadingSkeleton variant="cards" />
-            ) : (
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                {filtered.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSelected(item)}
-                    className={cn(
-                      "overflow-hidden rounded-lg border text-left transition-all hover:shadow-md",
-                      selected?.id === item.id && "ring-2 ring-primary"
-                    )}
-                  >
-                    <div className="aspect-square">
-                      <PickerThumbnail item={item} />
-                    </div>
-                    <p className="truncate p-1.5 text-xs font-medium">
-                      {item.title}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirm} disabled={!selected}>
-              Select
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {pickerDialog}
     </div>
   );
 }

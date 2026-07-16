@@ -4,19 +4,14 @@ import { SitePageShell } from "@/components/site/SitePageShell";
 import { DestinationDetailView } from "@/components/destinations/DestinationDetailView";
 import {
   getDestinationDetail,
-  getPublishedDestinationsAsync,
 } from "@/lib/site/destination-data";
 import { getSiteLayoutData } from "@/lib/site/public-data";
 
 export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 interface DestinationPageProps {
   params: Promise<{ slug: string }>;
-}
-
-export async function generateStaticParams() {
-  const destinations = await getPublishedDestinationsAsync();
-  return destinations.map((d) => ({ slug: d.slug }));
 }
 
 export async function generateMetadata({
