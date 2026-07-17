@@ -39,8 +39,19 @@ async function resolveUser(
       data: Record<string, unknown>;
     }>(mePath, { token: payload.token });
 
-    if (!res.ok || !data.success) return null;
-    return normalizeAuthUser(data.data);
+    if (res.ok && data.success) {
+      return normalizeAuthUser(data.data);
+    }
+
+    // Expired or invalid token — do not fall back to stale cookie user.
+    if (res.status === 401 || res.status === 403) {
+      return null;
+    }
+
+    // Keep the session alive when /me is temporarily unavailable.
+    if (cached) return cached;
+
+    return null;
   }
 
   return getUserById(payload.userId);

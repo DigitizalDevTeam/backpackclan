@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm, Controller, type Resolver } from "react-hook-form";
+import { useForm, Controller, type FieldErrors, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { blogFormSchema, type BlogFormValues } from "@/lib/validations/blog";
+import { collectErrorMessages } from "@/lib/forms/multi-tab-validation";
+import { getFormErrorMessage } from "@/lib/api/errors";
 import { hasPermission } from "@/lib/auth/permissions";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import type { AuthUser } from "@/types/auth";
@@ -37,7 +39,7 @@ function paragraphsToItems(paragraphs: string[]): RepeaterItem[] {
 }
 
 function itemsToParagraphs(items: RepeaterItem[]): string[] {
-  return items.map((item) => item.text.trim()).filter(Boolean);
+  return items.map((item) => item.text);
 }
 
 export function BlogForm({ postId, user }: BlogFormProps) {
@@ -118,12 +120,19 @@ export function BlogForm({ postId, user }: BlogFormProps) {
 
   const tagsString = useMemo(() => (tagsInput ?? []).join(", "), [tagsInput]);
 
+  function onInvalid(errors: FieldErrors<BlogFormValues>) {
+    const messages = collectErrorMessages(errors);
+    toast.error(messages[0] ?? "Please fix the highlighted fields");
+  }
+
   async function onSubmit(data: BlogFormValues) {
     setSubmitting(true);
     try {
       const payload = {
         ...data,
-        content: data.content.filter((p) => p.trim() !== ""),
+        imageId: data.imageId ?? null,
+        content: data.content.map((p) => p.trim()).filter(Boolean),
+        readTime: data.readTime && data.readTime > 0 ? data.readTime : undefined,
       };
 
       const url = isEdit ? `/api/admin/blogs/${postId}` : "/api/admin/blogs";
@@ -137,7 +146,7 @@ export function BlogForm({ postId, user }: BlogFormProps) {
       const result = await res.json();
 
       if (!res.ok || !result.success) {
-        toast.error(result.errors?.form ?? "Failed to save blog post");
+        toast.error(getFormErrorMessage(result, "Failed to save blog post"));
         return;
       }
 
@@ -168,7 +177,7 @@ export function BlogForm({ postId, user }: BlogFormProps) {
         }
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
         <Card>
           <CardContent className="space-y-6 pt-6">
             <div className="grid gap-6 md:grid-cols-2">
@@ -252,7 +261,7 @@ export function BlogForm({ postId, user }: BlogFormProps) {
                   render={({ field }) => (
                     <MediaPicker
                       value={field.value}
-                      onChange={field.onChange}
+                      onChange={(media) => field.onChange(media?.id ?? null)}
                       disabled={readOnly}
                     />
                   )}
@@ -318,7 +327,12 @@ export function BlogForm({ postId, user }: BlogFormProps) {
                   type="number"
                   min={1}
                   max={120}
-                  {...register("readTime")}
+                  {...register("readTime", {
+                    setValueAs: (value) =>
+                      value === "" || value === null || value === undefined
+                        ? undefined
+                        : Number(value),
+                  })}
                   disabled={readOnly}
                   placeholder="Auto-calculated if empty"
                 />

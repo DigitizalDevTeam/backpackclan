@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80" role="img" aria-label="Uttarakhand Tourism">
+  <path fill="#0b5d38" d="M0 72 L20 12 L34 36 L48 4 L68 72 Z"/>
+  <path fill="#1f8f55" d="M8 72 L24 24 L36 42 L48 16 L60 72 Z" opacity="0.7"/>
+  <circle cx="50" cy="12" r="7" fill="#f58220"/>
+  <text x="72" y="38" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="800" fill="#0b5d38">UTDB</text>
+  <text x="72" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="8" font-weight="600" fill="#1f8f55">DEVBHOOMI</text>
+</svg>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import {
   Image,
@@ -62,7 +63,8 @@ function formatDepartureDate(date: string): string {
 
 export default async function DashboardPage() {
   const session = await getSession();
-  const user = session!.user;
+  if (!session) redirect("/login");
+  const user = session.user;
   const [stats, activity, lowSeatAlerts, recentBookings] = await Promise.all([
     getDashboardStats(),
     getDashboardActivity(),

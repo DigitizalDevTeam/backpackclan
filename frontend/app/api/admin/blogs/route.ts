@@ -11,7 +11,16 @@ export async function GET() {
   if (error) return error;
 
   if (useLaravelApi()) {
-    return proxyToLaravel(session!, "/v1/admin/blogs");
+    try {
+      return await proxyToLaravel(session!, "/v1/admin/blogs");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to reach Laravel API";
+      return NextResponse.json(
+        { success: false, errors: { form: message } },
+        { status: 502 }
+      );
+    }
   }
 
   await mockDelay(250);
@@ -26,10 +35,19 @@ export async function POST(request: Request) {
     const body = (await request.json()) as BlogPostInput;
 
     if (useLaravelApi()) {
-      return proxyToLaravel(session!, "/v1/admin/blogs", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
+      try {
+        return await proxyToLaravel(session!, "/v1/admin/blogs", {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to reach Laravel API";
+        return NextResponse.json(
+          { success: false, errors: { form: message } },
+          { status: 502 }
+        );
+      }
     }
 
     await mockDelay(400);

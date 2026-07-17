@@ -11,7 +11,38 @@ export async function proxyToLaravel(
     ...init,
     token: session.token,
   });
-  return NextResponse.json(data, { status: res.status });
+
+  const payload =
+    typeof data === "object" && data !== null
+      ? (data as Record<string, unknown>)
+      : { data };
+
+  if (
+    !res.ok &&
+    payload.errors &&
+    typeof payload.errors === "object" &&
+    !("form" in (payload.errors as object))
+  ) {
+    const fieldErrors = payload.errors as Record<string, unknown>;
+    for (const value of Object.values(fieldErrors)) {
+      if (typeof value === "string") {
+        payload.success = false;
+        payload.errors = { ...fieldErrors, form: value };
+        break;
+      }
+      if (Array.isArray(value) && typeof value[0] === "string") {
+        payload.success = false;
+        payload.errors = { ...fieldErrors, form: value[0] };
+        break;
+      }
+    }
+  }
+
+  if (!res.ok && payload.success === undefined) {
+    payload.success = false;
+  }
+
+  return NextResponse.json(payload, { status: res.status });
 }
 
 export async function proxyFormToLaravel(

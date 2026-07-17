@@ -3,25 +3,29 @@ const BADGES = [
     id: "msme",
     label: "MSME Registered",
     sublabel: "Government of India",
-    accent: "from-blue-600 to-blue-800",
+    logoSrc: "/certifications/msme.svg",
+    logoClassName: "h-14 w-auto max-w-[140px] sm:h-16",
   },
   {
     id: "uttarakhand",
     label: "Uttarakhand Tourism",
     sublabel: "Recognized operator",
-    accent: "from-emerald-600 to-teal-700",
+    logoSrc: "/certifications/uttarakhand-tourism.svg",
+    logoClassName: "h-14 w-auto max-w-[140px] sm:h-16",
   },
   {
     id: "startup-india",
     label: "Startup India",
     sublabel: "DPIIT recognized",
-    accent: "from-orange-500 to-amber-600",
+    logoSrc: "/certifications/startup-india.svg",
+    logoClassName: "h-10 w-auto max-w-[150px] sm:h-11",
   },
   {
     id: "tripadvisor",
     label: "Travelers' Choice",
     sublabel: "TripAdvisor Award",
-    accent: "from-[#34E0A1] to-[#00AF87]",
+    logoSrc: "/certifications/tripadvisor-travelers-choice.svg",
+    logoClassName: "h-14 w-auto max-w-[72px] sm:h-16",
   },
 ] as const;
 
@@ -39,12 +43,15 @@ export function HomeCertifications() {
           {BADGES.map((badge) => (
             <div
               key={badge.id}
-              className="flex flex-col items-center rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-6 text-center shadow-sm"
+              className="flex flex-col items-center rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center shadow-sm"
             >
-              <div
-                className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${badge.accent} text-xs font-bold uppercase tracking-wide text-white shadow-md`}
-              >
-                {badge.id === "tripadvisor" ? "TA" : badge.label.split(" ")[0].slice(0, 4)}
+              <div className="flex h-14 w-full items-center justify-center sm:h-16">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={badge.logoSrc}
+                  alt={badge.label}
+                  className={`object-contain ${badge.logoClassName}`}
+                />
               </div>
               <p className="mt-4 text-sm font-bold text-slate-900">{badge.label}</p>
               <p className="mt-1 text-xs text-slate-500">{badge.sublabel}</p>

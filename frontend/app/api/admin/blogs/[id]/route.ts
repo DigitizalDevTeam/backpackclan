@@ -44,10 +44,19 @@ export async function PUT(request: Request, { params }: RouteParams) {
     const body = (await request.json()) as BlogPostInput;
 
     if (useLaravelApi()) {
-      return proxyToLaravel(session!, `/v1/admin/blogs/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(body),
-      });
+      try {
+        return await proxyToLaravel(session!, `/v1/admin/blogs/${id}`, {
+          method: "PUT",
+          body: JSON.stringify(body),
+        });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to reach Laravel API";
+        return NextResponse.json(
+          { success: false, errors: { form: message } },
+          { status: 502 }
+        );
+      }
     }
 
     await mockDelay(400);

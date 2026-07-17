@@ -78,6 +78,7 @@ export function TripList({ user }: TripListProps) {
         catRes.json(),
       ]);
       if (tripsData.success) setTrips(tripsData.data);
+      else toast.error(tripsData.errors?.form ?? "Failed to load trips");
       if (destData.success) setDestinations(destData.data);
       if (catData.success) setCategories(catData.data);
     } catch {

@@ -44,8 +44,11 @@ export function BlogList({ user }: BlogListProps) {
     try {
       const res = await fetch("/api/admin/blogs");
       const result = await res.json();
-      if (result.success) setPosts(result.data);
-      else toast.error("Failed to load blog posts");
+      if (result.success && Array.isArray(result.data)) {
+        setPosts(result.data);
+      } else {
+        toast.error(result.errors?.form ?? "Failed to load blog posts");
+      }
     } catch {
       toast.error("Failed to load blog posts");
     } finally {
