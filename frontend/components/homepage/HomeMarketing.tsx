@@ -24,37 +24,42 @@ export interface HomeMarketingProps {
 export function HomeMarketing({ view: initialView, fetchOnClient = false }: HomeMarketingProps) {
   const [view, setView] = useState<MarketingHomepageView | null>(initialView ?? null);
   const [loading, setLoading] = useState(fetchOnClient && !initialView);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!fetchOnClient) return;
 
     async function load() {
       try {
+        setError(null);
         const res = await fetch("/api/preview/homepage");
         const data = await res.json();
-        if (!data.success) return;
+        if (!res.ok || !data.success) {
+          setError(data.errors?.form ?? "Failed to load homepage preview");
+          return;
+        }
 
         const payload = data.data;
         const sections: HomepageSection[] = Array.isArray(payload)
           ? payload
           : (payload.sections ?? []);
 
-        let mediaMap: Record<string, string> = {};
-        const mediaRes = await fetch("/api/admin/media");
-        const mediaData = await mediaRes.json();
-        if (mediaData.success) {
-          mediaMap = Object.fromEntries(
-            mediaData.data.map((m: { id: string; url: string }) => [m.id, m.url])
+        const mediaMap: Record<string, string> =
+          payload.mediaMap ??
+          Object.fromEntries(
+            ((payload.media ?? []) as { id: string; url: string }[]).map((m) => [m.id, m.url])
           );
-        }
 
         setView(
           buildMarketingHomepageView(sections, mediaMap, {
+            categories: Array.isArray(payload) ? [] : (payload.categories ?? []),
             offerBanners: Array.isArray(payload) ? [] : (payload.offerBanners ?? []),
             trips: Array.isArray(payload) ? [] : (payload.trips ?? []),
             destinations: Array.isArray(payload) ? [] : (payload.destinations ?? []),
           })
         );
+      } catch {
+        setError("Failed to load homepage preview");
       } finally {
         setLoading(false);
       }
@@ -63,10 +68,22 @@ export function HomeMarketing({ view: initialView, fetchOnClient = false }: Home
     load();
   }, [fetchOnClient]);
 
-  if (loading || !view) {
+  if (loading) {
     return (
       <div className="bg-white py-20">
         <LoadingSkeleton variant="cards" />
+      </div>
+    );
+  }
+
+  if (!view) {
+    return (
+      <div className="bg-white py-20">
+        <div className="mx-auto max-w-lg px-4 text-center">
+          <p className="text-sm text-destructive">
+            {error ?? "Homepage preview could not be loaded."}
+          </p>
+        </div>
       </div>
     );
   }
@@ -93,7 +110,9 @@ export function HomeMarketing({ view: initialView, fetchOnClient = false }: Home
           ) : null}
         </div>
       ))}
-      <HomeCertifications />
+      {view.accreditations ? (
+        <HomeCertifications accreditations={view.accreditations} />
+      ) : null}
       {view.reviews ? <HomeReviewsSection reviews={view.reviews} /> : null}
       {view.videos ? <HomeVideosSection videos={view.videos} /> : null}
       {view.inquiry ? <HomeInquiryCta inquiry={view.inquiry} /> : null}

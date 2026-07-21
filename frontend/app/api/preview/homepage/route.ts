@@ -17,6 +17,7 @@ export async function GET() {
       offerBanners: data.offerBanners,
       destinations: data.destinations,
       categories: data.categories,
+      mediaMap: data.mediaMap,
     },
   });
 }

@@ -4,6 +4,7 @@ import type {
   HeroContent,
   HomepageSection,
   NewsletterCtaContent,
+  AccreditationsContent,
   TestimonialsContent,
   YoutubeVideosContent,
 } from "@/types/homepage";
@@ -90,6 +91,19 @@ export type ResolvedOffer = {
   ctaLabel: string;
 };
 
+export type ResolvedAccreditation = {
+  id: string;
+  label: string;
+  sublabel: string;
+  logoUrl: string | null;
+};
+
+export type ResolvedAccreditations = {
+  eyebrow: string;
+  title: string;
+  items: ResolvedAccreditation[];
+};
+
 export type MarketingHomepageView = {
   hero: ResolvedHero;
   categories: ResolvedCategory[];
@@ -98,8 +112,16 @@ export type MarketingHomepageView = {
   reviews: ResolvedTestimonials | null;
   videos: ResolvedYoutubeVideos | null;
   inquiry: ResolvedInquiry | null;
+  accreditations: ResolvedAccreditations | null;
   internationalTrips: PublicTrip[];
   mediaMap: Record<string, string>;
+};
+
+const ACCREDITATION_LOGO_FALLBACKS: Record<string, string> = {
+  msme: "/certifications/msme.svg",
+  uttarakhand: "/certifications/uttarakhand-tourism.svg",
+  "startup-india": "/certifications/startup-india.svg",
+  tripadvisor: "/certifications/tripadvisor-travelers-choice.svg",
 };
 
 const FALLBACK_POSTER =
@@ -143,6 +165,42 @@ export function extractYoutubeId(input: string): string | null {
     // ignore invalid URLs
   }
   return null;
+}
+
+export function resolveAccreditations(
+  sections: HomepageSection[],
+  mediaMap: Record<string, string>
+): ResolvedAccreditations | null {
+  const section = sections.find((s) => s.type === "accreditations");
+  if (!section) return null;
+
+  const content = section.content as AccreditationsContent;
+  const items = (content.items ?? [])
+    .map((item) => {
+      const label = item.label?.trim();
+      if (!label) return null;
+
+      const logoUrl =
+        resolveMedia(mediaMap, item.imageId) ??
+        ACCREDITATION_LOGO_FALLBACKS[item.id] ??
+        null;
+
+      return {
+        id: item.id,
+        label,
+        sublabel: item.sublabel?.trim() ?? "",
+        logoUrl,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item != null);
+
+  if (items.length === 0) return null;
+
+  return {
+    eyebrow: content.eyebrow?.trim() || "Accreditations",
+    title: content.title?.trim() || "Trusted & certified",
+    items,
+  };
 }
 
 function categoriesFromCatalog(
@@ -391,6 +449,8 @@ export function buildMarketingHomepageView(
     .filter((t) => t.region === "international")
     .slice(0, 8);
 
+  const accreditations = resolveAccreditations(sections, mediaMap);
+
   return {
     hero,
     categories,
@@ -399,6 +459,7 @@ export function buildMarketingHomepageView(
     reviews,
     videos,
     inquiry,
+    accreditations,
     internationalTrips,
     mediaMap,
   };

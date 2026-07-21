@@ -9,6 +9,7 @@ export type HomepageSectionType =
   | "blog_highlights"
   | "newsletter_cta"
   | "partner_logos"
+  | "accreditations"
   | "faq_strip"
   | "category_showcase";
 
@@ -150,6 +151,19 @@ export interface PartnerLogosContent {
   logos: PartnerLogo[];
 }
 
+export interface AccreditationItem {
+  id: string;
+  label: string;
+  sublabel: string;
+  imageId: string | null;
+}
+
+export interface AccreditationsContent {
+  eyebrow: string;
+  title: string;
+  items: AccreditationItem[];
+}
+
 export interface FaqItem {
   id: string;
   question: string;
@@ -213,6 +227,7 @@ export type HomepageSectionContent =
   | BlogHighlightsContent
   | NewsletterCtaContent
   | PartnerLogosContent
+  | AccreditationsContent
   | FaqStripContent
   | CategoryShowcaseContent;
 

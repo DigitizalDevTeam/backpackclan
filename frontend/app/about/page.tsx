@@ -12,7 +12,8 @@ import {
 import { SitePageShell } from "@/components/site/SitePageShell";
 import { HomeCertifications } from "@/components/homepage/HomeCertifications";
 import { buildPageMetadata } from "@/lib/site/seo-metadata";
-import { getSiteLayoutData } from "@/lib/site/public-data";
+import { getHomepageData } from "@/lib/site/public-data";
+import { resolveAccreditations } from "@/lib/site/home-categories";
 import { Button } from "@/components/ui/button";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -60,8 +61,9 @@ const team = [
 ];
 
 export default async function AboutPage() {
-  const layout = await getSiteLayoutData();
-  const heroImage = layout.mediaMap["2"] ?? layout.mediaMap["1"];
+  const data = await getHomepageData();
+  const accreditations = resolveAccreditations(data.sections, data.mediaMap);
+  const heroImage = data.mediaMap["2"] ?? data.mediaMap["1"];
 
   return (
     <SitePageShell seoPageKey="about">
@@ -125,10 +127,10 @@ export default async function AboutPage() {
             </p>
           </div>
           <div className="relative overflow-hidden rounded-3xl shadow-xl ring-1 ring-slate-200">
-            {layout.mediaMap["7"] ? (
+            {data.mediaMap["7"] ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={layout.mediaMap["7"]}
+                src={data.mediaMap["7"]}
                 alt="Himalayan landscape"
                 className="aspect-[4/3] w-full object-cover"
               />
@@ -217,7 +219,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <HomeCertifications />
+      {accreditations ? <HomeCertifications accreditations={accreditations} /> : null}
 
       {/* CTA */}
       <section className="relative overflow-hidden bg-slate-950 py-20 text-white">

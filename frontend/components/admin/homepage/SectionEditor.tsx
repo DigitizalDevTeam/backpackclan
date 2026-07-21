@@ -102,6 +102,12 @@ export function SectionEditor({ slug, userRole }: SectionEditorProps) {
               items: t.items ?? [],
             })),
           });
+        } else if (result.data.type === "accreditations") {
+          const c = content as import("@/types/homepage").AccreditationsContent;
+          reset({
+            ...c,
+            items: c.items ?? [],
+          });
         } else {
           reset(content);
         }
@@ -220,6 +226,8 @@ function SectionFormFields({
       return <NewsletterForm {...props} />;
     case "partner_logos":
       return <PartnerLogosForm {...props} />;
+    case "accreditations":
+      return <AccreditationsForm {...props} />;
     case "faq_strip":
       return <FaqForm {...props} />;
     case "category_showcase":
@@ -814,6 +822,40 @@ function PartnerLogosForm({ register, control, readOnly }: FormProps) {
           <Input {...register(`logos.${i}.link` as never)} placeholder="Link" disabled={readOnly} />
           <MediaPickerController control={control} name={`logos.${i}.imageId`} readOnly={readOnly} />
           {!readOnly && <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+        </div>
+      ))}
+    </>
+  );
+}
+
+function AccreditationsForm({ register, control, readOnly }: FormProps) {
+  const { fields, append, remove } = useFieldArray({ control, name: "items" as never });
+  return (
+    <>
+      <Field label="Eyebrow" name="eyebrow" register={register} readOnly={readOnly} />
+      <Field label="Section title" name="title" register={register} readOnly={readOnly} />
+      <RepeaterHeader
+        label="Accreditation badges"
+        readOnly={readOnly}
+        onAdd={() =>
+          append({
+            id: `acc-${Date.now()}`,
+            label: "",
+            sublabel: "",
+            imageId: null,
+          } as never)
+        }
+      />
+      {fields.map((field, i) => (
+        <div key={field.id} className="space-y-2 rounded-lg border p-4">
+          <Input {...register(`items.${i}.label` as never)} placeholder="Title (e.g. MSME Registered)" disabled={readOnly} />
+          <Input {...register(`items.${i}.sublabel` as never)} placeholder="Subtitle (e.g. Government of India)" disabled={readOnly} />
+          <MediaPickerController control={control} name={`items.${i}.imageId`} readOnly={readOnly} />
+          {!readOnly && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
         </div>
       ))}
     </>

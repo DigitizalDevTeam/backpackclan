@@ -363,10 +363,20 @@ const SEED_SECTIONS: HomepageSection[] = [
       { id: "f3", question: "What is the cancellation policy?", answer: "Free cancellation up to 30 days before departure. Terms apply." },
     ],
   }),
+  section("11", "accreditations", "Accreditations", "accreditations", 15, true, {
+    eyebrow: "Accreditations",
+    title: "Trusted & certified",
+    items: [
+      { id: "msme", label: "MSME Registered", sublabel: "Government of India", imageId: null },
+      { id: "uttarakhand", label: "Uttarakhand Tourism", sublabel: "Recognized operator", imageId: null },
+      { id: "startup-india", label: "Startup India", sublabel: "DPIIT recognized", imageId: null },
+      { id: "tripadvisor", label: "Travelers' Choice", sublabel: "TripAdvisor Award", imageId: null },
+    ],
+  }),
 ];
 
-/** v2 seed includes category showcase sections for the marketing homepage */
-const sectionStore = createPersistedStore("homepage-sections-v3", SEED_SECTIONS);
+/** v4 seed adds accreditations section for the marketing homepage */
+const sectionStore = createPersistedStore("homepage-sections-v4", SEED_SECTIONS);
 
 export function getAllSections(): HomepageSection[] {
   return [...sectionStore.get()].sort((a, b) => a.sortOrder - b.sortOrder);

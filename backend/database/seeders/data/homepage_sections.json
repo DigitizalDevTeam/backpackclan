@@ -306,5 +306,42 @@
       "secondaryButtonText": "Browse trips",
       "secondaryButtonUrl": "/trips"
     }
+  },
+  {
+    "slug": "accreditations",
+    "title": "Accreditations",
+    "type": "accreditations",
+    "sort_order": 10,
+    "is_enabled": true,
+    "content": {
+      "eyebrow": "Accreditations",
+      "title": "Trusted & certified",
+      "items": [
+        {
+          "id": "msme",
+          "label": "MSME Registered",
+          "sublabel": "Government of India",
+          "imageId": "9"
+        },
+        {
+          "id": "uttarakhand",
+          "label": "Uttarakhand Tourism",
+          "sublabel": "Recognized operator",
+          "imageId": "10"
+        },
+        {
+          "id": "startup-india",
+          "label": "Startup India",
+          "sublabel": "DPIIT recognized",
+          "imageId": "11"
+        },
+        {
+          "id": "tripadvisor",
+          "label": "Travelers' Choice",
+          "sublabel": "TripAdvisor Award",
+          "imageId": "12"
+        }
+      ]
+    }
   }
 ]

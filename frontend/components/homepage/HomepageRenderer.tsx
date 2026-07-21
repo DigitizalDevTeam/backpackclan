@@ -28,8 +28,9 @@ import {
   TrustBar,
 } from "@/components/homepage/homepage-parts";
 import { ScrollCarousel } from "@/components/homepage/ScrollCarousel";
+import { HomeCertifications } from "@/components/homepage/HomeCertifications";
 import { HomeVideosSection } from "@/components/homepage/HomeVideosSection";
-import { extractYoutubeId } from "@/lib/site/home-categories";
+import { extractYoutubeId, resolveAccreditations } from "@/lib/site/home-categories";
 import type { HomepageSection } from "@/types/homepage";
 import type { PublicTrip } from "@/types/trip";
 import type { Banner } from "@/types/banner";
@@ -646,6 +647,11 @@ function SectionBlock({
           </div>
         </section>
       );
+    }
+
+    case "accreditations": {
+      const resolved = resolveAccreditations([section], mediaMap);
+      return resolved ? <HomeCertifications accreditations={resolved} /> : null;
     }
 
     case "faq_strip": {
