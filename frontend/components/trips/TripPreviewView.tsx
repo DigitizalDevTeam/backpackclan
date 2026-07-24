@@ -32,7 +32,7 @@ export function TripPreviewShell({
   return (
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-50 border-b bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+        <div className="site-container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/preview/trips" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
@@ -152,7 +152,7 @@ export function TripPreviewView({ slug }: { slug: string }) {
   if (loading) return <LoadingSkeleton variant="cards" />;
   if (!trip) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-16 text-center">
+      <div className="site-container py-16 text-center">
         <h1 className="text-2xl font-bold">Trip not found</h1>
         <Button className="mt-4" variant="outline" asChild>
           <Link href="/preview/trips">Back to trips</Link>
@@ -173,7 +173,7 @@ export function TripPreviewView({ slug }: { slug: string }) {
       />
 
       <div className="border-b bg-slate-50">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-6">
+        <div className="site-container flex flex-wrap items-center justify-between gap-4 py-6">
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline">{TRIP_TYPE_LABELS[trip.tripType]}</Badge>
             <Badge variant="outline">{TRIP_DIFFICULTY_LABELS[trip.difficulty]}</Badge>
@@ -194,7 +194,7 @@ export function TripPreviewView({ slug }: { slug: string }) {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-12 space-y-16">
+      <div className="site-container py-12 space-y-16">
         {destination && (
           <p className="text-sm text-muted-foreground -mt-8">
             Destination:{" "}

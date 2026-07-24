@@ -1,52 +1,97 @@
 import type { ResolvedAccreditations } from "@/lib/site/home-categories";
 
-function logoClassName(id: string): string {
-  if (id === "startup-india") {
-    return "h-10 w-auto max-w-[150px] sm:h-11";
-  }
-  if (id === "tripadvisor") {
-    return "h-14 w-auto max-w-[72px] sm:h-16";
-  }
-  return "h-14 w-auto max-w-[140px] sm:h-16";
+const FALLBACK_LOGOS: Record<string, string> = {
+  google: "/certifications/google.svg",
+  tripadvisor: "/certifications/tripadvisor.svg",
+  "startup-india": "/certifications/startup-india.svg",
+  msme: "/certifications/msme.svg",
+  uttarakhand: "/certifications/uttarakhand-tourism.svg",
+  "tripadvisor-choice": "/certifications/tripadvisor-travelers-choice.svg",
+};
+
+const DEFAULT_ITEMS = [
+  { id: "google", label: "Google", sublabel: "", logoUrl: FALLBACK_LOGOS.google },
+  { id: "tripadvisor", label: "TripAdvisor", sublabel: "", logoUrl: FALLBACK_LOGOS.tripadvisor },
+  {
+    id: "startup-india",
+    label: "Startup India",
+    sublabel: "",
+    logoUrl: FALLBACK_LOGOS["startup-india"],
+  },
+  { id: "msme", label: "MSME", sublabel: "", logoUrl: FALLBACK_LOGOS.msme },
+  {
+    id: "uttarakhand",
+    label: "Uttarakhand Tourism",
+    sublabel: "",
+    logoUrl: FALLBACK_LOGOS.uttarakhand,
+  },
+  {
+    id: "tripadvisor-choice",
+    label: "Travelers' Choice",
+    sublabel: "",
+    logoUrl: FALLBACK_LOGOS["tripadvisor-choice"],
+  },
+];
+
+function logoSize(id: string): string {
+  if (id === "startup-india") return "h-8 w-auto max-w-[132px] sm:h-9";
+  if (id === "uttarakhand") return "h-10 w-auto max-w-[110px] sm:h-11";
+  if (id === "google" || id === "tripadvisor") return "h-10 w-10 sm:h-11 sm:w-11";
+  if (id === "msme" || id === "tripadvisor-choice") return "h-11 w-11 sm:h-12 sm:w-12";
+  return "h-10 w-auto max-w-[120px]";
 }
 
 export function HomeCertifications({
   accreditations,
 }: {
-  accreditations: ResolvedAccreditations;
+  accreditations?: ResolvedAccreditations | null;
 }) {
+  const eyebrow = accreditations?.eyebrow?.trim() || "Trust & branding";
+  const title = accreditations?.title?.trim() || "Officially recognized";
+  const items =
+    accreditations?.items && accreditations.items.length > 0
+      ? accreditations.items.map((item) => ({
+          id: item.id,
+          label: item.label,
+          sublabel: item.sublabel,
+          logoUrl: item.logoUrl || FALLBACK_LOGOS[item.id] || null,
+        }))
+      : DEFAULT_ITEMS;
+
   return (
-    <section className="border-y border-slate-100 bg-white py-10 sm:py-12">
-      <div className="mx-auto max-w-7xl px-4">
-        <p className="text-center text-xs font-bold uppercase tracking-[0.28em] text-slate-400">
-          {accreditations.eyebrow}
-        </p>
-        <h2 className="mt-2 text-center font-display text-2xl font-semibold text-slate-900 sm:text-3xl">
-          {accreditations.title}
-        </h2>
-        <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {accreditations.items.map((badge) => (
-            <div
-              key={badge.id}
-              className="flex flex-col items-center rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center shadow-sm"
-            >
-              <div className="flex h-14 w-full items-center justify-center sm:h-16">
-                {badge.logoUrl ? (
+    <section className="site-section border-y border-slate-100 bg-[#FFFBF5]">
+      <div className="site-container">
+        <div className="text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">
+            {eyebrow}
+          </p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-slate-900 sm:text-3xl">
+            {title}
+          </h2>
+        </div>
+
+        <ul className="mt-8 grid grid-cols-2 items-center gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-4">
+          {items.map((item) => (
+            <li key={item.id} className="flex flex-col items-center gap-3 text-center">
+              <div className="flex h-16 w-full items-center justify-center">
+                {item.logoUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
-                    src={badge.logoUrl}
-                    alt={badge.label}
-                    className={`object-contain ${logoClassName(badge.id)}`}
+                    src={item.logoUrl}
+                    alt={item.label}
+                    className={`object-contain transition duration-300 hover:scale-105 ${logoSize(item.id)}`}
                   />
                 ) : null}
               </div>
-              <p className="mt-4 text-sm font-bold text-slate-900">{badge.label}</p>
-              {badge.sublabel ? (
-                <p className="mt-1 text-xs text-slate-500">{badge.sublabel}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                {item.label}
+              </p>
+              {item.sublabel ? (
+                <p className="-mt-2 text-[10px] text-slate-400">{item.sublabel}</p>
               ) : null}
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );

@@ -1,6 +1,7 @@
 import type {
   CategoryShowcaseContent,
   FeaturedDestinationsContent,
+  GalleryContent,
   HeroContent,
   HomepageSection,
   NewsletterCtaContent,
@@ -104,6 +105,19 @@ export type ResolvedAccreditations = {
   items: ResolvedAccreditation[];
 };
 
+export type ResolvedMemory = {
+  id: string;
+  src: string;
+  caption: string;
+};
+
+export type ResolvedMemories = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  items: ResolvedMemory[];
+};
+
 export type MarketingHomepageView = {
   hero: ResolvedHero;
   categories: ResolvedCategory[];
@@ -111,21 +125,103 @@ export type MarketingHomepageView = {
   offers: ResolvedOffer[];
   reviews: ResolvedTestimonials | null;
   videos: ResolvedYoutubeVideos | null;
+  memories: ResolvedMemories | null;
   inquiry: ResolvedInquiry | null;
   accreditations: ResolvedAccreditations | null;
   internationalTrips: PublicTrip[];
+  domesticTrips: PublicTrip[];
   mediaMap: Record<string, string>;
 };
 
 const ACCREDITATION_LOGO_FALLBACKS: Record<string, string> = {
+  google: "/certifications/google.svg",
   msme: "/certifications/msme.svg",
   uttarakhand: "/certifications/uttarakhand-tourism.svg",
   "startup-india": "/certifications/startup-india.svg",
-  tripadvisor: "/certifications/tripadvisor-travelers-choice.svg",
+  tripadvisor: "/certifications/tripadvisor.svg",
+  "tripadvisor-choice": "/certifications/tripadvisor-travelers-choice.svg",
 };
 
 const FALLBACK_POSTER =
   "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=85";
+
+const MONTH_WISE_IMAGE_IDS = ["7", "2", "5", "1"] as const;
+
+const MONTH_WISE_QUARTERS = [
+  { id: "q1", name: "Jan – Mar", month: "jan" },
+  { id: "q2", name: "Apr – Jun", month: "apr" },
+  { id: "q3", name: "Jul – Sep", month: "jul" },
+  { id: "q4", name: "Oct – Dec", month: "oct" },
+] as const;
+
+/** Bike / Backpacking / Treks get month-wise nav; Custom Departures never do. */
+export function categorySupportsMonthWise(slug: string, title = ""): boolean {
+  const s = slug.toLowerCase();
+  const t = title.toLowerCase();
+  if (s.includes("custom") || t.includes("custom")) return false;
+  return (
+    s.includes("bike") ||
+    s.includes("motor") ||
+    s.includes("backpack") ||
+    s.includes("trek") ||
+    t.includes("bike") ||
+    t.includes("backpack") ||
+    t.includes("trek")
+  );
+}
+
+function categoryQueryParam(href: string, slug: string): string {
+  try {
+    const url = new URL(href, "https://backpackclan.local");
+    const fromHref = url.searchParams.get("category");
+    if (fromHref) return fromHref;
+  } catch {
+    // fall through
+  }
+  if (slug === "motor-biking") return "motor-biking";
+  return slug || "all";
+}
+
+function buildMonthWiseDestinations(
+  categoryParam: string,
+  mediaMap: Record<string, string>
+): ResolvedDestination[] {
+  return MONTH_WISE_QUARTERS.map((q, index) => ({
+    name: q.name,
+    href: `/trips?category=${encodeURIComponent(categoryParam)}&month=${q.month}`,
+    image:
+      resolveMedia(mediaMap, MONTH_WISE_IMAGE_IDS[index]) ?? FALLBACK_POSTER,
+    trips: undefined,
+  }));
+}
+
+function withMonthWiseTab(
+  category: ResolvedCategory,
+  mediaMap: Record<string, string>
+): ResolvedCategory {
+  const tabs = category.tabs.filter((t) => t.id !== "months");
+
+  if (!categorySupportsMonthWise(category.slug, category.title)) {
+    return { ...category, tabs };
+  }
+
+  if (category.tabs.some((t) => t.id === "months" && t.destinations.length > 0)) {
+    return category;
+  }
+
+  const categoryParam = categoryQueryParam(category.href, category.slug);
+  return {
+    ...category,
+    tabs: [
+      ...tabs,
+      {
+        id: "months",
+        label: "Month-wise",
+        destinations: buildMonthWiseDestinations(categoryParam, mediaMap),
+      },
+    ],
+  };
+}
 
 function resolveMedia(
   mediaMap: Record<string, string>,
@@ -264,7 +360,8 @@ function categoriesFromCatalog(
         },
       ],
     };
-  });
+  })
+  .map((category) => withMonthWiseTab(category, mediaMap));
 }
 
 export function buildMarketingHomepageView(
@@ -330,7 +427,8 @@ export function buildMarketingHomepageView(
         poster: resolveMedia(mediaMap, c.posterMediaId) ?? FALLBACK_POSTER,
         tabs,
       };
-    });
+    })
+    .map((category) => withMonthWiseTab(category, mediaMap));
 
   if (
     categories.length === 0 &&
@@ -449,7 +547,72 @@ export function buildMarketingHomepageView(
     .filter((t) => t.region === "international")
     .slice(0, 8);
 
+  const domesticTrips = (catalog?.trips ?? [])
+    .filter((t) => t.region !== "international")
+    .slice(0, 8);
+
   const accreditations = resolveAccreditations(sections, mediaMap);
+
+  const gallerySection = sections.find((s) => s.type === "gallery");
+  const galleryContent = (gallerySection?.content ?? null) as GalleryContent | null;
+  const MEMORY_CAPTIONS = [
+    "Spiti nights",
+    "Ladakh passes",
+    "Trail crew",
+    "Summit views",
+    "Bhutan trails",
+    "Road stories",
+  ];
+
+  const memoryItemsFromCards = (galleryContent?.items ?? [])
+    .map((item, index) => {
+      const src = resolveMedia(mediaMap, item.imageId);
+      if (!src) return null;
+      return {
+        id: item.id || `mem-${index}`,
+        src,
+        caption: item.caption?.trim() || MEMORY_CAPTIONS[index % MEMORY_CAPTIONS.length],
+      };
+    })
+    .filter((item): item is ResolvedMemory => item != null);
+
+  const memoryItemsFromIds = (galleryContent?.imageIds ?? [])
+    .map((id, index) => {
+      const src = resolveMedia(mediaMap, id);
+      if (!src) return null;
+      return {
+        id,
+        src,
+        caption: MEMORY_CAPTIONS[index % MEMORY_CAPTIONS.length],
+      };
+    })
+    .filter((item): item is ResolvedMemory => item != null);
+
+  const memoryItems = (memoryItemsFromCards.length > 0
+    ? memoryItemsFromCards
+    : memoryItemsFromIds
+  ).slice(0, 6);
+
+  const memories: ResolvedMemories | null =
+    gallerySection && memoryItems.length > 0
+      ? {
+          eyebrow: galleryContent?.eyebrow?.trim() || "Postcards of memories",
+          title: galleryContent?.title?.trim() || "Moments from the road",
+          description:
+            galleryContent?.description?.trim() ||
+            "Real frames from our batches — polaroids worth pinning to the fridge.",
+          items: memoryItems,
+        }
+      : gallerySection
+        ? {
+            eyebrow: galleryContent?.eyebrow?.trim() || "Postcards of memories",
+            title: galleryContent?.title?.trim() || "Moments from the road",
+            description:
+              galleryContent?.description?.trim() ||
+              "Real frames from our batches — polaroids worth pinning to the fridge.",
+            items: [],
+          }
+        : null;
 
   return {
     hero,
@@ -458,9 +621,11 @@ export function buildMarketingHomepageView(
     offers,
     reviews,
     videos,
+    memories,
     inquiry,
     accreditations,
     internationalTrips,
+    domesticTrips,
     mediaMap,
   };
 }

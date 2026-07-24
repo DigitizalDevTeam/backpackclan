@@ -264,7 +264,7 @@ export function TrustBar() {
 
   return (
     <section className="border-b border-slate-200/80 bg-white">
-      <div className="mx-auto grid max-w-7xl divide-y divide-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div className="site-container grid divide-y divide-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {items.map((item) => (
           <div key={item.label} className="flex items-center justify-center gap-4 px-6 py-5">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-100">
@@ -295,7 +295,7 @@ export function StatsStrip() {
 
   return (
     <section className="bg-primary py-10 text-white">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 lg:grid-cols-4">
+      <div className="site-container grid grid-cols-2 gap-6 lg:grid-cols-4">
         {stats.map(({ value, label, icon: Icon }) => (
           <div key={label} className="text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
@@ -317,7 +317,7 @@ export function DestinationQuickNav({
 }) {
   return (
     <section className="border-b bg-slate-50 py-6">
-      <div className="mx-auto max-w-7xl px-4">
+      <div className="site-container">
         <p className="mb-4 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           Popular Destinations
         </p>
@@ -353,7 +353,7 @@ export function InquiryStrip() {
   return (
     <section className="relative overflow-hidden bg-slate-900 py-14 text-white">
       <div className="homepage-pattern absolute inset-0 opacity-30" />
-      <div className="relative mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-4 lg:flex-row">
+      <div className="relative site-container flex flex-col items-center justify-between gap-8 lg:flex-row">
         <div className="max-w-xl text-center lg:text-left">
           <p className="text-sm font-semibold uppercase tracking-widest text-orange-300">
             Custom Adventures

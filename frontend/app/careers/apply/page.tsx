@@ -19,7 +19,7 @@ export default function CareersApplyPage() {
         title="Work where the trails lead"
         subtitle="Guides, ops, and storytellers — apply below."
       />
-      <section className="mx-auto max-w-7xl px-4 py-16">
+      <section className="site-container py-16">
         <CareerLeadForm />
       </section>
     </SitePageShell>

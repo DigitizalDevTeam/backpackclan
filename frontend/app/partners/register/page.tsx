@@ -19,7 +19,7 @@ export default function PartnerRegisterPage() {
         title="Grow with Backpackclan"
         subtitle="Resellers, operators, and affiliates — let's collaborate."
       />
-      <section className="mx-auto max-w-7xl px-4 py-16">
+      <section className="site-container py-16">
         <PartnerLeadForm />
       </section>
     </SitePageShell>

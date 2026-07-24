@@ -62,7 +62,7 @@ export default async function TripsPage({ searchParams }: TripsPageProps) {
 
 function TripsListingSkeleton() {
   return (
-    <div className="mx-auto max-w-7xl animate-pulse space-y-6 px-4 py-12">
+    <div className="site-container animate-pulse space-y-6 py-12">
       <div className="h-10 w-64 rounded bg-slate-200" />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (

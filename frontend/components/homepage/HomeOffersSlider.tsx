@@ -26,12 +26,12 @@ export function HomeOffersSlider({ offers }: { offers: ResolvedOffer[] }) {
 
   return (
     <section
-      className="bg-[#FFFBF5] py-10 sm:py-12"
+      className="site-section bg-[#FFFBF5]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="mx-auto max-w-7xl px-4">
-        <div className="mb-6 flex items-end justify-between gap-4">
+      <div className="site-container">
+        <div className="mb-5 flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">
               Offers

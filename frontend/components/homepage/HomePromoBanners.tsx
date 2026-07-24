@@ -49,8 +49,8 @@ export function HomePromoBanners({ offers }: { offers: ResolvedOffer[] }) {
   if (!offers.length) return null;
 
   return (
-    <section className="bg-white py-8 sm:py-10">
-      <div className="mx-auto max-w-7xl px-4">
+    <section className="site-section bg-white">
+      <div className="site-container">
         {offers.length === 1 ? (
           <OfferBannerCard offer={offers[0]} />
         ) : (

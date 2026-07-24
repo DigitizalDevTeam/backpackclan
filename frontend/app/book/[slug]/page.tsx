@@ -73,7 +73,7 @@ export default async function BookTripPage({
   return (
     <SitePageShell>
       <div className="border-b bg-slate-50">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+        <div className="site-container flex items-center justify-between gap-4 py-3">
           <Button asChild variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
             <Link href={`/trips/${slug}`}>
               <ArrowLeft className="h-4 w-4" />
@@ -86,7 +86,7 @@ export default async function BookTripPage({
         </div>
       </div>
       <div className="bg-gradient-to-b from-slate-50 to-white">
-        <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="site-container py-8">
           <BookingCheckoutWizard
             trip={data.trip}
             detail={data.detail}

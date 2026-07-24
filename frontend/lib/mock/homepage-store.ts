@@ -52,6 +52,17 @@ const SEED_SECTIONS: HomepageSection[] = [
         destinationIds: ["4", "5"],
         items: [],
       },
+      {
+        id: "months",
+        label: "Month-wise",
+        destinationIds: [],
+        items: [
+          { id: "bq1", name: "Jan – Mar", href: "/trips?category=motor-biking&month=jan", imageId: "7", tripCount: 3 },
+          { id: "bq2", name: "Apr – Jun", href: "/trips?category=motor-biking&month=apr", imageId: "2", tripCount: 5 },
+          { id: "bq3", name: "Jul – Sep", href: "/trips?category=motor-biking&month=jul", imageId: "1", tripCount: 6 },
+          { id: "bq4", name: "Oct – Dec", href: "/trips?category=motor-biking&month=oct", imageId: "5", tripCount: 4 },
+        ],
+      },
     ],
   }),
   section("12", "backpacking", "Backpacking", "category_showcase", 2, true, {
@@ -74,6 +85,17 @@ const SEED_SECTIONS: HomepageSection[] = [
         label: "International",
         destinationIds: ["4", "5"],
         items: [],
+      },
+      {
+        id: "months",
+        label: "Month-wise",
+        destinationIds: [],
+        items: [
+          { id: "pq1", name: "Jan – Mar", href: "/trips?category=backpacking&month=jan", imageId: "13", tripCount: 4 },
+          { id: "pq2", name: "Apr – Jun", href: "/trips?category=backpacking&month=apr", imageId: "2", tripCount: 5 },
+          { id: "pq3", name: "Jul – Sep", href: "/trips?category=backpacking&month=jul", imageId: "5", tripCount: 5 },
+          { id: "pq4", name: "Oct – Dec", href: "/trips?category=backpacking&month=oct", imageId: "1", tripCount: 6 },
+        ],
       },
     ],
   }),
@@ -329,9 +351,18 @@ const SEED_SECTIONS: HomepageSection[] = [
       },
     ],
   }),
-  section("6", "gallery", "Instagram / Gallery", "gallery", 10, false, {
-    title: "Adventures in Pictures",
-    imageIds: ["1", "2", "3", "4", "5", "7"],
+  section("6", "gallery", "Postcards / Memories", "gallery", 10, true, {
+    title: "Moments from the road",
+    eyebrow: "Postcards of memories",
+    description: "Real frames from our batches — polaroids worth pinning to the fridge.",
+    imageIds: ["1", "2", "3", "4", "5"],
+    items: [
+      { id: "mem1", imageId: "1", caption: "Spiti nights" },
+      { id: "mem2", imageId: "2", caption: "Ladakh passes" },
+      { id: "mem3", imageId: "3", caption: "Trail crew" },
+      { id: "mem4", imageId: "4", caption: "Summit views" },
+      { id: "mem5", imageId: "5", caption: "Bhutan trails" },
+    ],
   }),
   section("7", "blog-highlights", "Blog Highlights", "blog_highlights", 11, false, {
     title: "From Our Blog",
@@ -364,19 +395,21 @@ const SEED_SECTIONS: HomepageSection[] = [
     ],
   }),
   section("11", "accreditations", "Accreditations", "accreditations", 15, true, {
-    eyebrow: "Accreditations",
-    title: "Trusted & certified",
+    eyebrow: "Trust & branding",
+    title: "Recognized. Rated. Trusted.",
     items: [
-      { id: "msme", label: "MSME Registered", sublabel: "Government of India", imageId: null },
-      { id: "uttarakhand", label: "Uttarakhand Tourism", sublabel: "Recognized operator", imageId: null },
+      { id: "google", label: "Google", sublabel: "4.5★ traveller rating", imageId: null },
+      { id: "tripadvisor", label: "TripAdvisor", sublabel: "4.7★ top-rated operator", imageId: null },
       { id: "startup-india", label: "Startup India", sublabel: "DPIIT recognized", imageId: null },
-      { id: "tripadvisor", label: "Travelers' Choice", sublabel: "TripAdvisor Award", imageId: null },
+      { id: "msme", label: "MSME", sublabel: "Government of India", imageId: null },
+      { id: "uttarakhand", label: "Uttarakhand Tourism", sublabel: "Recognized operator", imageId: null },
+      { id: "tripadvisor-choice", label: "Travelers' Choice", sublabel: "TripAdvisor Award", imageId: null },
     ],
   }),
 ];
 
-/** v4 seed adds accreditations section for the marketing homepage */
-const sectionStore = createPersistedStore("homepage-sections-v4", SEED_SECTIONS);
+/** v6 seed: memories gallery enabled + editable postcard captions */
+const sectionStore = createPersistedStore("homepage-sections-v6", SEED_SECTIONS);
 
 export function getAllSections(): HomepageSection[] {
   return [...sectionStore.get()].sort((a, b) => a.sortOrder - b.sortOrder);

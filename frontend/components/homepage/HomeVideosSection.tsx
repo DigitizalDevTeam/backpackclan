@@ -31,9 +31,9 @@ export function HomeVideosSection({ videos }: { videos: ResolvedYoutubeVideos })
   const go = (dir: -1 | 1) => setActive((i) => (i + dir + total) % total);
 
   return (
-    <section className="bg-white py-14 sm:py-16">
-      <div className="mx-auto max-w-7xl px-4">
-        <div className="mb-8 text-center sm:mb-10">
+    <section className="site-section bg-white">
+      <div className="site-container">
+        <div className="mb-6 text-center sm:mb-8">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">
             {videos.eyebrow}
           </p>

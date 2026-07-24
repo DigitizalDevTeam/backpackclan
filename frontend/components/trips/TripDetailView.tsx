@@ -69,6 +69,16 @@ export function TripDetailView({
     .map((id) => mediaMap[id])
     .filter(Boolean) as string[];
   const mainImage = galleryUrls[0] ?? mediaMap[trip.imageId] ?? null;
+  const galleryPool = (
+    galleryUrls.length > 0
+      ? galleryUrls
+      : [mainImage, mediaMap[trip.imageId]].filter(Boolean)
+  ) as string[];
+  /** Exactly 4 equal tiles — pad by cycling when fewer unique images exist */
+  const galleryTiles =
+    galleryPool.length > 0
+      ? Array.from({ length: 4 }, (_, i) => galleryPool[i % galleryPool.length])
+      : [];
   const selectedBatchData = detail.batches.find((b) => b.id === selectedBatch);
   const bookHref = selectedBatch
     ? `/book/${trip.slug}?departure=${encodeURIComponent(selectedBatch)}&adults=${adults}&children=${children}`
@@ -105,22 +115,23 @@ export function TripDetailView({
 
   return (
     <>
-      {/* Gallery — 4 equal tiles */}
+      {/* Gallery — exactly 4 equal tiles with hover zoom */}
       <section className="relative bg-slate-100">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-2 p-2 sm:grid-cols-4 sm:p-4">
-          {(galleryUrls.length > 0 ? galleryUrls : [mainImage]).filter(Boolean).slice(0, 4).map((url, i) => (
+        <div className="site-container grid grid-cols-2 gap-2 p-2 sm:grid-cols-4 sm:gap-3 sm:p-4">
+          {galleryTiles.map((url, i) => (
             <button
               key={`${url}-${i}`}
               type="button"
               onClick={() => setGalleryOpen(true)}
-              className="group relative aspect-square overflow-hidden rounded-xl bg-muted"
+              className="group relative aspect-square overflow-hidden rounded-xl bg-muted ring-1 ring-slate-200/60"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={url!}
+                src={url}
                 alt={i === 0 ? trip.title : `Gallery image ${i + 1}`}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
               />
+              <span className="pointer-events-none absolute inset-0 bg-black/0 transition duration-500 group-hover:bg-black/15" />
             </button>
           ))}
         </div>
@@ -137,7 +148,7 @@ export function TripDetailView({
 
       {/* Title + quick info */}
       <section className="border-b bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-6">
+        <div className="site-container py-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
               {trip.badge ? (
@@ -195,7 +206,7 @@ export function TripDetailView({
           ref={tabsRef}
           className="sticky top-[7.25rem] z-40 border-t bg-white/95 backdrop-blur-md lg:top-[4rem]"
         >
-          <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 scrollbar-hide">
+          <div className="site-container flex gap-1 overflow-x-auto scrollbar-hide">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -216,7 +227,7 @@ export function TripDetailView({
       </section>
 
       {/* Main layout */}
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <div className="site-container py-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
           {/* Content */}
           <div className="min-w-0 space-y-12">
@@ -601,11 +612,21 @@ export function TripDetailView({
           </aside>
         </div>
 
-        {/* Similar trips */}
+        {/* Similar trips — nearby price range */}
         {similarTrips.length > 0 ? (
           <section className="mt-16 border-t pt-12">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold">Similar Trips You May Like</h2>
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Similar price range
+                </p>
+                <h2 className="mt-1 font-display text-2xl font-semibold text-slate-900">
+                  Similar Tours You May Like
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Adventures near {formatInr(trip.price)} — same vibe, close budget.
+                </p>
+              </div>
               <Link
                 href="/trips"
                 className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
@@ -613,8 +634,8 @@ export function TripDetailView({
                 View all <ArrowUpRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {similarTrips.map((t) => (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {similarTrips.slice(0, 4).map((t) => (
                 <TripCard key={t.id} trip={t} imageUrl={mediaMap[t.imageId] ?? null} />
               ))}
             </div>

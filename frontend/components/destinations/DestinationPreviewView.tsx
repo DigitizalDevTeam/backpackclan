@@ -28,7 +28,7 @@ export function DestinationPreviewShell({
   return (
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-50 border-b bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+        <div className="site-container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/preview/destinations" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
@@ -122,7 +122,7 @@ export function DestinationPreviewView({ slug, mediaMap: initialMediaMap }: Dest
 
   if (!destination) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-16 text-center">
+      <div className="site-container py-16 text-center">
         <h1 className="text-2xl font-bold">Destination not found</h1>
         <p className="mt-2 text-muted-foreground">No destination matches &quot;{slug}&quot;.</p>
       </div>
@@ -149,7 +149,7 @@ export function DestinationPreviewView({ slug, mediaMap: initialMediaMap }: Dest
 
       {pageBanner && (
         <section className="border-b bg-slate-900 py-10 text-white">
-          <div className="mx-auto max-w-7xl px-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="site-container flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-bold">{pageBanner.headline}</h2>
               {pageBanner.subheadline && (
@@ -167,7 +167,7 @@ export function DestinationPreviewView({ slug, mediaMap: initialMediaMap }: Dest
 
       {destination.banner.headline && !pageBanner && (
         <section className="border-b bg-orange-50 py-8">
-          <div className="mx-auto max-w-7xl px-4 text-center">
+          <div className="site-container text-center">
             <h2 className="text-2xl font-bold">{destination.banner.headline}</h2>
             {destination.banner.subheadline && (
               <p className="mt-2 text-muted-foreground">{destination.banner.subheadline}</p>
@@ -181,7 +181,7 @@ export function DestinationPreviewView({ slug, mediaMap: initialMediaMap }: Dest
         </section>
       )}
 
-      <div className="mx-auto max-w-7xl px-4 py-12 space-y-16">
+      <div className="site-container py-12 space-y-16">
         {destination.overview.content && (
           <section>
             <h2 className="text-2xl font-bold mb-4">Overview</h2>

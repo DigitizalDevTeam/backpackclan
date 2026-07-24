@@ -116,7 +116,7 @@ export function TripsListing({
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900/85 via-slate-900/60 to-transparent" />
-        <div className="relative mx-auto flex h-full max-w-7xl items-center px-4">
+        <div className="relative site-container flex h-full items-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-orange-300">
               Fixed Departures
@@ -132,7 +132,7 @@ export function TripsListing({
       </section>
 
       <section className="border-b bg-white py-4">
-        <div className="mx-auto max-w-7xl px-4">
+        <div className="site-container">
           <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
             {destinationPills.map((pill) => (
               <button
@@ -157,7 +157,7 @@ export function TripsListing({
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <div className="site-container py-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <form onSubmit={submitSearch} className="relative flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

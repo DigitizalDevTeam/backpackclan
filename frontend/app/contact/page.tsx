@@ -22,7 +22,7 @@ export default async function ContactPage() {
         title="Plan your next adventure"
         subtitle="Share your travel dates, group size, and dream destination — we'll craft the perfect itinerary."
       />
-      <section className="mx-auto max-w-7xl px-4 py-16">
+      <section className="site-container py-16">
         <ContactForm settings={layout.settings} />
       </section>
     </SitePageShell>

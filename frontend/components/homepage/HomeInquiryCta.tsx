@@ -4,8 +4,8 @@ import type { ResolvedInquiry } from "@/lib/site/home-categories";
 
 export function HomeInquiryCta({ inquiry }: { inquiry: ResolvedInquiry }) {
   return (
-    <section className="bg-gradient-to-br from-[#F58220] to-[#FFD200] py-14 sm:py-16">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-4 text-center lg:flex-row lg:text-left">
+    <section className="site-section bg-gradient-to-br from-[#F58220] to-[#FFD200]">
+      <div className="site-container flex flex-col items-center justify-between gap-8 text-center lg:flex-row lg:text-left">
         <div className="max-w-xl">
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-black/60">
             Still planning?

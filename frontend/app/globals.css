@@ -64,6 +64,36 @@
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
 }
 
+/* Site layout — wider content, tighter gutters & section rhythm */
+.site-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 110rem; /* 1600px — fuller width than max-w-7xl (1280px) */
+  padding-inline: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .site-container {
+    padding-inline: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-container {
+    padding-inline: 1.5rem;
+  }
+}
+
+.site-section {
+  padding-block: 2rem;
+}
+
+@media (min-width: 640px) {
+  .site-section {
+    padding-block: 2.5rem;
+  }
+}
+
 * {
   border-color: var(--border);
 }

@@ -78,30 +78,32 @@ function normalizeTrip(trip: PublicTrip): PublicTrip {
   };
 }
 
-function filterRelatedTrips(trips: PublicTrip[], current: PublicTrip, limit = 3): PublicTrip[] {
-  const minPrice = current.price;
-  const maxPrice = current.price * 2;
+/** Prefer same destination/category within ±35% price, then nearest price overall. */
+export function filterRelatedTrips(
+  trips: PublicTrip[],
+  current: PublicTrip,
+  limit = 4
+): PublicTrip[] {
+  const spread = 0.35;
+  const minPrice = Math.round(current.price * (1 - spread));
+  const maxPrice = Math.round(current.price * (1 + spread));
+  const byPriceProximity = (a: PublicTrip, b: PublicTrip) =>
+    Math.abs(a.price - current.price) - Math.abs(b.price - current.price);
 
-  const matched = trips.filter(
-    (t) =>
-      t.slug !== current.slug &&
-      (t.destination === current.destination || t.category === current.category) &&
-      t.price >= minPrice &&
-      t.price <= maxPrice
-  );
+  const others = trips.filter((t) => t.slug !== current.slug);
+  const sameFamily = (t: PublicTrip) =>
+    t.destination === current.destination || t.category === current.category;
+  const inPriceBand = (t: PublicTrip) => t.price >= minPrice && t.price <= maxPrice;
 
-  if (matched.length >= limit) {
-    return matched.slice(0, limit);
-  }
+  const primary = others.filter((t) => sameFamily(t) && inPriceBand(t)).sort(byPriceProximity);
+  if (primary.length >= limit) return primary.slice(0, limit);
 
-  const fallback = trips.filter(
-    (t) =>
-      t.slug !== current.slug &&
-      (t.destination === current.destination || t.category === current.category)
-  );
+  const priceOnly = others.filter(inPriceBand).sort(byPriceProximity);
+  const familyOnly = others.filter(sameFamily).sort(byPriceProximity);
+  const nearestPrice = [...others].sort(byPriceProximity);
 
   const seen = new Set<string>();
-  return [...matched, ...fallback]
+  return [...primary, ...priceOnly, ...familyOnly, ...nearestPrice]
     .filter((t) => {
       if (seen.has(t.slug)) return false;
       seen.add(t.slug);
@@ -251,10 +253,16 @@ export async function getPublicTripDetail(
         `/v1/trips/${encodeURIComponent(slug)}`
       );
       if (res.ok && data.success && data.data?.trip && data.data.detail) {
+        const trip = normalizeTrip(data.data.trip);
+        const apiRelated = (data.data.related ?? []).map(normalizeTrip);
         return {
-          trip: normalizeTrip(data.data.trip),
+          trip,
           detail: data.data.detail,
-          related: (data.data.related ?? []).map(normalizeTrip),
+          related: filterRelatedTrips(
+            apiRelated.length > 0 ? apiRelated : [trip],
+            trip,
+            4
+          ),
         };
       }
     } catch {
@@ -267,7 +275,7 @@ export async function getPublicTripDetail(
   return {
     trip,
     detail: getMockTripDetail(trip),
-    related: filterRelatedTrips(getMockTrips(), trip),
+    related: filterRelatedTrips(getMockTrips(), trip, 4),
   };
 }
 

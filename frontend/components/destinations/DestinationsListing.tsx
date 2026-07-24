@@ -14,14 +14,14 @@ export function DestinationsListing({
 }: DestinationsListingProps) {
   if (destinations.length === 0) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-16 text-center text-muted-foreground">
+      <div className="site-container py-16 text-center text-muted-foreground">
         No destinations published yet.
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
+    <div className="site-container py-12">
       <div className="mb-10">
         <p className="text-xs font-bold uppercase tracking-widest text-primary">
           Explore

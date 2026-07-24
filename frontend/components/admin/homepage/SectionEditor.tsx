@@ -108,6 +108,26 @@ export function SectionEditor({ slug, userRole }: SectionEditorProps) {
             ...c,
             items: c.items ?? [],
           });
+        } else if (result.data.type === "gallery") {
+          const c = content as import("@/types/homepage").GalleryContent;
+          const legacyIds = c.imageIds ?? [];
+          const items =
+            c.items && c.items.length > 0
+              ? c.items
+              : legacyIds.map((imageId, index) => ({
+                  id: `mem-${imageId}-${index}`,
+                  imageId,
+                  caption: "",
+                }));
+          reset({
+            title: c.title ?? "",
+            eyebrow: c.eyebrow ?? "Postcards of memories",
+            description:
+              c.description ??
+              "Real frames from our batches — polaroids worth pinning to the fridge.",
+            imageIds: legacyIds,
+            items,
+          });
         } else {
           reset(content);
         }
@@ -123,10 +143,23 @@ export function SectionEditor({ slug, userRole }: SectionEditorProps) {
   async function onSubmit(data: HomepageSectionContent) {
     setSubmitting(true);
     try {
+      let payload = data;
+      if (section?.type === "gallery") {
+        const gallery = data as import("@/types/homepage").GalleryContent;
+        const items = gallery.items ?? [];
+        payload = {
+          ...gallery,
+          imageIds: items
+            .map((item) => item.imageId)
+            .filter((id): id is string => Boolean(id)),
+          items,
+        };
+      }
+
       const res = await fetch(`/api/admin/homepage/sections/${slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: data }),
+        body: JSON.stringify({ content: payload }),
       });
       const result = await res.json();
       if (!res.ok || !result.success) {
@@ -586,30 +619,53 @@ function YoutubeVideosForm({ register, control, readOnly }: FormProps) {
   );
 }
 
-function GalleryForm({ register, control, watch, setValue, readOnly }: FormProps) {
-  const imageIds = (watch("imageIds" as never) as unknown as string[]) ?? [];
+function GalleryForm({ register, control, readOnly }: FormProps) {
+  const { fields, append, remove } = useFieldArray({ control, name: "items" as never });
+
   return (
     <>
+      <Field label="Eyebrow" name="eyebrow" register={register} readOnly={readOnly} />
       <Field label="Section title" name="title" register={register} readOnly={readOnly} />
       <div className="space-y-2">
-        <Label>Gallery images</Label>
-        {!readOnly && (
-          <MediaPicker
-            value={null}
-            onChange={(m) => {
-              if (m) setValue("imageIds" as never, [...imageIds, m.id] as never);
-            }}
-            accept="image"
-            label="Add image"
-          />
-        )}
-        <p className="text-sm text-muted-foreground">{imageIds.length} image(s)</p>
-        {!readOnly && imageIds.length > 0 && (
-          <Button type="button" variant="outline" size="sm" onClick={() => setValue("imageIds" as never, [] as never)}>
-            Clear all
-          </Button>
-        )}
+        <Label>Description</Label>
+        <Input
+          {...register("description" as never)}
+          disabled={readOnly}
+          placeholder="Short supporting line under the title"
+        />
       </div>
+      <RepeaterHeader
+        label="Postcard photos (up to 6)"
+        readOnly={readOnly}
+        onAdd={() =>
+          append({
+            id: `mem-${Date.now()}`,
+            imageId: null,
+            caption: "",
+          } as never)
+        }
+      />
+      <p className="text-xs text-muted-foreground">
+        Each photo shows as a polaroid on the homepage. Add a short caption for the handwritten label.
+      </p>
+      {fields.map((field, i) => (
+        <div key={field.id} className="space-y-3 rounded-lg border p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">Photo {i + 1}</p>
+            {!readOnly && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            )}
+          </div>
+          <MediaPickerController control={control} name={`items.${i}.imageId`} readOnly={readOnly} />
+          <Input
+            {...register(`items.${i}.caption` as never)}
+            placeholder="Caption (e.g. Spiti nights)"
+            disabled={readOnly}
+          />
+        </div>
+      ))}
     </>
   );
 }
@@ -835,7 +891,7 @@ function AccreditationsForm({ register, control, readOnly }: FormProps) {
       <Field label="Eyebrow" name="eyebrow" register={register} readOnly={readOnly} />
       <Field label="Section title" name="title" register={register} readOnly={readOnly} />
       <RepeaterHeader
-        label="Accreditation badges"
+        label="Trust logos / badges"
         readOnly={readOnly}
         onAdd={() =>
           append({
@@ -846,16 +902,31 @@ function AccreditationsForm({ register, control, readOnly }: FormProps) {
           } as never)
         }
       />
+      <p className="text-xs text-muted-foreground">
+        Upload official logos (Google, TripAdvisor, Startup India, MSME, Uttarakhand Tourism, Travelers&apos; Choice).
+        Label appears under each logo on the homepage.
+      </p>
       {fields.map((field, i) => (
         <div key={field.id} className="space-y-2 rounded-lg border p-4">
-          <Input {...register(`items.${i}.label` as never)} placeholder="Title (e.g. MSME Registered)" disabled={readOnly} />
-          <Input {...register(`items.${i}.sublabel` as never)} placeholder="Subtitle (e.g. Government of India)" disabled={readOnly} />
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">Logo {i + 1}</p>
+            {!readOnly && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            )}
+          </div>
+          <Input
+            {...register(`items.${i}.label` as never)}
+            placeholder="Title (e.g. MSME)"
+            disabled={readOnly}
+          />
+          <Input
+            {...register(`items.${i}.sublabel` as never)}
+            placeholder="Optional subtitle"
+            disabled={readOnly}
+          />
           <MediaPickerController control={control} name={`items.${i}.imageId`} readOnly={readOnly} />
-          {!readOnly && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}>
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          )}
         </div>
       ))}
     </>

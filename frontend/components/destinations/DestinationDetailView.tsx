@@ -32,7 +32,7 @@ export function DestinationDetailView({
         imageUrl={heroUrl}
       />
 
-      <section className="mx-auto max-w-7xl px-4 py-12">
+      <section className="site-container py-12">
         {destination.overview?.content ? (
           <div className="mb-12 max-w-3xl">
             <h2 className="font-display text-2xl font-semibold">Overview</h2>

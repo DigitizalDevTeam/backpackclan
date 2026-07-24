@@ -43,7 +43,7 @@ export default async function TripDetailPage({ params }: TripDetailPageProps) {
   return (
     <SitePageShell>
       <div className="border-b bg-slate-50">
-        <div className="mx-auto max-w-7xl px-4 py-3">
+        <div className="site-container py-3">
           <Button asChild variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
             <Link href="/trips">
               <ArrowLeft className="h-4 w-4" />

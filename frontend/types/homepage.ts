@@ -109,9 +109,21 @@ export interface YoutubeVideosContent {
   items: YoutubeVideoItem[];
 }
 
+export interface GalleryItem {
+  id: string;
+  imageId: string | null;
+  caption: string;
+}
+
 export interface GalleryContent {
   title: string;
+  /** Small uppercase label (e.g. Postcards of memories) */
+  eyebrow?: string;
+  description?: string;
+  /** Legacy flat image ids — used when items is empty */
   imageIds: string[];
+  /** Preferred postcard items with per-image captions */
+  items?: GalleryItem[];
 }
 
 export interface BlogPostCard {

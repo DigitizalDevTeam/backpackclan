@@ -43,7 +43,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
       />
       <Suspense
         fallback={
-          <div className="mx-auto max-w-7xl px-4 py-16 text-center text-muted-foreground">
+          <div className="site-container py-16 text-center text-muted-foreground">
             Loading articles…
           </div>
         }

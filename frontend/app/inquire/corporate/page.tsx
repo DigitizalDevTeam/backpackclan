@@ -19,7 +19,7 @@ export default function CorporateInquirePage() {
         title="Team trips that actually inspire"
         subtitle="From weekend offsites to multi-day incentive expeditions."
       />
-      <section className="mx-auto max-w-7xl px-4 py-16">
+      <section className="site-container py-16">
         <CorporateLeadForm />
       </section>
     </SitePageShell>

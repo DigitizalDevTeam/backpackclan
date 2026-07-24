@@ -19,7 +19,7 @@ export default function RequestCallbackPage() {
         title="We'll call you back"
         subtitle="Prefer talking it through? Leave your number and a preferred time."
       />
-      <section className="mx-auto max-w-7xl px-4 py-16">
+      <section className="site-container py-16">
         <CallbackLeadForm />
       </section>
     </SitePageShell>

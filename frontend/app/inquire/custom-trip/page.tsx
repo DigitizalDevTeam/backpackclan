@@ -19,7 +19,7 @@ export default function CustomTripInquirePage() {
         title="Design your own adventure"
         subtitle="Private groups, flexible dates, and tailor-made routes."
       />
-      <section className="mx-auto max-w-7xl px-4 py-16">
+      <section className="site-container py-16">
         <CustomTripLeadForm />
       </section>
     </SitePageShell>

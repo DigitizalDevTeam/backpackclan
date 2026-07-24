@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   Mail,
@@ -34,9 +35,11 @@ interface SiteHeaderProps {
 function NavLinks({
   items,
   onNavigate,
+  light = false,
 }: {
   items: MenuItemNode[];
   onNavigate?: () => void;
+  light?: boolean;
 }) {
   return (
     <>
@@ -44,7 +47,14 @@ function NavLinks({
         item.children.length > 0 ? (
           <DropdownMenu key={item.id}>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-orange-50 hover:text-[#F58220]">
+              <button
+                className={cn(
+                  "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  light
+                    ? "text-white/90 hover:bg-white/10 hover:text-white"
+                    : "text-slate-700 hover:bg-orange-50 hover:text-[#F58220]"
+                )}
+              >
                 {item.label}
                 <ChevronDown className="h-4 w-4" />
               </button>
@@ -64,7 +74,12 @@ function NavLinks({
             key={item.id}
             href={item.url}
             onClick={onNavigate}
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-orange-50 hover:text-[#F58220]"
+            className={cn(
+              "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              light
+                ? "text-white/90 hover:bg-white/10 hover:text-white"
+                : "text-slate-700 hover:bg-orange-50 hover:text-[#F58220]"
+            )}
           >
             {item.label}
           </Link>
@@ -118,23 +133,42 @@ export function SiteHeader({
   mobileMenu,
   mediaMap = {},
 }: SiteHeaderProps) {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { general, social, branding } = settings;
   const drawerMenu = mobileMenu?.length ? mobileMenu : menu;
   const primaryRgb = hexToRgb(branding.primaryColor);
 
+  // Transparent overlay on homepage (BlackTomato-style merged header)
+  const overlayCapable = pathname === "/";
+  const transparent = overlayCapable && !scrolled && !mobileOpen;
+
   useEffect(() => {
     function onScroll() {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 40);
     }
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   return (
-    <header className="sticky top-0 z-50">
+    <header
+      className={cn(
+        "z-50 w-full transition-[background-color,box-shadow,backdrop-filter] duration-300",
+        overlayCapable ? "fixed top-0 left-0 right-0" : "sticky top-0",
+        transparent
+          ? "bg-transparent"
+          : "border-b border-slate-100 bg-white/95 shadow-sm backdrop-blur-md"
+      )}
+    >
+      {/* Utility bar — skip on homepage so overlay header stays slim & cinematic */}
+      {!overlayCapable ? (
       <div
         className="hidden border-b text-white md:block"
         style={{
@@ -142,7 +176,7 @@ export function SiteHeader({
           borderColor: primaryRgb ? `rgb(${primaryRgb} / 0.8)` : undefined,
         }}
       >
-        <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-4 text-xs opacity-90">
+        <div className="site-container flex h-9 items-center justify-between text-xs opacity-90">
           <div className="flex items-center gap-4">
             {general.contactPhone ? (
               <a href={`tel:${general.contactPhone}`} className="flex items-center gap-1 hover:text-white">
@@ -211,36 +245,51 @@ export function SiteHeader({
           </div>
         </div>
       </div>
+      ) : null}
 
       <div
         className={cn(
-          "border-b border-slate-100 bg-white py-2 transition-shadow duration-300 sm:py-3",
-          scrolled && "shadow-md"
+          "py-2 transition-colors duration-300 sm:py-3",
+          transparent && "bg-gradient-to-b from-black/45 via-black/20 to-transparent"
         )}
       >
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:h-16">
+        <div className="site-container flex h-14 items-center justify-between gap-4 sm:h-16">
           <SiteLogo
             siteName={general.siteName}
             tagline={general.tagline}
             logoId={general.logoId}
             mediaMap={mediaMap}
+            className={cn(
+              "transition duration-300"
+            )}
+            imageClassName="h-10 w-auto sm:h-12"
           />
 
           <nav className="hidden items-center gap-1 lg:flex">
-            <NavLinks items={menu} />
+            <NavLinks items={menu} light={transparent} />
           </nav>
 
           <div className="flex items-center gap-2">
-            <HeaderAuthMenu />
+            <HeaderAuthMenu light={transparent} />
             <Button
               asChild
-              className="hidden rounded-full bg-[#FFD200] px-5 font-bold text-black hover:bg-[#F58220] hover:text-white sm:inline-flex"
+              className={cn(
+                "hidden rounded-full px-5 font-bold sm:inline-flex",
+                transparent
+                  ? "bg-[#FFD200] text-black hover:bg-white"
+                  : "bg-[#FFD200] text-black hover:bg-[#F58220] hover:text-white"
+              )}
             >
               <Link href="/contact">Plan My Trip</Link>
             </Button>
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 lg:hidden"
+              className={cn(
+                "inline-flex h-10 w-10 items-center justify-center rounded-lg border lg:hidden",
+                transparent
+                  ? "border-white/40 bg-white/10 text-white backdrop-blur-sm"
+                  : "border-slate-200 text-slate-700"
+              )}
               onClick={() => setMobileOpen((v) => !v)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
             >
@@ -250,8 +299,13 @@ export function SiteHeader({
         </div>
       </div>
 
-      <div className={cn("border-b bg-white lg:hidden", mobileOpen ? "block" : "hidden")}>
-        <nav className="mx-auto max-w-7xl space-y-1 px-4 py-4">
+      <div
+        className={cn(
+          "border-b bg-white lg:hidden",
+          mobileOpen ? "block" : "hidden"
+        )}
+      >
+        <nav className="site-container space-y-1 py-4">
           <MobileNavLinks items={drawerMenu} onNavigate={() => setMobileOpen(false)} />
           <Button
             asChild

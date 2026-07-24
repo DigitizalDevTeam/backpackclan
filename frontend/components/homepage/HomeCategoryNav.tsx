@@ -9,9 +9,9 @@ export function HomeCategoryNav({
   categories: ResolvedCategory[];
 }) {
   return (
-    <section className="bg-white px-4 py-10 sm:py-12">
-      <div className="mx-auto max-w-7xl">
-        <p className="mb-6 text-center text-xs font-bold uppercase tracking-[0.22em] text-slate-400">
+    <section className="site-section bg-white">
+      <div className="site-container">
+        <p className="mb-5 text-center text-xs font-bold uppercase tracking-[0.22em] text-slate-400">
           Popular destinations
         </p>
         <div className="scrollbar-hide flex justify-start gap-5 overflow-x-auto pb-2 sm:justify-center sm:gap-8">
@@ -37,7 +37,7 @@ export function HomeCategoryNav({
         </div>
 
         {categories.length > 0 ? (
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             {categories.map((c) => (
               <a
                 key={c.id}

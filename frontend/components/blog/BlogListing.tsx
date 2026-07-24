@@ -47,7 +47,7 @@ export function BlogListing({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
+    <div className="site-container py-12">
       <div className="mb-8 flex flex-wrap gap-2">
         {["All", ...categories].map((cat) => (
           <button

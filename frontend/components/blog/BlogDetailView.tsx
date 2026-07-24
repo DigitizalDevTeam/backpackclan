@@ -120,7 +120,7 @@ export function BlogDetailView({
 
       {related.length > 0 ? (
         <section className="border-t border-slate-100 bg-[#FFFBF5] py-16">
-          <div className="mx-auto max-w-7xl px-4">
+          <div className="site-container">
             <div className="mb-8 flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#F58220]">

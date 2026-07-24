@@ -76,7 +76,7 @@ export default async function AboutPage() {
           ) : null}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
         </div>
-        <div className="relative mx-auto max-w-7xl px-4 py-24 sm:py-32">
+        <div className="relative site-container py-16 sm:py-20">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#FFD200]">
             Since 2016
           </p>
@@ -91,8 +91,8 @@ export default async function AboutPage() {
       </section>
 
       {/* Stats strip */}
-      <section className="border-b bg-white py-12">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 lg:grid-cols-4">
+      <section className="border-b bg-white py-8 sm:py-10">
+        <div className="site-container grid grid-cols-2 gap-8 lg:grid-cols-4">
           {[
             { value: "18,000+", label: "Happy travellers" },
             { value: "50+", label: "Curated departures" },
@@ -108,8 +108,8 @@ export default async function AboutPage() {
       </section>
 
       {/* Story */}
-      <section className="mx-auto max-w-7xl px-4 py-20">
-        <div className="grid gap-14 lg:grid-cols-2 lg:items-center">
+      <section className="site-container site-section">
+        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#F58220]">Our story</p>
             <h2 className="mt-3 font-display text-3xl font-semibold text-slate-900 sm:text-4xl">
@@ -142,15 +142,15 @@ export default async function AboutPage() {
       </section>
 
       {/* Pillars */}
-      <section className="bg-[#FFFBF5] py-20">
-        <div className="mx-auto max-w-7xl px-4">
+      <section className="site-section bg-[#FFFBF5]">
+        <div className="site-container">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-display text-3xl font-semibold text-slate-900">What guides us</h2>
             <p className="mt-3 text-slate-600">
               Principles we never compromise on — from route planning to the last kilometre home.
             </p>
           </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {pillars.map((p) => (
               <div
                 key={p.title}
@@ -168,11 +168,11 @@ export default async function AboutPage() {
       </section>
 
       {/* Timeline */}
-      <section className="mx-auto max-w-7xl px-4 py-20">
+      <section className="site-container site-section">
         <h2 className="text-center font-display text-3xl font-semibold text-slate-900">
           Our journey
         </h2>
-        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {milestones.map((m) => (
             <div
               key={m.year}
@@ -187,8 +187,8 @@ export default async function AboutPage() {
       </section>
 
       {/* Team */}
-      <section className="border-t bg-slate-50 py-20">
-        <div className="mx-auto max-w-7xl px-4">
+      <section className="site-section border-t bg-slate-50">
+        <div className="site-container">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="font-display text-3xl font-semibold text-slate-900">Leadership team</h2>
@@ -201,7 +201,7 @@ export default async function AboutPage() {
               Based across India &amp; the Himalayas
             </div>
           </div>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {team.map((member) => (
               <div key={member.name} className="rounded-2xl border bg-white p-6 text-center shadow-sm">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-amber-50 text-lg font-bold text-[#F58220]">
@@ -219,34 +219,36 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      {accreditations ? <HomeCertifications accreditations={accreditations} /> : null}
+      <HomeCertifications accreditations={accreditations} />
 
       {/* CTA */}
-      <section className="relative overflow-hidden bg-slate-950 py-20 text-white">
+      <section className="relative overflow-hidden bg-slate-950 py-14 text-white sm:py-16">
         <div className="absolute inset-0 bg-gradient-to-br from-[#F58220]/20 via-transparent to-[#FFD200]/10" />
-        <div className="relative mx-auto max-w-3xl px-4 text-center">
-          <Award className="mx-auto h-10 w-10 text-[#FFD200]" />
-          <h2 className="mt-6 font-display text-3xl font-semibold">Ready to travel with us?</h2>
-          <p className="mt-4 text-white/70">
-            Browse upcoming departures or tell us your dream itinerary — we will design it with the
-            same care we put into every batch we lead.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Button
-              asChild
-              size="lg"
-              className="rounded-full bg-[#FFD200] px-8 font-bold text-black hover:bg-[#F58220] hover:text-white"
-            >
-              <Link href="/trips">Explore trips</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="rounded-full border-white/30 bg-transparent text-white hover:bg-white/10"
-            >
-              <Link href="/contact">Talk to our team</Link>
-            </Button>
+        <div className="relative site-container text-center">
+          <div className="mx-auto max-w-3xl">
+            <Award className="mx-auto h-10 w-10 text-[#FFD200]" />
+            <h2 className="mt-6 font-display text-3xl font-semibold">Ready to travel with us?</h2>
+            <p className="mt-4 text-white/70">
+              Browse upcoming departures or tell us your dream itinerary — we will design it with the
+              same care we put into every batch we lead.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-full bg-[#FFD200] px-8 font-bold text-black hover:bg-[#F58220] hover:text-white"
+              >
+                <Link href="/trips">Explore trips</Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="rounded-full border-white/30 bg-transparent text-white hover:bg-white/10"
+              >
+                <Link href="/contact">Talk to our team</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>

@@ -58,7 +58,7 @@ export function DestinationsPreviewListing() {
   if (loading) return <LoadingSkeleton variant="cards" />;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 space-y-8">
+    <div className="site-container py-10 space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-primary">

@@ -8,6 +8,7 @@ import { HomeCertifications } from "@/components/homepage/HomeCertifications";
 import { CategorySection } from "@/components/homepage/CategorySection";
 import { HomeReviewsSection } from "@/components/homepage/HomeReviewsSection";
 import { HomeVideosSection } from "@/components/homepage/HomeVideosSection";
+import { HomeMemoriesSection } from "@/components/homepage/HomeMemoriesSection";
 import { HomeInquiryCta } from "@/components/homepage/HomeInquiryCta";
 import { LoadingSkeleton } from "@/components/admin/LoadingSkeleton";
 import {
@@ -102,6 +103,7 @@ export function HomeMarketing({ view: initialView, fetchOnClient = false }: Home
               category={category}
               index={index}
               internationalTrips={view.internationalTrips}
+              domesticTrips={view.domesticTrips}
               mediaMap={view.mediaMap}
             />
           </div>
@@ -112,8 +114,11 @@ export function HomeMarketing({ view: initialView, fetchOnClient = false }: Home
       ))}
       {view.accreditations ? (
         <HomeCertifications accreditations={view.accreditations} />
-      ) : null}
+      ) : (
+        <HomeCertifications />
+      )}
       {view.reviews ? <HomeReviewsSection reviews={view.reviews} /> : null}
+      {view.memories ? <HomeMemoriesSection memories={view.memories} /> : null}
       {view.videos ? <HomeVideosSection videos={view.videos} /> : null}
       {view.inquiry ? <HomeInquiryCta inquiry={view.inquiry} /> : null}
     </div>

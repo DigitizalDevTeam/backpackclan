@@ -33,7 +33,7 @@ export function SiteFooter({
 
   return (
     <footer className="bg-[#0c0c0c] text-zinc-300">
-      <div className="mx-auto max-w-7xl px-4 py-14">
+      <div className="site-container py-10 sm:py-12">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <SiteLogo

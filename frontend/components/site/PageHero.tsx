@@ -7,7 +7,7 @@ interface PageHeroProps {
 
 export function PageHero({ title, subtitle, badge, imageUrl }: PageHeroProps) {
   return (
-    <section className="relative overflow-hidden bg-[#0c0c0c] py-16 text-white sm:py-20">
+    <section className="relative overflow-hidden bg-[#0c0c0c] py-12 text-white sm:py-14">
       {imageUrl ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -20,7 +20,7 @@ export function PageHero({ title, subtitle, badge, imageUrl }: PageHeroProps) {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(245,130,32,0.25),transparent_55%)]" />
         </>
       )}
-      <div className="relative mx-auto max-w-7xl px-4">
+      <div className="relative site-container">
         {badge ? (
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#FFD200]">
             {badge}

@@ -29,6 +29,7 @@ import {
 } from "@/components/homepage/homepage-parts";
 import { ScrollCarousel } from "@/components/homepage/ScrollCarousel";
 import { HomeCertifications } from "@/components/homepage/HomeCertifications";
+import { HomeMemoriesSection } from "@/components/homepage/HomeMemoriesSection";
 import { HomeVideosSection } from "@/components/homepage/HomeVideosSection";
 import { extractYoutubeId, resolveAccreditations } from "@/lib/site/home-categories";
 import type { HomepageSection } from "@/types/homepage";
@@ -256,7 +257,7 @@ function SectionBlock({
           ) : null}
           <section className="relative overflow-hidden bg-slate-950 py-20 text-white">
             <div className="homepage-pattern absolute inset-0 opacity-20" />
-            <div className="relative mx-auto max-w-7xl px-4">
+            <div className="relative site-container">
               <div className="grid items-end gap-10 lg:grid-cols-[1fr_1.6fr]">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-300">
@@ -328,7 +329,7 @@ function SectionBlock({
         <section className="relative overflow-hidden py-20">
           <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />
           <div className="homepage-pattern absolute inset-0 opacity-40" />
-          <div className="relative mx-auto max-w-7xl px-4">
+          <div className="relative site-container">
             <SectionHeader
               title={content.title}
               subtitle="Trusted by thousands of Himalayan travelers since 2018"
@@ -364,7 +365,7 @@ function SectionBlock({
       const content = c as import("@/types/homepage").TestimonialsContent;
       return (
         <section className="bg-slate-50 py-20">
-          <div className="mx-auto max-w-7xl px-4">
+          <div className="site-container">
             <SectionHeader
               title={content.title}
               subtitle="Real stories from real travelers who explored with us"
@@ -443,40 +444,49 @@ function SectionBlock({
 
     case "gallery": {
       const content = c as import("@/types/homepage").GalleryContent;
+      const MEMORY_CAPTIONS = [
+        "Spiti nights",
+        "Ladakh passes",
+        "Trail crew",
+        "Summit views",
+        "Bhutan trails",
+        "Road stories",
+      ];
+      const fromItems = (content.items ?? [])
+        .map((item, index) => {
+          const src = mediaUrl(mediaMap, item.imageId);
+          if (!src) return null;
+          return {
+            id: item.id || `mem-${index}`,
+            src,
+            caption: item.caption?.trim() || MEMORY_CAPTIONS[index % MEMORY_CAPTIONS.length],
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item));
+      const fromIds = (content.imageIds ?? [])
+        .map((id, index) => {
+          const src = mediaUrl(mediaMap, id);
+          if (!src) return null;
+          return {
+            id,
+            src,
+            caption: MEMORY_CAPTIONS[index % MEMORY_CAPTIONS.length],
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item));
+      const items = (fromItems.length > 0 ? fromItems : fromIds).slice(0, 6);
+
       return (
-        <section className="py-20">
-          <div className="mx-auto max-w-7xl px-4">
-            <SectionHeader
-              title={content.title}
-              subtitle="As seen on Instagram — real moments from our community"
-              align="center"
-            />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-              {content.imageIds.map((id, index) => {
-                const url = mediaUrl(mediaMap, id);
-                return url ? (
-                  <div
-                    key={id}
-                    className={cn(
-                      "group relative aspect-square overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-200/60",
-                      index === 0 && "sm:col-span-2 sm:row-span-2 sm:aspect-auto"
-                    )}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={url}
-                      alt=""
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-4 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="text-xs font-medium text-white">@backpackclan</span>
-                    </div>
-                  </div>
-                ) : null;
-              })}
-            </div>
-          </div>
-        </section>
+        <HomeMemoriesSection
+          memories={{
+            eyebrow: content.eyebrow?.trim() || "Postcards of memories",
+            title: content.title || "Moments from the road",
+            description:
+              content.description?.trim() ||
+              "Real frames from our batches — polaroids worth pinning to the fridge.",
+            items,
+          }}
+        />
       );
     }
 
@@ -486,7 +496,7 @@ function SectionBlock({
 
       return (
         <section className="bg-slate-50 py-20">
-          <div className="mx-auto max-w-7xl px-4">
+          <div className="site-container">
             <SectionHeader title={content.title} viewAllHref="/blog" />
             <div className="grid gap-6 lg:grid-cols-2">
               {featured ? (
@@ -572,7 +582,7 @@ function SectionBlock({
           <section className="relative overflow-hidden bg-gradient-to-br from-teal-900 via-teal-800 to-slate-900 py-20 text-white">
           <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-teal-600/20 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-orange-500/10 blur-3xl" />
-          <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-2">
+          <div className="relative site-container grid items-center gap-12 lg:grid-cols-2">
             <div>
               <p className="text-sm font-semibold uppercase tracking-widest text-orange-300">
                 Stay in the loop
@@ -627,7 +637,7 @@ function SectionBlock({
     case "partner_logos": {
       const content = c as import("@/types/homepage").PartnerLogosContent;
       return (
-        <section className="mx-auto max-w-7xl px-4 py-12">
+        <section className="site-container py-12">
           <h2 className="mb-8 text-center text-lg font-semibold text-muted-foreground">
             {content.title}
           </h2>
@@ -705,7 +715,7 @@ function PopularTripsSection({
 
   return (
     <section className="bg-slate-50 py-20">
-      <div className="mx-auto max-w-7xl px-4">
+      <div className="site-container">
         <SectionHeader
           title={content.title}
           subtitle="Curated adventures with guaranteed departures and expert local guides"
@@ -757,7 +767,7 @@ function PromoBanner({
   const cta = banner.ctaButtons[0];
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10">
+    <section className="site-container py-10">
       <div className="relative overflow-hidden rounded-3xl bg-slate-900 shadow-xl">
         {bg ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -792,7 +802,7 @@ export function HomepagePreviewShell({ children }: { children: React.ReactNode }
   return (
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-50 border-b bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+        <div className="site-container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/preview/homepage" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
