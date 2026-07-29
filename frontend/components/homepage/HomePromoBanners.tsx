@@ -56,7 +56,8 @@ export function HomePromoBanners({ offers }: { offers: ResolvedOffer[] }) {
         ) : (
           <ScrollCarousel
             itemClassName="w-[92%] shrink-0 snap-start sm:w-[calc(50%-8px)] lg:w-[calc(50%-8px)]"
-            showDots={offers.length > 2}
+            showArrows={false}
+            autoplay={4500}
           >
             {offers.map((offer) => (
               <OfferBannerCard key={offer.id} offer={offer} />

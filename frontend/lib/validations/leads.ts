@@ -69,9 +69,26 @@ export const careerLeadSchema = z.object({
   message: z.string().optional(),
 });
 
+export const searchLeadSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email,
+  phone,
+  destination: z.string().min(1, "Tell us what you're looking for"),
+  travelers: z.preprocess(
+    (val) => {
+      if (val === "" || val === null || val === undefined) return undefined;
+      const n = Number(val);
+      return Number.isFinite(n) ? n : undefined;
+    },
+    z.number().int().min(1).max(100).optional()
+  ),
+  message: z.string().optional(),
+});
+
 export type ContactLeadData = z.infer<typeof contactLeadSchema>;
 export type CallbackLeadData = z.infer<typeof callbackLeadSchema>;
 export type CustomTripLeadData = z.infer<typeof customTripLeadSchema>;
 export type CorporateLeadData = z.infer<typeof corporateLeadSchema>;
 export type PartnerLeadData = z.infer<typeof partnerLeadSchema>;
 export type CareerLeadData = z.infer<typeof careerLeadSchema>;
+export type SearchLeadData = z.infer<typeof searchLeadSchema>;

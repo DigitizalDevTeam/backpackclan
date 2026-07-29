@@ -174,7 +174,7 @@ export function CategorySection({
         </div>
 
         <div className="relative mb-2 overflow-hidden rounded-xl sm:mb-3 sm:rounded-2xl">
-          <div className="relative aspect-[2/1] sm:aspect-[21/8]">
+          <div className="relative aspect-[2/1] sm:aspect-[21/6]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={category.poster}
@@ -225,7 +225,7 @@ export function CategorySection({
           </div>
         ) : null}
 
-        <div className="scrollbar-hide -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 md:grid-cols-4">
+        <div className="scrollbar-hide -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 md:grid-cols-5">
           {destinations.map((d) => (
             <Link
               key={`${d.name}-${d.href}`}

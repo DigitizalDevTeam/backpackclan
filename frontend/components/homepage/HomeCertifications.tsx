@@ -70,9 +70,12 @@ export function HomeCertifications({
           </h2>
         </div>
 
-        <ul className="mt-8 grid grid-cols-2 items-center gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-4">
+        <ul className="mt-8 flex flex-wrap items-start justify-center gap-x-8 gap-y-8 sm:gap-x-12 lg:gap-x-14">
           {items.map((item) => (
-            <li key={item.id} className="flex flex-col items-center gap-3 text-center">
+            <li
+              key={item.id}
+              className="flex w-[140px] flex-col items-center gap-3 text-center sm:w-[150px]"
+            >
               <div className="flex h-16 w-full items-center justify-center">
                 {item.logoUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */

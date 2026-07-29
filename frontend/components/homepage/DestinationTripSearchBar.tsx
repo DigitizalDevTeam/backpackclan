@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Search, Sparkles } from "lucide-react";
 import type { PublicTrip } from "@/types/trip";
 import { Button } from "@/components/ui/button";
+import { SearchLeadModal } from "@/components/leads/SearchLeadModal";
 import { cn } from "@/lib/utils";
 
 interface DestinationOption {
@@ -21,14 +22,18 @@ interface SearchSuggestion {
   type: "destination" | "trip";
 }
 
+const LEAD_SESSION_KEY = "bc_homepage_search_lead_shown";
+
 export function DestinationTripSearchBar({ className }: { className?: string }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [leadOpen, setLeadOpen] = useState(false);
   const [destinations, setDestinations] = useState<DestinationOption[]>([]);
   const [trips, setTrips] = useState<PublicTrip[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const leadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -102,6 +107,16 @@ export function DestinationTripSearchBar({ className }: { className?: string }) 
 
   const close = useCallback(() => setOpen(false), []);
 
+  const openLeadForm = useCallback(() => {
+    try {
+      sessionStorage.setItem(LEAD_SESSION_KEY, "1");
+    } catch {
+      // ignore
+    }
+    setLeadOpen(true);
+    setOpen(false);
+  }, []);
+
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!containerRef.current?.contains(e.target as Node)) close();
@@ -113,6 +128,33 @@ export function DestinationTripSearchBar({ className }: { className?: string }) 
   useEffect(() => {
     setActiveIndex(0);
   }, [suggestions.length, query]);
+
+  // Pop lead form once per session after the visitor starts typing
+  useEffect(() => {
+    if (leadTimerRef.current) {
+      clearTimeout(leadTimerRef.current);
+      leadTimerRef.current = null;
+    }
+
+    const q = query.trim();
+    if (q.length < 3 || leadOpen) return;
+
+    let alreadyShown = false;
+    try {
+      alreadyShown = sessionStorage.getItem(LEAD_SESSION_KEY) === "1";
+    } catch {
+      alreadyShown = false;
+    }
+    if (alreadyShown) return;
+
+    leadTimerRef.current = setTimeout(() => {
+      openLeadForm();
+    }, 900);
+
+    return () => {
+      if (leadTimerRef.current) clearTimeout(leadTimerRef.current);
+    };
+  }, [query, leadOpen, openLeadForm]);
 
   function goTo(href: string) {
     close();
@@ -156,6 +198,10 @@ export function DestinationTripSearchBar({ className }: { className?: string }) 
                 }}
                 onFocus={() => setOpen(true)}
                 onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    close();
+                    return;
+                  }
                   if (!open || !suggestions.length) return;
                   if (e.key === "ArrowDown") {
                     e.preventDefault();
@@ -163,8 +209,6 @@ export function DestinationTripSearchBar({ className }: { className?: string }) 
                   } else if (e.key === "ArrowUp") {
                     e.preventDefault();
                     setActiveIndex((i) => (i - 1 + suggestions.length) % suggestions.length);
-                  } else if (e.key === "Escape") {
-                    close();
                   }
                 }}
                 placeholder="Search Trips..."
@@ -185,42 +229,67 @@ export function DestinationTripSearchBar({ className }: { className?: string }) 
         </div>
       </form>
 
-      {open && suggestions.length > 0 ? (
-        <ul className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-80 overflow-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-xl">
-          {suggestions.map((item, index) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => goTo(item.href)}
-                className={cn(
-                  "flex w-full items-start gap-3 px-4 py-3 text-left transition",
-                  index === activeIndex ? "bg-orange-50" : "hover:bg-slate-50"
-                )}
-              >
-                <span
-                  className={cn(
-                    "mt-0.5 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                    item.type === "destination"
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-emerald-50 text-emerald-700"
-                  )}
-                >
-                  {item.type === "destination" ? "Place" : "Trip"}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-slate-900">
-                    {item.label}
-                  </span>
-                  {item.sublabel ? (
-                    <span className="block truncate text-xs text-slate-500">{item.sublabel}</span>
-                  ) : null}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+      {open && query.trim().length >= 2 ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+          {suggestions.length > 0 ? (
+            <ul className="max-h-72 overflow-auto py-2">
+              {suggestions.map((item, index) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => goTo(item.href)}
+                    className={cn(
+                      "flex w-full items-start gap-3 px-4 py-3 text-left transition",
+                      index === activeIndex ? "bg-orange-50" : "hover:bg-slate-50"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "mt-0.5 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                        item.type === "destination"
+                          ? "bg-blue-50 text-blue-700"
+                          : "bg-emerald-50 text-emerald-700"
+                      )}
+                    >
+                      {item.type === "destination" ? "Place" : "Trip"}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-slate-900">
+                        {item.label}
+                      </span>
+                      {item.sublabel ? (
+                        <span className="block truncate text-xs text-slate-500">{item.sublabel}</span>
+                      ) : null}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="px-4 py-3 text-sm text-slate-500">
+              No exact matches yet — tell us what you need and we&apos;ll email options.
+            </p>
+          )}
+
+          <div className="border-t border-slate-100 bg-slate-50/80 p-3">
+            <button
+              type="button"
+              onClick={openLeadForm}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FFD200] px-4 py-2.5 text-sm font-bold text-black transition hover:bg-[#F58220] hover:text-white"
+            >
+              <Sparkles className="h-4 w-4" />
+              Get a free quote for “{query.trim()}”
+            </button>
+          </div>
+        </div>
       ) : null}
+
+      <SearchLeadModal
+        open={leadOpen}
+        onOpenChange={setLeadOpen}
+        searchQuery={query}
+      />
     </div>
   );
 }
