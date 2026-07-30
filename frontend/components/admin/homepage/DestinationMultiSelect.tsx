@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronsUpDown, Search, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ChevronsUpDown, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,8 @@ interface DestinationMultiSelectProps {
   disabled?: boolean;
   label?: string;
   hint?: string;
+  /** Show up/down controls to reorder selected destinations */
+  reorderable?: boolean;
 }
 
 export function DestinationMultiSelect({
@@ -31,6 +33,7 @@ export function DestinationMultiSelect({
   disabled = false,
   label = "Destinations",
   hint = "Select one or more published destinations.",
+  reorderable = false,
 }: DestinationMultiSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -74,7 +77,9 @@ export function DestinationMultiSelect({
     );
   }, [destinations, search]);
 
-  const selectedDestinations = destinations.filter((d) => selected.includes(d.id));
+  const selectedDestinations = selected
+    .map((id) => destinations.find((d) => d.id === id))
+    .filter((d): d is DestinationOption => d != null);
 
   function toggle(id: string) {
     if (disabled) return;
@@ -90,28 +95,70 @@ export function DestinationMultiSelect({
     onChange(selected.filter((x) => x !== id));
   }
 
+  function move(id: string, direction: -1 | 1) {
+    if (disabled) return;
+    const index = selected.indexOf(id);
+    if (index < 0) return;
+    const next = index + direction;
+    if (next < 0 || next >= selected.length) return;
+    const copy = [...selected];
+    const [item] = copy.splice(index, 1);
+    copy.splice(next, 0, item!);
+    onChange(copy);
+  }
+
   return (
     <div className="space-y-2">
       {label ? <Label>{label}</Label> : null}
 
       {selectedDestinations.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {selectedDestinations.map((dest) => (
+        <div className={cn("flex flex-wrap gap-2", reorderable && "flex-col")}>
+          {selectedDestinations.map((dest, index) => (
             <span
               key={dest.id}
-              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-medium text-[#F58220]"
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-medium text-[#F58220]",
+                reorderable && "w-full justify-between rounded-lg px-3 py-2"
+              )}
             >
-              {dest.name}
-              {!disabled ? (
-                <button
-                  type="button"
-                  onClick={() => remove(dest.id)}
-                  className="rounded-full p-0.5 hover:bg-orange-100"
-                  aria-label={`Remove ${dest.name}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              ) : null}
+              <span className="min-w-0 truncate">
+                {reorderable ? `${index + 1}. ` : ""}
+                {dest.name}
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-0.5">
+                {reorderable && !disabled ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => move(dest.id, -1)}
+                      disabled={index === 0}
+                      className="rounded p-0.5 hover:bg-orange-100 disabled:opacity-30"
+                      aria-label={`Move ${dest.name} up`}
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => move(dest.id, 1)}
+                      disabled={index === selectedDestinations.length - 1}
+                      className="rounded p-0.5 hover:bg-orange-100 disabled:opacity-30"
+                      aria-label={`Move ${dest.name} down`}
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                ) : null}
+                {!disabled ? (
+                  <button
+                    type="button"
+                    onClick={() => remove(dest.id)}
+                    className="rounded-full p-0.5 hover:bg-orange-100"
+                    aria-label={`Remove ${dest.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                ) : null}
+              </span>
             </span>
           ))}
         </div>

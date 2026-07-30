@@ -98,8 +98,13 @@ export function SectionEditor({ slug, userRole }: SectionEditorProps) {
             ...c,
             tabs: (c.tabs ?? []).map((t) => ({
               ...t,
+              title: t.title ?? "",
+              subtitle: t.subtitle ?? "",
+              href: t.href ?? "",
               destinationIds: t.destinationIds ?? [],
               items: t.items ?? [],
+              bannerImageId: t.bannerImageId ?? null,
+              bannerVideoId: t.bannerVideoId ?? null,
             })),
           });
         } else if (result.data.type === "accreditations") {
@@ -788,9 +793,12 @@ function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: 
 
   return (
     <>
-      <Field label="Title" name="title" register={register} readOnly={readOnly} />
-      <Field label="Subtitle" name="subtitle" register={register} readOnly={readOnly} />
-      <Field label="View all URL" name="href" register={register} readOnly={readOnly} />
+      <p className="rounded-md border border-dashed bg-slate-50 px-3 py-2 text-xs text-muted-foreground">
+        Section defaults below are used when a tab leaves Title / Subtitle / View all / Banner empty.
+      </p>
+      <Field label="Default title" name="title" register={register} readOnly={readOnly} />
+      <Field label="Default subtitle" name="subtitle" register={register} readOnly={readOnly} />
+      <Field label="Default view all URL" name="href" register={register} readOnly={readOnly} />
       <div className="space-y-2">
         <Label>Layout</Label>
         <select
@@ -804,7 +812,7 @@ function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: 
         </select>
       </div>
       <div className="space-y-2">
-        <Label>Banner video</Label>
+        <Label>Default banner video</Label>
         <MediaPicker
           value={watch("videoMediaId" as never) as unknown as string | null}
           onChange={(m) => setValue("videoMediaId" as never, (m?.id ?? null) as never)}
@@ -813,7 +821,7 @@ function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: 
         />
       </div>
       <div className="space-y-2">
-        <Label>Banner poster</Label>
+        <Label>Default banner image</Label>
         <MediaPicker
           value={watch("posterMediaId" as never) as unknown as string | null}
           onChange={(m) => setValue("posterMediaId" as never, (m?.id ?? null) as never)}
@@ -828,8 +836,13 @@ function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: 
           append({
             id: `tab-${Date.now()}`,
             label: "New tab",
+            title: "",
+            subtitle: "",
+            href: "",
             destinationIds: [],
             items: [],
+            bannerImageId: null,
+            bannerVideoId: null,
           } as never)
         }
       />
@@ -838,7 +851,7 @@ function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: 
           <div className="flex items-center justify-between gap-2">
             <Input
               {...register(`tabs.${i}.label` as never)}
-              placeholder="Tab label"
+              placeholder="Tab pill label (India / International / Month-wise)"
               disabled={readOnly}
             />
             {!readOnly && (
@@ -847,6 +860,57 @@ function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: 
               </Button>
             )}
           </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Title</Label>
+              <Input
+                {...register(`tabs.${i}.title` as never)}
+                placeholder="Leave blank to use default title"
+                disabled={readOnly}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Subtitle</Label>
+              <Input
+                {...register(`tabs.${i}.subtitle` as never)}
+                placeholder="Leave blank to use default subtitle"
+                disabled={readOnly}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>View all URL</Label>
+              <Input
+                {...register(`tabs.${i}.href` as never)}
+                placeholder="Leave blank to use default view all URL"
+                disabled={readOnly}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Banner image</Label>
+            <MediaPicker
+              value={watch(`tabs.${i}.bannerImageId` as never) as unknown as string | null}
+              onChange={(m) =>
+                setValue(`tabs.${i}.bannerImageId` as never, (m?.id ?? null) as never)
+              }
+              accept="image"
+              disabled={readOnly}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Banner video</Label>
+            <MediaPicker
+              value={watch(`tabs.${i}.bannerVideoId` as never) as unknown as string | null}
+              onChange={(m) =>
+                setValue(`tabs.${i}.bannerVideoId` as never, (m?.id ?? null) as never)
+              }
+              accept="video"
+              disabled={readOnly}
+            />
+          </div>
+
           <Controller
             control={control}
             name={`tabs.${i}.destinationIds` as never}

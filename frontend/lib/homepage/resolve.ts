@@ -143,7 +143,12 @@ export function resolveCategoryShowcase(
     return {
       id: tab.id,
       label: tab.label,
+      title: tab.title ?? "",
+      subtitle: tab.subtitle ?? "",
+      href: tab.href ?? "",
       destinations: [...fromDestinations, ...fromItems],
+      bannerImageId: tab.bannerImageId ?? null,
+      bannerVideoId: tab.bannerVideoId ?? null,
     };
   });
 

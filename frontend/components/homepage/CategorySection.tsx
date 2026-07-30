@@ -86,9 +86,14 @@ export function CategorySection({
   const destinations = tab?.destinations ?? [];
   const isMonthTab = tab?.id === "months";
   const lightBg = index % 2 === 1;
-  const viewAllHref = withRegionParam(category.href, activeTab);
-  const categoryParam = categoryParamFromHref(category.href, category.slug);
+  const displayTitle = tab?.title?.trim() || category.title;
+  const displaySubtitle = tab?.subtitle?.trim() || category.subtitle;
+  const viewAllBase = tab?.href?.trim() || category.href;
+  const viewAllHref = withRegionParam(viewAllBase, activeTab);
+  const categoryParam = categoryParamFromHref(viewAllBase, category.slug);
   const region = regionFromTabId(activeTab);
+  const bannerPoster = tab?.poster || category.poster;
+  const bannerVideo = tab?.videoSrc || category.videoSrc;
 
   const departureTrips = useMemo(() => {
     const pool =
@@ -134,9 +139,9 @@ export function CategorySection({
         <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-xl">
             <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              {category.title}
+              {displayTitle}
             </h2>
-            <p className="mt-2 text-sm text-slate-500 sm:text-base">{category.subtitle}</p>
+            <p className="mt-2 text-sm text-slate-500 sm:text-base">{displaySubtitle}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {tabs.length > 1 ? (
@@ -177,30 +182,31 @@ export function CategorySection({
           <div className="relative aspect-[2/1] sm:aspect-[21/6]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={category.poster}
+              src={bannerPoster}
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
             />
-            {category.videoSrc ? (
+            {bannerVideo ? (
               <video
+                key={bannerVideo}
                 className="absolute inset-0 h-full w-full object-cover"
                 autoPlay
                 muted
                 loop
                 playsInline
-                poster={category.poster}
-                aria-label={`${category.title} video`}
+                poster={bannerPoster}
+                aria-label={`${displayTitle} video`}
               >
-                <source src={category.videoSrc} type="video/mp4" />
+                <source src={bannerVideo} type="video/mp4" />
               </video>
             ) : null}
             <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-transparent" />
             <div className="absolute bottom-0 left-0 p-4 sm:p-6">
               <p className="font-display text-xl font-semibold text-white sm:text-3xl">
-                {category.title}
+                {displayTitle}
               </p>
               <p className="mt-1 max-w-md text-xs text-white/75 sm:text-sm">
-                {category.subtitle}
+                {displaySubtitle}
               </p>
             </div>
           </div>

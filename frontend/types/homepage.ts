@@ -198,11 +198,21 @@ export interface CategoryShowcaseItem {
 
 export interface CategoryShowcaseTab {
   id: string;
+  /** Pill label (India / International / Month-wise) */
   label: string;
+  /** Section heading for this tab — falls back to section title */
+  title?: string;
+  /** Section subheading for this tab — falls back to section subtitle */
+  subtitle?: string;
+  /** View all URL for this tab — falls back to section href */
+  href?: string;
   /** Prefer published destination IDs when available */
   destinationIds?: string[];
   /** Freeform items (resolved alongside destinations) */
   items?: CategoryShowcaseItem[];
+  /** Per-tab banner — falls back to section poster/video when empty */
+  bannerImageId?: string | null;
+  bannerVideoId?: string | null;
 }
 
 export interface CategoryShowcaseContent {
@@ -218,6 +228,9 @@ export interface CategoryShowcaseContent {
   resolvedTabs?: {
     id: string;
     label: string;
+    title?: string;
+    subtitle?: string;
+    href?: string;
     destinations: {
       name: string;
       href: string;
@@ -225,6 +238,8 @@ export interface CategoryShowcaseContent {
       imageId: string | null;
       trips?: number;
     }[];
+    bannerImageId?: string | null;
+    bannerVideoId?: string | null;
   }[];
 }
 

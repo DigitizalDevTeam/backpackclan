@@ -33,7 +33,12 @@ export type ResolvedCategory = {
   tabs: {
     id: string;
     label: string;
+    title?: string;
+    subtitle?: string;
+    href?: string;
     destinations: ResolvedDestination[];
+    poster?: string;
+    videoSrc?: string;
   }[];
 };
 
@@ -401,10 +406,8 @@ export function buildMarketingHomepageView(
     .filter((s) => s.type === "category_showcase")
     .map((s) => {
       const c = s.content as CategoryShowcaseContent;
-      const tabs = (c.resolvedTabs ?? c.tabs ?? []).map((tab) => ({
-        id: tab.id,
-        label: tab.label,
-        destinations: (
+      const tabs = (c.resolvedTabs ?? c.tabs ?? []).map((tab) => {
+        const destinations = (
           "destinations" in tab && Array.isArray(tab.destinations)
             ? tab.destinations
             : []
@@ -413,8 +416,37 @@ export function buildMarketingHomepageView(
           href: d.href,
           image: d.image ?? resolveMedia(mediaMap, d.imageId) ?? FALLBACK_POSTER,
           trips: d.trips,
-        })),
-      }));
+        }));
+
+        const tabBannerImage =
+          "bannerImageId" in tab
+            ? resolveMedia(mediaMap, tab.bannerImageId)
+            : null;
+        const tabBannerVideo =
+          "bannerVideoId" in tab
+            ? resolveMedia(mediaMap, tab.bannerVideoId)
+            : null;
+
+        const tabTitle =
+          "title" in tab && typeof tab.title === "string" ? tab.title.trim() : "";
+        const tabSubtitle =
+          "subtitle" in tab && typeof tab.subtitle === "string"
+            ? tab.subtitle.trim()
+            : "";
+        const tabHref =
+          "href" in tab && typeof tab.href === "string" ? tab.href.trim() : "";
+
+        return {
+          id: tab.id,
+          label: tab.label,
+          title: tabTitle || undefined,
+          subtitle: tabSubtitle || undefined,
+          href: tabHref || undefined,
+          destinations,
+          poster: tabBannerImage ?? undefined,
+          videoSrc: tabBannerVideo ?? undefined,
+        };
+      });
 
       return {
         id: s.id,
