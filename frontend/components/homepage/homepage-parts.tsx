@@ -20,6 +20,7 @@ import type { PublicTrip } from "@/types/trip";
 import { formatInr } from "@/lib/site/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StarRating } from "@/components/ui/StarRating";
 import { cn } from "@/lib/utils";
 
 interface TripCardProps {
@@ -92,19 +93,7 @@ export function TripCard({ trip, imageUrl, variant = "default" }: TripCardProps)
         </h3>
 
         <div className="mt-2.5 flex items-center gap-1.5">
-          <div className="flex">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                className={cn(
-                  "h-3.5 w-3.5",
-                  i < Math.floor(trip.rating)
-                    ? "fill-amber-400 text-amber-400"
-                    : "fill-slate-200 text-slate-200"
-                )}
-              />
-            ))}
-          </div>
+          <StarRating rating={trip.rating} starClassName="h-3.5 w-3.5" />
           <span className="text-xs font-semibold">{trip.rating}</span>
           <span className="text-xs text-muted-foreground">({trip.reviewCount} reviews)</span>
         </div>

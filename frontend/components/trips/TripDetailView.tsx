@@ -30,6 +30,7 @@ import { formatInr } from "@/lib/site/format";
 import { TripCard } from "@/components/homepage/homepage-parts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StarRating } from "@/components/ui/StarRating";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -227,17 +228,7 @@ export function TripDetailView({
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
                 <span className="flex items-center gap-1 font-medium">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className={cn(
-                        "h-4 w-4",
-                        i < Math.floor(trip.rating)
-                          ? "fill-amber-400 text-amber-400"
-                          : "fill-slate-200 text-slate-200"
-                      )}
-                    />
-                  ))}
+                  <StarRating rating={trip.rating} />
                   <span className="ml-1">{trip.rating}</span>
                   <span className="text-muted-foreground">({trip.reviewCount} reviews)</span>
                 </span>
