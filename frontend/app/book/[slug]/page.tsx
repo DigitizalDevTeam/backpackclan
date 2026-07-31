@@ -16,6 +16,8 @@ interface BookTripPageProps {
     departure?: string;
     adults?: string;
     children?: string;
+    rider?: string;
+    room?: string;
   }>;
 }
 
@@ -45,6 +47,8 @@ export default async function BookTripPage({
     ...(query.departure ? { departure: query.departure } : {}),
     ...(query.adults ? { adults: query.adults } : {}),
     ...(query.children ? { children: query.children } : {}),
+    ...(query.rider ? { rider: query.rider } : {}),
+    ...(query.room ? { room: query.room } : {}),
   });
   const bookPath = qs.toString() ? `/book/${slug}?${qs.toString()}` : `/book/${slug}`;
 
@@ -65,6 +69,12 @@ export default async function BookTripPage({
 
   const adults = Math.max(1, Number.parseInt(query.adults ?? "1", 10) || 1);
   const children = Math.max(0, Number.parseInt(query.children ?? "0", 10) || 0);
+  const rider =
+    query.rider === "solo" || query.rider === "dual" ? query.rider : undefined;
+  const room =
+    query.room === "triple" || query.room === "double" || query.room === "single"
+      ? query.room
+      : undefined;
   const departureId =
     query.departure ??
     data.detail.batches.find((b) => b.status !== "sold_out")?.id ??
@@ -93,6 +103,8 @@ export default async function BookTripPage({
             initialDepartureId={departureId}
             initialAdults={adults}
             initialChildren={children}
+            initialRiderOption={rider}
+            initialRoomOption={room}
             user={session.user}
             imageUrl={layout.mediaMap[data.trip.imageId] ?? null}
           />

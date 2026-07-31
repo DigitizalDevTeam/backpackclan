@@ -44,6 +44,9 @@ export interface Booking {
   travelers: number;
   adults?: number;
   children?: number;
+  riderOption?: "solo" | "dual" | null;
+  roomOption?: "triple" | "double" | "single" | null;
+  unitPrice?: number | null;
   travelerDetails?: BookingTraveler[];
   contactPhone?: string | null;
   contactEmail?: string | null;
@@ -68,6 +71,8 @@ export interface CreateBookingPayload {
   departureId: string;
   adults: number;
   children: number;
+  riderOption?: "solo" | "dual";
+  roomOption?: "triple" | "double" | "single";
   travelers: BookingTraveler[];
   contactPhone?: string;
   contactEmail?: string;

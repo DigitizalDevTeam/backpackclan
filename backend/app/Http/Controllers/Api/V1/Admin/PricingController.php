@@ -71,6 +71,13 @@ class PricingController extends Controller
             'pricing.offerValidUntil' => ['nullable', 'date'],
             'pricing.currency' => ['required', 'string', 'in:INR'],
             'pricing.pricePer' => ['required', 'string', 'in:person,bike,couple'],
+            'pricing.dynamicPricing' => ['nullable', 'array'],
+            'pricing.dynamicPricing.enabled' => ['nullable', 'boolean'],
+            'pricing.dynamicPricing.riderEnabled' => ['nullable', 'boolean'],
+            'pricing.dynamicPricing.roomEnabled' => ['nullable', 'boolean'],
+            'pricing.dynamicPricing.riders' => ['nullable', 'array'],
+            'pricing.dynamicPricing.rooms' => ['nullable', 'array'],
+            'pricing.dynamicPricing.matrix' => ['nullable', 'array'],
         ]);
 
         $trip->update([
@@ -90,7 +97,7 @@ class PricingController extends Controller
      */
     private function mapPricing(array $pricing): array
     {
-        return [
+        $mapped = [
             'basePrice' => (int) ($pricing['base_price'] ?? $pricing['basePrice'] ?? 0),
             'salePrice' => isset($pricing['sale_price']) || isset($pricing['salePrice'])
                 ? (int) ($pricing['sale_price'] ?? $pricing['salePrice'])
@@ -101,6 +108,16 @@ class PricingController extends Controller
             'currency' => 'INR',
             'pricePer' => (string) ($pricing['price_per'] ?? $pricing['pricePer'] ?? 'person'),
         ];
+
+        $dynamic = $pricing['dynamic_pricing'] ?? $pricing['dynamicPricing'] ?? null;
+        if (is_array($dynamic)) {
+            $mapped['dynamicPricing'] = \App\Support\DynamicPricing::mapInput(
+                $dynamic,
+                $mapped['basePrice']
+            );
+        }
+
+        return $mapped;
     }
 
     /**
@@ -109,8 +126,9 @@ class PricingController extends Controller
      */
     private function mapPricingInput(array $pricing): array
     {
-        return [
-            'base_price' => $pricing['basePrice'],
+        $basePrice = (int) $pricing['basePrice'];
+        $mapped = [
+            'base_price' => $basePrice,
             'sale_price' => $pricing['salePrice'] ?? null,
             'show_strike_through' => $pricing['showStrikeThrough'],
             'offer_label' => $pricing['offerLabel'] ?? '',
@@ -118,6 +136,15 @@ class PricingController extends Controller
             'currency' => 'INR',
             'price_per' => $pricing['pricePer'],
         ];
+
+        if (array_key_exists('dynamicPricing', $pricing) && is_array($pricing['dynamicPricing'])) {
+            $mapped['dynamic_pricing'] = \App\Support\DynamicPricing::mapInput(
+                $pricing['dynamicPricing'],
+                $basePrice
+            );
+        }
+
+        return $mapped;
     }
 
     /**

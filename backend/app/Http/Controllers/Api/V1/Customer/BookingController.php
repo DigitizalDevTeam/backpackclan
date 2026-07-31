@@ -37,6 +37,8 @@ class BookingController extends Controller
             'departureId' => ['required'],
             'adults' => ['required', 'integer', 'min:1', 'max:12'],
             'children' => ['required', 'integer', 'min:0', 'max:6'],
+            'riderOption' => ['nullable', 'in:solo,dual'],
+            'roomOption' => ['nullable', 'in:triple,double,single'],
             'travelers' => ['required', 'array', 'min:1'],
             'travelers.*.fullName' => ['required', 'string', 'max:120'],
             'travelers.*.age' => ['required', 'integer', 'min:1', 'max:100'],
@@ -104,14 +106,46 @@ class BookingController extends Controller
                 }
 
                 $pricing = CamelCase::convert($trip->pricing ?? []);
-                $basePrice = (int) ($pricing['salePrice'] ?? $pricing['basePrice'] ?? 0);
-                $override = CamelCase::convert($departure->pricing_override ?? []);
-                $unitPrice = (int) ($override['salePrice'] ?? $override['basePrice'] ?? $basePrice);
-                if ($unitPrice <= 0) {
-                    return response()->json([
-                        'success' => false,
-                        'errors' => ['form' => 'Trip pricing is not configured'],
-                    ], 422);
+                $dynamic = \App\Support\DynamicPricing::normalize($pricing);
+                $riderOption = $data['riderOption'] ?? null;
+                $roomOption = $data['roomOption'] ?? null;
+
+                if (! empty($dynamic['enabled'])) {
+                    $riderEnabled = ($dynamic['riderEnabled'] ?? true) !== false;
+                    $roomEnabled = ($dynamic['roomEnabled'] ?? true) !== false;
+                    if ($riderEnabled && empty($riderOption)) {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => ['form' => 'Please select a rider option'],
+                        ], 422);
+                    }
+                    if ($roomEnabled && empty($roomOption)) {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => ['form' => 'Please select a room sharing option'],
+                        ], 422);
+                    }
+                    $unitPrice = \App\Support\DynamicPricing::resolveUnitPrice(
+                        $dynamic,
+                        $riderOption,
+                        $roomOption
+                    );
+                    if ($unitPrice === null || $unitPrice <= 0) {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => ['form' => 'Selected pricing option is not available'],
+                        ], 422);
+                    }
+                } else {
+                    $basePrice = (int) ($pricing['salePrice'] ?? $pricing['basePrice'] ?? 0);
+                    $override = CamelCase::convert($departure->pricing_override ?? []);
+                    $unitPrice = (int) ($override['salePrice'] ?? $override['basePrice'] ?? $basePrice);
+                    if ($unitPrice <= 0) {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => ['form' => 'Trip pricing is not configured'],
+                        ], 422);
+                    }
                 }
 
                 $tripSubtotal = $unitPrice * $pax;
@@ -166,6 +200,9 @@ class BookingController extends Controller
                     'travelers' => $pax,
                     'adults' => (int) $data['adults'],
                     'children' => (int) $data['children'],
+                    'rider_option' => $data['riderOption'] ?? null,
+                    'room_option' => $data['roomOption'] ?? null,
+                    'unit_price' => $unitPrice,
                     'traveler_details' => $data['travelers'],
                     'contact_phone' => $data['contactPhone'] ?? $request->user()->phone,
                     'contact_email' => $data['contactEmail'] ?? $request->user()->email,

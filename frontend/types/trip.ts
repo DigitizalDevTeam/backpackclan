@@ -1,3 +1,5 @@
+import type { RiderOptionKey, RoomOptionKey } from "@/types/travel";
+
 export type TripBadge = "Trending" | "Best Seller" | "Guaranteed" | "New";
 export type TripRegion = "domestic" | "international";
 export type BatchStatus = "available" | "filling_fast" | "sold_out";
@@ -57,6 +59,18 @@ export interface TripQuickFact {
   value: string;
 }
 
+export interface PublicPricingOptions {
+  enabled: boolean;
+  riderEnabled: boolean;
+  roomEnabled: boolean;
+  riders: { id: RiderOptionKey; label: string; price?: number }[];
+  rooms: { id: RoomOptionKey; label: string; price?: number }[];
+  matrix: Record<RiderOptionKey, Record<RoomOptionKey, number | null>>;
+  riderPrices: Record<RiderOptionKey, number | null>;
+  roomPrices: Record<RoomOptionKey, number | null>;
+  startingFrom: number | null;
+}
+
 export interface TripDetailContent {
   slug: string;
   overview: string;
@@ -77,6 +91,7 @@ export interface TripDetailContent {
   batches: TripBatch[];
   reviews: TripReview[];
   addons?: TripAddon[];
+  pricingOptions?: PublicPricingOptions | null;
 }
 
 export interface TripAddon {

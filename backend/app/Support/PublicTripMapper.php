@@ -128,6 +128,13 @@ class PublicTripMapper
         $showStrike = (bool) ($pricing['showStrikeThrough'] ?? $pricing['show_strike_through'] ?? false);
         $saleActive = $salePrice !== null && $salePrice > 0 && $salePrice < $basePrice;
         $displayPrice = $saleActive ? $salePrice : $basePrice;
+        $dynamicMin = \App\Support\DynamicPricing::minPrice(
+            \App\Support\DynamicPricing::normalize($pricing)
+        );
+        if ($dynamicMin !== null) {
+            $displayPrice = $dynamicMin;
+            $saleActive = false;
+        }
 
         $futureDepartures = $trip->departures
             ->filter(fn (Departure $d) => ! $d->is_cancelled && $d->start_date && $d->start_date->isFuture())
@@ -301,6 +308,9 @@ class PublicTripMapper
             'batches' => $batches,
             'reviews' => $reviews,
             'addons' => \App\Support\TripAddons::normalize($trip->addons),
+            'pricingOptions' => \App\Support\DynamicPricing::toPublicOptions(
+                CamelCase::convert($trip->pricing ?? [])
+            ),
         ];
     }
 }

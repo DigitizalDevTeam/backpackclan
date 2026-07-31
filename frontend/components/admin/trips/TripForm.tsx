@@ -29,6 +29,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { normalizeDynamicPricing } from "@/lib/pricing/dynamic-options";
 import {
   TRIP_TABS,
   TRIP_TAB_FIELD_RULES,
@@ -125,11 +126,15 @@ function normalizeTrip(data: Record<string, unknown>): AdminTripFormValues {
         (pricing.offerValidUntil as string | null) ??
         (pricing.offer_valid_until as string | null) ??
         null,
-      currency: "INR",
+      currency: "INR" as const,
       pricePer:
         (pricing.pricePer as AdminTripFormValues["pricing"]["pricePer"]) ??
         (pricing.price_per as AdminTripFormValues["pricing"]["pricePer"]) ??
         "person",
+      dynamicPricing: normalizeDynamicPricing(
+        pricing.dynamicPricing ?? pricing.dynamic_pricing,
+        Number(pricing.basePrice ?? pricing.base_price ?? 0)
+      ),
     },
     seo: {
       metaTitle: String(seo.metaTitle ?? seo.meta_title ?? ""),

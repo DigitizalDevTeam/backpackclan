@@ -40,6 +40,12 @@ const testimonialSchema = z.object({
   avatarId: z.string().nullable(),
 });
 
+const roomPricesSchema = z.object({
+  triple: z.number().nullable(),
+  double: z.number().nullable(),
+  single: z.number().nullable(),
+});
+
 const pricingSchema = z.object({
   basePrice: z.number().min(0),
   salePrice: z.number().nullable().optional(),
@@ -48,6 +54,23 @@ const pricingSchema = z.object({
   offerValidUntil: z.string().nullable().optional(),
   currency: z.literal("INR"),
   pricePer: z.enum(["person", "bike", "couple"]),
+  dynamicPricing: z
+    .object({
+      enabled: z.boolean(),
+      riderEnabled: z.boolean(),
+      roomEnabled: z.boolean(),
+      riders: z.object({
+        solo: z.number().nullable(),
+        dual: z.number().nullable(),
+      }),
+      rooms: roomPricesSchema,
+      matrix: z.object({
+        solo: roomPricesSchema,
+        dual: roomPricesSchema,
+      }),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const adminTripFormSchema = z.object({
@@ -167,6 +190,17 @@ export function defaultAdminTripFormValues(): AdminTripFormValues {
       offerValidUntil: null,
       currency: "INR",
       pricePer: "person",
+      dynamicPricing: {
+        enabled: false,
+        riderEnabled: true,
+        roomEnabled: true,
+        riders: { solo: null, dual: null },
+        rooms: { triple: null, double: null, single: null },
+        matrix: {
+          solo: { triple: null, double: null, single: null },
+          dual: { triple: null, double: null, single: null },
+        },
+      },
     },
     seo: {
       metaTitle: "",

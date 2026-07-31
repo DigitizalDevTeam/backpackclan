@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -17,6 +17,15 @@ import {
   X,
 } from "lucide-react";
 import type { PublicTrip, TripDetailContent, TripBatch } from "@/types/trip";
+import type { RiderOptionKey, RoomOptionKey } from "@/types/travel";
+import {
+  enabledRiderOptions,
+  enabledRoomOptions,
+  normalizeDynamicPricing,
+  resolveDynamicUnitPrice,
+  RIDER_OPTION_LABELS,
+  ROOM_OPTION_LABELS,
+} from "@/lib/pricing/dynamic-options";
 import { formatInr } from "@/lib/site/format";
 import { TripCard } from "@/components/homepage/homepage-parts";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +74,51 @@ export function TripDetailView({
   const [galleryOpen, setGalleryOpen] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
 
+  const pricingOptions = detail.pricingOptions ?? null;
+  const dynamicConfig = useMemo(
+    () =>
+      pricingOptions
+        ? normalizeDynamicPricing({
+            enabled: pricingOptions.enabled,
+            riderEnabled: pricingOptions.riderEnabled,
+            roomEnabled: pricingOptions.roomEnabled,
+            riders: pricingOptions.riderPrices,
+            rooms: pricingOptions.roomPrices,
+            matrix: pricingOptions.matrix,
+          })
+        : null,
+    [pricingOptions]
+  );
+
+  const riderChoices = useMemo(
+    () => (dynamicConfig ? enabledRiderOptions(dynamicConfig) : []),
+    [dynamicConfig]
+  );
+  const [riderOption, setRiderOption] = useState<RiderOptionKey | "">(
+    () => (dynamicConfig ? enabledRiderOptions(dynamicConfig)[0] : "") ?? ""
+  );
+  const roomChoices = useMemo(
+    () =>
+      dynamicConfig
+        ? enabledRoomOptions(dynamicConfig, riderOption || null)
+        : [],
+    [dynamicConfig, riderOption]
+  );
+  const [roomOption, setRoomOption] = useState<RoomOptionKey | "">("");
+
+  useEffect(() => {
+    if (riderChoices.length && !riderChoices.includes(riderOption as RiderOptionKey)) {
+      setRiderOption(riderChoices[0] ?? "");
+    }
+  }, [riderChoices, riderOption]);
+
+  useEffect(() => {
+    if (roomChoices.length && !roomChoices.includes(roomOption as RoomOptionKey)) {
+      setRoomOption(roomChoices[0] ?? "");
+    }
+    if (!roomChoices.length) setRoomOption("");
+  }, [roomChoices, roomOption]);
+
   const galleryUrls = detail.galleryImageIds
     .map((id) => mediaMap[id])
     .filter(Boolean) as string[];
@@ -80,13 +134,27 @@ export function TripDetailView({
       ? Array.from({ length: 4 }, (_, i) => galleryPool[i % galleryPool.length])
       : [];
   const selectedBatchData = detail.batches.find((b) => b.id === selectedBatch);
-  const bookHref = selectedBatch
-    ? `/book/${trip.slug}?departure=${encodeURIComponent(selectedBatch)}&adults=${adults}&children=${children}`
-    : `/book/${trip.slug}`;
+  const optionUnitPrice =
+    dynamicConfig?.enabled
+      ? resolveDynamicUnitPrice(dynamicConfig, {
+          rider: riderOption || null,
+          room: roomOption || null,
+        })
+      : null;
+  const unitPrice = optionUnitPrice ?? selectedBatchData?.price ?? trip.price;
+  const qs = new URLSearchParams({
+    ...(selectedBatch ? { departure: selectedBatch } : {}),
+    adults: String(adults),
+    children: String(children),
+    ...(riderOption ? { rider: riderOption } : {}),
+    ...(roomOption ? { room: roomOption } : {}),
+  });
+  const bookHref = `/book/${trip.slug}?${qs.toString()}`;
   const canBook =
     Boolean(selectedBatchData) && selectedBatchData?.status !== "sold_out";
   const pax = adults + children;
-  const estimatedTotal = (selectedBatchData?.price ?? trip.price) * pax;
+  const estimatedTotal = unitPrice * pax;
+  const showDynamic = Boolean(dynamicConfig?.enabled && (riderChoices.length || roomChoices.length));
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -500,14 +568,14 @@ export function TripDetailView({
           {/* Sticky booking sidebar */}
           <aside className="lg:sticky lg:top-36 lg:self-start">
             <div className="rounded-2xl border bg-white p-6 shadow-xl ring-1 ring-slate-100">
-              <p className="text-sm text-muted-foreground">Starting from</p>
+              <p className="text-sm text-muted-foreground">
+                {showDynamic ? "Your price" : "Starting from"}
+              </p>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold">
-                  {formatInr(selectedBatchData?.price ?? trip.price)}
-                </span>
+                <span className="text-3xl font-bold">{formatInr(unitPrice)}</span>
                 <span className="text-sm text-muted-foreground">/ person</span>
               </div>
-              {trip.originalPrice ? (
+              {!showDynamic && trip.originalPrice ? (
                 <p className="mt-1 text-sm text-red-500 line-through">
                   {formatInr(trip.originalPrice)}
                 </p>
@@ -527,11 +595,74 @@ export function TripDetailView({
                       .filter((b) => b.status !== "sold_out")
                       .map((b) => (
                         <option key={b.id} value={b.id}>
-                          {b.date} — {formatInr(b.price)}
+                          {b.date}
+                          {!showDynamic ? ` — ${formatInr(b.price)}` : ""}
                         </option>
                       ))}
                   </select>
                 </div>
+
+                {showDynamic && riderChoices.length > 0 ? (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Rider option
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {riderChoices.map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setRiderOption(key)}
+                          className={cn(
+                            "rounded-xl border px-3 py-2.5 text-sm font-semibold transition",
+                            riderOption === key
+                              ? "border-[#F58220] bg-[#FFF7ED] text-[#F58220]"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                          )}
+                        >
+                          {RIDER_OPTION_LABELS[key]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {showDynamic && roomChoices.length > 0 ? (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Room sharing
+                    </label>
+                    <div className="grid gap-2">
+                      {roomChoices.map((key) => {
+                        const price = resolveDynamicUnitPrice(dynamicConfig!, {
+                          rider: riderOption || null,
+                          room: key,
+                        });
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setRoomOption(key)}
+                            className={cn(
+                              "flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-semibold transition",
+                              roomOption === key
+                                ? "border-[#F58220] bg-[#FFF7ED] text-[#F58220]"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            )}
+                          >
+                            <span>{ROOM_OPTION_LABELS[key]}</span>
+                            {price ? (
+                              <span className="text-xs font-medium opacity-80">
+                                {formatInr(price)}
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">

@@ -49,6 +49,32 @@ export interface TripPricing {
   offerValidUntil?: string | null;
   currency: "INR";
   pricePer: "person" | "bike" | "couple";
+  /** Solo/Dual + Triple/Double/Single package matrix */
+  dynamicPricing?: DynamicPricingConfig | null;
+}
+
+export type RiderOptionKey = "solo" | "dual";
+export type RoomOptionKey = "triple" | "double" | "single";
+
+export interface DynamicPricingRoomPrices {
+  triple: number | null;
+  double: number | null;
+  single: number | null;
+}
+
+export interface DynamicPricingConfig {
+  enabled: boolean;
+  riderEnabled: boolean;
+  roomEnabled: boolean;
+  /**
+   * Absolute per-person package prices.
+   * When both rider + room are enabled → matrix[rider][room].
+   * When only rider → use riders[rider].
+   * When only room → use rooms[room].
+   */
+  riders: Record<RiderOptionKey, number | null>;
+  rooms: DynamicPricingRoomPrices;
+  matrix: Record<RiderOptionKey, DynamicPricingRoomPrices>;
 }
 
 export interface WeatherMonth {

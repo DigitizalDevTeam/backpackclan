@@ -71,5 +71,16 @@ export function defaultTripPricing(): TripPricing {
     offerValidUntil: null,
     currency: "INR",
     pricePer: "person",
+    dynamicPricing: {
+      enabled: false,
+      riderEnabled: true,
+      roomEnabled: true,
+      riders: { solo: null, dual: null },
+      rooms: { triple: null, double: null, single: null },
+      matrix: {
+        solo: { triple: null, double: null, single: null },
+        dual: { triple: null, double: null, single: null },
+      },
+    },
   };
 }

@@ -264,8 +264,9 @@ class TripController extends Controller
      */
     private function mapPricing(array $pricing): array
     {
-        return [
-            'base_price' => $pricing['basePrice'] ?? $pricing['base_price'] ?? 0,
+        $basePrice = (int) ($pricing['basePrice'] ?? $pricing['base_price'] ?? 0);
+        $mapped = [
+            'base_price' => $basePrice,
             'sale_price' => $pricing['salePrice'] ?? $pricing['sale_price'] ?? null,
             'show_strike_through' => $pricing['showStrikeThrough'] ?? $pricing['show_strike_through'] ?? false,
             'offer_label' => $pricing['offerLabel'] ?? $pricing['offer_label'] ?? '',
@@ -273,6 +274,13 @@ class TripController extends Controller
             'currency' => $pricing['currency'] ?? 'INR',
             'price_per' => $pricing['pricePer'] ?? $pricing['price_per'] ?? 'person',
         ];
+
+        $dynamic = $pricing['dynamicPricing'] ?? $pricing['dynamic_pricing'] ?? null;
+        if (is_array($dynamic)) {
+            $mapped['dynamic_pricing'] = \App\Support\DynamicPricing::mapInput($dynamic, $basePrice);
+        }
+
+        return $mapped;
     }
 
     /**
