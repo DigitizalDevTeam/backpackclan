@@ -152,6 +152,7 @@ export function PricingTripForm({ tripId, user }: PricingTripFormProps) {
               pricing={pricing}
               onChange={(p) => setValue("pricing", p, { shouldDirty: true })}
               disabled={readOnly}
+              tripType={trip?.tripType}
             />
           </CardContent>
         </Card>

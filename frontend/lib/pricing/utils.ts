@@ -73,13 +73,15 @@ export function defaultTripPricing(): TripPricing {
     pricePer: "person",
     dynamicPricing: {
       enabled: false,
-      riderEnabled: true,
+      travelEnabled: true,
       roomEnabled: true,
-      riders: { solo: null, dual: null },
-      rooms: { triple: null, double: null, single: null },
+      travel: { own_bike: null, solo: null, dual: null, coach: null },
+      rooms: { single: null, double: null, triple: null },
       matrix: {
-        solo: { triple: null, double: null, single: null },
-        dual: { triple: null, double: null, single: null },
+        own_bike: { single: null, double: null, triple: null },
+        solo: { single: null, double: null, triple: null },
+        dual: { single: null, double: null, triple: null },
+        coach: { single: null, double: null, triple: null },
       },
     },
   };

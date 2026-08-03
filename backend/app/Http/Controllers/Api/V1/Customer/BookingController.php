@@ -37,7 +37,8 @@ class BookingController extends Controller
             'departureId' => ['required'],
             'adults' => ['required', 'integer', 'min:1', 'max:12'],
             'children' => ['required', 'integer', 'min:0', 'max:6'],
-            'riderOption' => ['nullable', 'in:solo,dual'],
+            'riderOption' => ['nullable', 'in:own_bike,solo,dual,coach'],
+            'travelOption' => ['nullable', 'in:own_bike,solo,dual,coach'],
             'roomOption' => ['nullable', 'in:triple,double,single'],
             'travelers' => ['required', 'array', 'min:1'],
             'travelers.*.fullName' => ['required', 'string', 'max:120'],
@@ -107,16 +108,16 @@ class BookingController extends Controller
 
                 $pricing = CamelCase::convert($trip->pricing ?? []);
                 $dynamic = \App\Support\DynamicPricing::normalize($pricing);
-                $riderOption = $data['riderOption'] ?? null;
+                $travelOption = $data['travelOption'] ?? $data['riderOption'] ?? null;
                 $roomOption = $data['roomOption'] ?? null;
 
                 if (! empty($dynamic['enabled'])) {
-                    $riderEnabled = ($dynamic['riderEnabled'] ?? true) !== false;
+                    $travelEnabled = ($dynamic['travelEnabled'] ?? true) !== false;
                     $roomEnabled = ($dynamic['roomEnabled'] ?? true) !== false;
-                    if ($riderEnabled && empty($riderOption)) {
+                    if ($travelEnabled && empty($travelOption)) {
                         return response()->json([
                             'success' => false,
-                            'errors' => ['form' => 'Please select a rider option'],
+                            'errors' => ['form' => 'Please select a travel option'],
                         ], 422);
                     }
                     if ($roomEnabled && empty($roomOption)) {
@@ -127,7 +128,7 @@ class BookingController extends Controller
                     }
                     $unitPrice = \App\Support\DynamicPricing::resolveUnitPrice(
                         $dynamic,
-                        $riderOption,
+                        $travelOption,
                         $roomOption
                     );
                     if ($unitPrice === null || $unitPrice <= 0) {
@@ -200,7 +201,7 @@ class BookingController extends Controller
                     'travelers' => $pax,
                     'adults' => (int) $data['adults'],
                     'children' => (int) $data['children'],
-                    'rider_option' => $data['riderOption'] ?? null,
+                    'rider_option' => $data['travelOption'] ?? $data['riderOption'] ?? null,
                     'room_option' => $data['roomOption'] ?? null,
                     'unit_price' => $unitPrice,
                     'traveler_details' => $data['travelers'],

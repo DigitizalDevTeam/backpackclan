@@ -9,6 +9,15 @@ import { getSession } from "@/lib/auth/session";
 import { isCustomerUser } from "@/lib/auth/user-kind";
 import { getSiteLayoutData } from "@/lib/site/public-data";
 import { getPublicTripDetail } from "@/lib/site/trip-data";
+import type { TravelOptionKey, RoomOptionKey } from "@/types/travel";
+
+const TRAVEL_KEYS = new Set<TravelOptionKey>([
+  "own_bike",
+  "solo",
+  "dual",
+  "coach",
+]);
+const ROOM_KEYS = new Set<RoomOptionKey>(["single", "double", "triple"]);
 
 interface BookTripPageProps {
   params: Promise<{ slug: string }>;
@@ -16,6 +25,7 @@ interface BookTripPageProps {
     departure?: string;
     adults?: string;
     children?: string;
+    travel?: string;
     rider?: string;
     room?: string;
   }>;
@@ -43,11 +53,12 @@ export default async function BookTripPage({
   const query = await searchParams;
   const session = await getSession();
 
+  const travelParam = query.travel || query.rider;
   const qs = new URLSearchParams({
     ...(query.departure ? { departure: query.departure } : {}),
     ...(query.adults ? { adults: query.adults } : {}),
     ...(query.children ? { children: query.children } : {}),
-    ...(query.rider ? { rider: query.rider } : {}),
+    ...(travelParam ? { travel: travelParam } : {}),
     ...(query.room ? { room: query.room } : {}),
   });
   const bookPath = qs.toString() ? `/book/${slug}?${qs.toString()}` : `/book/${slug}`;
@@ -69,11 +80,13 @@ export default async function BookTripPage({
 
   const adults = Math.max(1, Number.parseInt(query.adults ?? "1", 10) || 1);
   const children = Math.max(0, Number.parseInt(query.children ?? "0", 10) || 0);
-  const rider =
-    query.rider === "solo" || query.rider === "dual" ? query.rider : undefined;
+  const travel =
+    travelParam && TRAVEL_KEYS.has(travelParam as TravelOptionKey)
+      ? (travelParam as TravelOptionKey)
+      : undefined;
   const room =
-    query.room === "triple" || query.room === "double" || query.room === "single"
-      ? query.room
+    query.room && ROOM_KEYS.has(query.room as RoomOptionKey)
+      ? (query.room as RoomOptionKey)
       : undefined;
   const departureId =
     query.departure ??
@@ -103,7 +116,7 @@ export default async function BookTripPage({
             initialDepartureId={departureId}
             initialAdults={adults}
             initialChildren={children}
-            initialRiderOption={rider}
+            initialTravelOption={travel}
             initialRoomOption={room}
             user={session.user}
             imageUrl={layout.mediaMap[data.trip.imageId] ?? null}

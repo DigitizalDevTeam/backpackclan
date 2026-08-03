@@ -4,25 +4,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PriceDisplay } from "@/components/forms/travel/PriceDisplay";
 import {
-  defaultDynamicPricing,
+  defaultDynamicPricingForTripType,
   normalizeDynamicPricing,
-  RIDER_OPTION_KEYS,
-  RIDER_OPTION_LABELS,
+  TRAVEL_OPTION_KEYS,
+  TRAVEL_OPTION_LABELS,
   ROOM_OPTION_KEYS,
   ROOM_OPTION_LABELS,
 } from "@/lib/pricing/dynamic-options";
 import { formatInr, isSaleActive, parseInrInput } from "@/lib/pricing/utils";
-import type { DynamicPricingConfig, TripPricing } from "@/types/travel";
+import type {
+  DynamicPricingConfig,
+  TravelOptionKey,
+  RoomOptionKey,
+  TripPricing,
+} from "@/types/travel";
 
 interface PriceInputProps {
   pricing: TripPricing;
   onChange: (pricing: TripPricing) => void;
   disabled?: boolean;
+  /** When set, defaults travel options for bike vs trek/backpacking */
+  tripType?: string;
 }
 
-export function PriceInput({ pricing, onChange, disabled = false }: PriceInputProps) {
+export function PriceInput({
+  pricing,
+  onChange,
+  disabled = false,
+  tripType,
+}: PriceInputProps) {
   const dynamic = normalizeDynamicPricing(
-    pricing.dynamicPricing ?? defaultDynamicPricing(pricing.basePrice),
+    pricing.dynamicPricing ??
+      defaultDynamicPricingForTripType(tripType, pricing.basePrice),
     pricing.basePrice
   );
 
@@ -31,35 +44,22 @@ export function PriceInput({ pricing, onChange, disabled = false }: PriceInputPr
   }
 
   function updateDynamic(patch: Partial<DynamicPricingConfig>) {
-    const next = { ...dynamic, ...patch };
-    update({ dynamicPricing: next });
+    update({ dynamicPricing: { ...dynamic, ...patch } });
   }
 
   function setMatrixPrice(
-    rider: "solo" | "dual",
-    room: "triple" | "double" | "single",
+    travel: TravelOptionKey,
+    room: RoomOptionKey,
     value: string
   ) {
     const parsed = parseInrInput(value);
     updateDynamic({
       matrix: {
         ...dynamic.matrix,
-        [rider]: {
-          ...dynamic.matrix[rider],
+        [travel]: {
+          ...dynamic.matrix[travel],
           [room]: parsed || null,
         },
-      },
-      riders: {
-        ...dynamic.riders,
-        [rider]:
-          room === "triple"
-            ? parsed || dynamic.riders[rider]
-            : dynamic.riders[rider],
-      },
-      rooms: {
-        ...dynamic.rooms,
-        [room]:
-          rider === "solo" ? parsed || dynamic.rooms[room] : dynamic.rooms[room],
       },
     });
   }
@@ -140,7 +140,7 @@ export function PriceInput({ pricing, onChange, disabled = false }: PriceInputPr
             onChange={(e) =>
               updateDynamic({
                 ...(e.target.checked && !pricing.dynamicPricing
-                  ? defaultDynamicPricing(pricing.basePrice)
+                  ? defaultDynamicPricingForTripType(tripType, pricing.basePrice)
                   : {}),
                 enabled: e.target.checked,
               })
@@ -148,11 +148,12 @@ export function PriceInput({ pricing, onChange, disabled = false }: PriceInputPr
             disabled={disabled}
             className="rounded border-input"
           />
-          Enable dynamic pricing (Solo / Dual + Room sharing)
+          Enable dynamic pricing
         </label>
         <p className="text-xs text-muted-foreground">
-          Trip page pe user options select karega aur price auto update hogi. Listing pe
-          sabse kam package price &quot;starting from&quot; dikhegi.
+          <strong>Biking:</strong> Own Bike / Solo / Dual / Seat in Coach × room sharing.
+          <br />
+          <strong>Treks &amp; backpacking:</strong> room sharing only (Single / Double / Triple).
         </p>
 
         {dynamic.enabled ? (
@@ -161,12 +162,12 @@ export function PriceInput({ pricing, onChange, disabled = false }: PriceInputPr
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  checked={dynamic.riderEnabled}
-                  onChange={(e) => updateDynamic({ riderEnabled: e.target.checked })}
+                  checked={dynamic.travelEnabled}
+                  onChange={(e) => updateDynamic({ travelEnabled: e.target.checked })}
                   disabled={disabled}
                   className="rounded border-input"
                 />
-                Solo / Dual Rider
+                Travel options (Own Bike / Solo / Dual / Coach) — for biking
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -176,13 +177,13 @@ export function PriceInput({ pricing, onChange, disabled = false }: PriceInputPr
                   disabled={disabled}
                   className="rounded border-input"
                 />
-                Room sharing (Triple / Double / Single)
+                Room sharing (Single / Double / Triple)
               </label>
             </div>
 
-            {dynamic.riderEnabled && dynamic.roomEnabled ? (
+            {dynamic.travelEnabled && dynamic.roomEnabled ? (
               <div className="overflow-x-auto rounded-lg border bg-white">
-                <table className="w-full min-w-[480px] text-sm">
+                <table className="w-full min-w-[640px] text-sm">
                   <thead>
                     <tr className="border-b bg-slate-50 text-left">
                       <th className="px-3 py-2 font-medium">Package</th>
@@ -194,19 +195,19 @@ export function PriceInput({ pricing, onChange, disabled = false }: PriceInputPr
                     </tr>
                   </thead>
                   <tbody>
-                    {RIDER_OPTION_KEYS.map((rider) => (
-                      <tr key={rider} className="border-b last:border-0">
+                    {TRAVEL_OPTION_KEYS.map((travel) => (
+                      <tr key={travel} className="border-b last:border-0">
                         <td className="px-3 py-2 font-medium">
-                          {RIDER_OPTION_LABELS[rider]}
+                          {TRAVEL_OPTION_LABELS[travel]}
                         </td>
                         {ROOM_OPTION_KEYS.map((room) => {
-                          const value = dynamic.matrix[rider][room];
+                          const value = dynamic.matrix[travel][room];
                           return (
                             <td key={room} className="px-3 py-2">
                               <Input
                                 value={value ? formatInr(value) : ""}
                                 onChange={(e) =>
-                                  setMatrixPrice(rider, room, e.target.value)
+                                  setMatrixPrice(travel, room, e.target.value)
                                 }
                                 disabled={disabled}
                                 placeholder="—"
@@ -222,21 +223,23 @@ export function PriceInput({ pricing, onChange, disabled = false }: PriceInputPr
               </div>
             ) : null}
 
-            {dynamic.riderEnabled && !dynamic.roomEnabled ? (
+            {dynamic.travelEnabled && !dynamic.roomEnabled ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                {RIDER_OPTION_KEYS.map((rider) => (
-                  <div key={rider} className="space-y-1.5">
-                    <Label>{RIDER_OPTION_LABELS[rider]}</Label>
+                {TRAVEL_OPTION_KEYS.map((travel) => (
+                  <div key={travel} className="space-y-1.5">
+                    <Label>{TRAVEL_OPTION_LABELS[travel]}</Label>
                     <Input
                       value={
-                        dynamic.riders[rider] ? formatInr(dynamic.riders[rider]!) : ""
+                        dynamic.travel[travel]
+                          ? formatInr(dynamic.travel[travel]!)
+                          : ""
                       }
                       onChange={(e) => {
                         const parsed = parseInrInput(e.target.value);
                         updateDynamic({
-                          riders: {
-                            ...dynamic.riders,
-                            [rider]: parsed || null,
+                          travel: {
+                            ...dynamic.travel,
+                            [travel]: parsed || null,
                           },
                         });
                       }}
@@ -248,7 +251,7 @@ export function PriceInput({ pricing, onChange, disabled = false }: PriceInputPr
               </div>
             ) : null}
 
-            {!dynamic.riderEnabled && dynamic.roomEnabled ? (
+            {!dynamic.travelEnabled && dynamic.roomEnabled ? (
               <div className="grid gap-3 sm:grid-cols-3">
                 {ROOM_OPTION_KEYS.map((room) => (
                   <div key={room} className="space-y-1.5">

@@ -1,4 +1,4 @@
-import type { RiderOptionKey, RoomOptionKey } from "@/types/travel";
+import type { TravelOptionKey, RoomOptionKey } from "@/types/travel";
 
 export type TripBadge = "Trending" | "Best Seller" | "Guaranteed" | "New";
 export type TripRegion = "domestic" | "international";
@@ -61,14 +61,18 @@ export interface TripQuickFact {
 
 export interface PublicPricingOptions {
   enabled: boolean;
-  riderEnabled: boolean;
+  travelEnabled: boolean;
   roomEnabled: boolean;
-  riders: { id: RiderOptionKey; label: string; price?: number }[];
+  travels: { id: TravelOptionKey; label: string; price?: number }[];
   rooms: { id: RoomOptionKey; label: string; price?: number }[];
-  matrix: Record<RiderOptionKey, Record<RoomOptionKey, number | null>>;
-  riderPrices: Record<RiderOptionKey, number | null>;
+  matrix: Record<TravelOptionKey, Record<RoomOptionKey, number | null>>;
+  travelPrices: Record<TravelOptionKey, number | null>;
   roomPrices: Record<RoomOptionKey, number | null>;
   startingFrom: number | null;
+  /** Legacy aliases */
+  riderEnabled?: boolean;
+  riders?: { id: TravelOptionKey; label: string; price?: number }[];
+  riderPrices?: Record<TravelOptionKey, number | null>;
 }
 
 export interface TripDetailContent {

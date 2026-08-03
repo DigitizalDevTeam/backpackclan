@@ -819,6 +819,7 @@ export function TripForm({ tripId, user }: TripFormProps) {
                 pricing={watchedPricing}
                 onChange={(p) => setValue("pricing", p, { shouldDirty: true })}
                 disabled={readOnly}
+                tripType={watch("tripType")}
               />
             </CardContent>
           </Card>

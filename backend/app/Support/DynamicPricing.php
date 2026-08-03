@@ -4,9 +4,24 @@ namespace App\Support;
 
 class DynamicPricing
 {
+    public const TRAVEL_KEYS = ['own_bike', 'solo', 'dual', 'coach'];
+
+    public const ROOM_KEYS = ['single', 'double', 'triple'];
+
+    public const TRAVEL_LABELS = [
+        'own_bike' => 'Own Bike',
+        'solo' => 'Solo Rider',
+        'dual' => 'Dual Rider',
+        'coach' => 'Seat in Coach',
+    ];
+
+    public const ROOM_LABELS = [
+        'single' => 'Single Sharing',
+        'double' => 'Double Sharing',
+        'triple' => 'Triple Sharing',
+    ];
+
     /**
-     * Normalize raw dynamic pricing input for JSON storage (camelCase keys).
-     *
      * @param  array<string, mixed>|null  $raw
      * @return array<string, mixed>|null
      */
@@ -45,74 +60,76 @@ class DynamicPricing
 
         $roomFrom = static function (array $obj) use ($num): array {
             return [
-                'triple' => $num($obj['triple'] ?? null),
-                'double' => $num($obj['double'] ?? null),
                 'single' => $num($obj['single'] ?? null),
+                'double' => $num($obj['double'] ?? null),
+                'triple' => $num($obj['triple'] ?? null),
             ];
         };
 
-        $matrix = is_array($raw['matrix'] ?? null) ? CamelCase::convert($raw['matrix']) : [];
-        $riders = is_array($raw['riders'] ?? null) ? CamelCase::convert($raw['riders']) : [];
-        $rooms = is_array($raw['rooms'] ?? null) ? CamelCase::convert($raw['rooms']) : [];
-        $solo = $roomFrom(is_array($matrix['solo'] ?? null) ? $matrix['solo'] : []);
-        $dual = $roomFrom(is_array($matrix['dual'] ?? null) ? $matrix['dual'] : []);
+        $matrixRaw = is_array($raw['matrix'] ?? null) ? CamelCase::convert($raw['matrix']) : [];
+        $travelRaw = is_array($raw['travel'] ?? null)
+            ? CamelCase::convert($raw['travel'])
+            : (is_array($raw['riders'] ?? null) ? CamelCase::convert($raw['riders']) : []);
+        $roomsRaw = is_array($raw['rooms'] ?? null) ? CamelCase::convert($raw['rooms']) : [];
+
+        $matrix = [];
+        foreach (self::TRAVEL_KEYS as $travel) {
+            $row = is_array($matrixRaw[$travel] ?? null) ? $matrixRaw[$travel] : [];
+            $matrix[$travel] = $roomFrom($row);
+        }
 
         $seed = $base > 0 ? $base : null;
+        $travelEnabled = array_key_exists('travelEnabled', $raw)
+            ? (bool) $raw['travelEnabled']
+            : (($raw['riderEnabled'] ?? true) !== false);
+
+        $travel = [];
+        foreach (self::TRAVEL_KEYS as $key) {
+            $travel[$key] = $num($travelRaw[$key] ?? null)
+                ?? $matrix[$key]['triple']
+                ?? $seed;
+        }
 
         return [
             'enabled' => (bool) ($raw['enabled'] ?? false),
-            'riderEnabled' => ($raw['riderEnabled'] ?? true) !== false,
+            'travelEnabled' => $travelEnabled,
             'roomEnabled' => ($raw['roomEnabled'] ?? true) !== false,
-            'riders' => [
-                'solo' => $num($riders['solo'] ?? null) ?? $solo['triple'] ?? $seed,
-                'dual' => $num($riders['dual'] ?? null) ?? $dual['triple'] ?? $seed,
-            ],
+            'travel' => $travel,
             'rooms' => [
-                'triple' => $num($rooms['triple'] ?? null) ?? $solo['triple'],
-                'double' => $num($rooms['double'] ?? null) ?? $solo['double'],
-                'single' => $num($rooms['single'] ?? null) ?? $solo['single'],
+                'single' => $num($roomsRaw['single'] ?? null) ?? $matrix['solo']['single'],
+                'double' => $num($roomsRaw['double'] ?? null) ?? $matrix['solo']['double'],
+                'triple' => $num($roomsRaw['triple'] ?? null) ?? $matrix['solo']['triple'],
             ],
-            'matrix' => [
-                'solo' => [
-                    'triple' => $solo['triple'] ?? $num($riders['solo'] ?? null) ?? $seed,
-                    'double' => $solo['double'] ?? $num($riders['solo'] ?? null) ?? $seed,
-                    'single' => $solo['single'] ?? $num($riders['solo'] ?? null) ?? $seed,
-                ],
-                'dual' => [
-                    'triple' => $dual['triple'] ?? $num($riders['dual'] ?? null) ?? $seed,
-                    'double' => $dual['double'] ?? $num($riders['dual'] ?? null) ?? $seed,
-                    'single' => $dual['single'] ?? $num($riders['dual'] ?? null) ?? $seed,
-                ],
-            ],
+            'matrix' => $matrix,
         ];
     }
 
     /**
      * @param  array<string, mixed>  $config
      */
-    public static function resolveUnitPrice(array $config, ?string $rider, ?string $room): ?int
+    public static function resolveUnitPrice(array $config, ?string $travel, ?string $room): ?int
     {
         if (empty($config['enabled'])) {
             return null;
         }
 
-        $riderEnabled = ($config['riderEnabled'] ?? true) !== false;
+        $travelEnabled = ($config['travelEnabled'] ?? true) !== false;
         $roomEnabled = ($config['roomEnabled'] ?? true) !== false;
 
-        if ($riderEnabled && $roomEnabled) {
-            if (! $rider || ! $room) {
+        if ($travelEnabled && $roomEnabled) {
+            if (! $travel || ! $room) {
                 return null;
             }
-            $price = (int) ($config['matrix'][$rider][$room] ?? 0);
+            $price = (int) ($config['matrix'][$travel][$room] ?? 0);
 
             return $price > 0 ? $price : null;
         }
 
-        if ($riderEnabled) {
-            if (! $rider) {
+        if ($travelEnabled) {
+            if (! $travel) {
                 return null;
             }
-            $price = (int) ($config['riders'][$rider] ?? 0);
+            $price = (int) ($config['travel'][$travel] ?? 0);
 
             return $price > 0 ? $price : null;
         }
@@ -139,27 +156,27 @@ class DynamicPricing
         }
 
         $prices = [];
-        $riderEnabled = ($config['riderEnabled'] ?? true) !== false;
+        $travelEnabled = ($config['travelEnabled'] ?? true) !== false;
         $roomEnabled = ($config['roomEnabled'] ?? true) !== false;
 
-        if ($riderEnabled && $roomEnabled) {
-            foreach (['solo', 'dual'] as $rider) {
-                foreach (['triple', 'double', 'single'] as $room) {
-                    $p = (int) ($config['matrix'][$rider][$room] ?? 0);
+        if ($travelEnabled && $roomEnabled) {
+            foreach (self::TRAVEL_KEYS as $travel) {
+                foreach (self::ROOM_KEYS as $room) {
+                    $p = (int) ($config['matrix'][$travel][$room] ?? 0);
                     if ($p > 0) {
                         $prices[] = $p;
                     }
                 }
             }
-        } elseif ($riderEnabled) {
-            foreach (['solo', 'dual'] as $rider) {
-                $p = (int) ($config['riders'][$rider] ?? 0);
+        } elseif ($travelEnabled) {
+            foreach (self::TRAVEL_KEYS as $travel) {
+                $p = (int) ($config['travel'][$travel] ?? 0);
                 if ($p > 0) {
                     $prices[] = $p;
                 }
             }
         } elseif ($roomEnabled) {
-            foreach (['triple', 'double', 'single'] as $room) {
+            foreach (self::ROOM_KEYS as $room) {
                 $p = (int) ($config['rooms'][$room] ?? 0);
                 if ($p > 0) {
                     $prices[] = $p;
@@ -173,11 +190,11 @@ class DynamicPricing
     /**
      * @param  array<string, mixed>  $pricing
      */
-    public static function resolveFromTripPricing(array $pricing, ?string $rider, ?string $room): int
+    public static function resolveFromTripPricing(array $pricing, ?string $travel, ?string $room): int
     {
         $pricing = CamelCase::convert($pricing);
         $config = self::normalize($pricing);
-        $option = self::resolveUnitPrice($config, $rider, $room);
+        $option = self::resolveUnitPrice($config, $travel, $room);
         if ($option !== null) {
             return $option;
         }
@@ -197,8 +214,6 @@ class DynamicPricing
     }
 
     /**
-     * Public payload for trip detail UI.
-     *
      * @param  array<string, mixed>  $pricing
      * @return array<string, mixed>|null
      */
@@ -209,32 +224,32 @@ class DynamicPricing
             return null;
         }
 
-        $riderEnabled = ($config['riderEnabled'] ?? true) !== false;
+        $travelEnabled = ($config['travelEnabled'] ?? true) !== false;
         $roomEnabled = ($config['roomEnabled'] ?? true) !== false;
 
-        $riders = [];
+        $travels = [];
         $rooms = [];
 
-        if ($riderEnabled && $roomEnabled) {
-            foreach (['solo', 'dual'] as $rider) {
+        if ($travelEnabled && $roomEnabled) {
+            foreach (self::TRAVEL_KEYS as $travel) {
                 $has = false;
-                foreach (['triple', 'double', 'single'] as $room) {
-                    if ((int) ($config['matrix'][$rider][$room] ?? 0) > 0) {
+                foreach (self::ROOM_KEYS as $room) {
+                    if ((int) ($config['matrix'][$travel][$room] ?? 0) > 0) {
                         $has = true;
                         break;
                     }
                 }
                 if ($has) {
-                    $riders[] = [
-                        'id' => $rider,
-                        'label' => $rider === 'solo' ? 'Solo Rider' : 'Dual Rider',
+                    $travels[] = [
+                        'id' => $travel,
+                        'label' => self::TRAVEL_LABELS[$travel],
                     ];
                 }
             }
-            foreach (['triple', 'double', 'single'] as $room) {
+            foreach (self::ROOM_KEYS as $room) {
                 $has = false;
-                foreach (['solo', 'dual'] as $rider) {
-                    if ((int) ($config['matrix'][$rider][$room] ?? 0) > 0) {
+                foreach (self::TRAVEL_KEYS as $travel) {
+                    if ((int) ($config['matrix'][$travel][$room] ?? 0) > 0) {
                         $has = true;
                         break;
                     }
@@ -242,54 +257,50 @@ class DynamicPricing
                 if ($has) {
                     $rooms[] = [
                         'id' => $room,
-                        'label' => match ($room) {
-                            'triple' => 'Triple Sharing',
-                            'double' => 'Double Sharing',
-                            default => 'Single Sharing',
-                        },
+                        'label' => self::ROOM_LABELS[$room],
                     ];
                 }
             }
-        } elseif ($riderEnabled) {
-            foreach (['solo', 'dual'] as $rider) {
-                $p = (int) ($config['riders'][$rider] ?? 0);
+        } elseif ($travelEnabled) {
+            foreach (self::TRAVEL_KEYS as $travel) {
+                $p = (int) ($config['travel'][$travel] ?? 0);
                 if ($p > 0) {
-                    $riders[] = [
-                        'id' => $rider,
-                        'label' => $rider === 'solo' ? 'Solo Rider' : 'Dual Rider',
+                    $travels[] = [
+                        'id' => $travel,
+                        'label' => self::TRAVEL_LABELS[$travel],
                         'price' => $p,
                     ];
                 }
             }
         } elseif ($roomEnabled) {
-            foreach (['triple', 'double', 'single'] as $room) {
+            foreach (self::ROOM_KEYS as $room) {
                 $p = (int) ($config['rooms'][$room] ?? 0);
                 if ($p > 0) {
                     $rooms[] = [
                         'id' => $room,
-                        'label' => match ($room) {
-                            'triple' => 'Triple Sharing',
-                            'double' => 'Double Sharing',
-                            default => 'Single Sharing',
-                        },
+                        'label' => self::ROOM_LABELS[$room],
                         'price' => $p,
                     ];
                 }
             }
         }
 
-        if ($riders === [] && $rooms === []) {
+        if ($travels === [] && $rooms === []) {
             return null;
         }
 
         return [
             'enabled' => true,
-            'riderEnabled' => $riderEnabled && $riders !== [],
+            'travelEnabled' => $travelEnabled && $travels !== [],
             'roomEnabled' => $roomEnabled && $rooms !== [],
-            'riders' => $riders,
+            'travels' => $travels,
             'rooms' => $rooms,
+            /** legacy aliases for older frontend builds */
+            'riderEnabled' => $travelEnabled && $travels !== [],
+            'riders' => $travels,
             'matrix' => $config['matrix'],
-            'riderPrices' => $config['riders'],
+            'travelPrices' => $config['travel'],
+            'riderPrices' => $config['travel'],
             'roomPrices' => $config['rooms'],
             'startingFrom' => self::minPrice($config),
         ];

@@ -41,9 +41,16 @@ const testimonialSchema = z.object({
 });
 
 const roomPricesSchema = z.object({
-  triple: z.number().nullable(),
-  double: z.number().nullable(),
   single: z.number().nullable(),
+  double: z.number().nullable(),
+  triple: z.number().nullable(),
+});
+
+const travelPricesSchema = z.object({
+  own_bike: z.number().nullable(),
+  solo: z.number().nullable(),
+  dual: z.number().nullable(),
+  coach: z.number().nullable(),
 });
 
 const pricingSchema = z.object({
@@ -57,16 +64,15 @@ const pricingSchema = z.object({
   dynamicPricing: z
     .object({
       enabled: z.boolean(),
-      riderEnabled: z.boolean(),
+      travelEnabled: z.boolean(),
       roomEnabled: z.boolean(),
-      riders: z.object({
-        solo: z.number().nullable(),
-        dual: z.number().nullable(),
-      }),
+      travel: travelPricesSchema,
       rooms: roomPricesSchema,
       matrix: z.object({
+        own_bike: roomPricesSchema,
         solo: roomPricesSchema,
         dual: roomPricesSchema,
+        coach: roomPricesSchema,
       }),
     })
     .nullable()
@@ -192,13 +198,15 @@ export function defaultAdminTripFormValues(): AdminTripFormValues {
       pricePer: "person",
       dynamicPricing: {
         enabled: false,
-        riderEnabled: true,
+        travelEnabled: true,
         roomEnabled: true,
-        riders: { solo: null, dual: null },
-        rooms: { triple: null, double: null, single: null },
+        travel: { own_bike: null, solo: null, dual: null, coach: null },
+        rooms: { single: null, double: null, triple: null },
         matrix: {
-          solo: { triple: null, double: null, single: null },
-          dual: { triple: null, double: null, single: null },
+          own_bike: { single: null, double: null, triple: null },
+          solo: { single: null, double: null, triple: null },
+          dual: { single: null, double: null, triple: null },
+          coach: { single: null, double: null, triple: null },
         },
       },
     },

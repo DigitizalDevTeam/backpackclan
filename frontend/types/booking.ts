@@ -1,3 +1,5 @@
+import type { RoomOptionKey, TravelOptionKey } from "@/types/travel";
+
 export type BookingStatus = "confirmed" | "pending" | "cancelled" | "completed";
 
 export type DocumentCategory = "passport" | "id_proof" | "medical" | "other";
@@ -44,8 +46,8 @@ export interface Booking {
   travelers: number;
   adults?: number;
   children?: number;
-  riderOption?: "solo" | "dual" | null;
-  roomOption?: "triple" | "double" | "single" | null;
+  riderOption?: TravelOptionKey | null;
+  roomOption?: RoomOptionKey | null;
   unitPrice?: number | null;
   travelerDetails?: BookingTraveler[];
   contactPhone?: string | null;
@@ -71,8 +73,9 @@ export interface CreateBookingPayload {
   departureId: string;
   adults: number;
   children: number;
-  riderOption?: "solo" | "dual";
-  roomOption?: "triple" | "double" | "single";
+  travelOption?: TravelOptionKey;
+  riderOption?: TravelOptionKey;
+  roomOption?: RoomOptionKey;
   travelers: BookingTraveler[];
   contactPhone?: string;
   contactEmail?: string;

@@ -49,11 +49,18 @@ export interface TripPricing {
   offerValidUntil?: string | null;
   currency: "INR";
   pricePer: "person" | "bike" | "couple";
-  /** Solo/Dual + Triple/Double/Single package matrix */
+  /**
+   * Biking: travel option (Own Bike / Solo / Dual / Coach) × room sharing.
+   * Treks & backpacking: room sharing only.
+   */
   dynamicPricing?: DynamicPricingConfig | null;
 }
 
-export type RiderOptionKey = "solo" | "dual";
+/** Biking travel / bike options */
+export type TravelOptionKey = "own_bike" | "solo" | "dual" | "coach";
+/** @deprecated use TravelOptionKey */
+export type RiderOptionKey = TravelOptionKey;
+
 export type RoomOptionKey = "triple" | "double" | "single";
 
 export interface DynamicPricingRoomPrices {
@@ -64,17 +71,22 @@ export interface DynamicPricingRoomPrices {
 
 export interface DynamicPricingConfig {
   enabled: boolean;
-  riderEnabled: boolean;
+  /** Own Bike / Solo / Dual / Seat in Coach — for biking trips */
+  travelEnabled: boolean;
+  /** Single / Double / Triple — biking + treks + backpacking */
   roomEnabled: boolean;
   /**
    * Absolute per-person package prices.
-   * When both rider + room are enabled → matrix[rider][room].
-   * When only rider → use riders[rider].
-   * When only room → use rooms[room].
+   * travel + room → matrix[travel][room]
+   * room only → rooms[room]
+   * travel only → travel[travel]
    */
-  riders: Record<RiderOptionKey, number | null>;
+  travel: Record<TravelOptionKey, number | null>;
   rooms: DynamicPricingRoomPrices;
-  matrix: Record<RiderOptionKey, DynamicPricingRoomPrices>;
+  matrix: Record<TravelOptionKey, DynamicPricingRoomPrices>;
+  /** Legacy aliases kept while loading older saved trips */
+  riderEnabled?: boolean;
+  riders?: Record<string, number | null>;
 }
 
 export interface WeatherMonth {

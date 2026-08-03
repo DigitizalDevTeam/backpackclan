@@ -17,13 +17,13 @@ import {
   X,
 } from "lucide-react";
 import type { PublicTrip, TripDetailContent, TripBatch } from "@/types/trip";
-import type { RiderOptionKey, RoomOptionKey } from "@/types/travel";
+import type { TravelOptionKey, RoomOptionKey } from "@/types/travel";
 import {
-  enabledRiderOptions,
+  enabledTravelOptions,
   enabledRoomOptions,
   normalizeDynamicPricing,
   resolveDynamicUnitPrice,
-  RIDER_OPTION_LABELS,
+  TRAVEL_OPTION_LABELS,
   ROOM_OPTION_LABELS,
 } from "@/lib/pricing/dynamic-options";
 import { formatInr } from "@/lib/site/format";
@@ -81,9 +81,10 @@ export function TripDetailView({
       pricingOptions
         ? normalizeDynamicPricing({
             enabled: pricingOptions.enabled,
-            riderEnabled: pricingOptions.riderEnabled,
+            travelEnabled:
+              pricingOptions.travelEnabled ?? pricingOptions.riderEnabled ?? false,
             roomEnabled: pricingOptions.roomEnabled,
-            riders: pricingOptions.riderPrices,
+            travel: pricingOptions.travelPrices ?? pricingOptions.riderPrices,
             rooms: pricingOptions.roomPrices,
             matrix: pricingOptions.matrix,
           })
@@ -91,27 +92,27 @@ export function TripDetailView({
     [pricingOptions]
   );
 
-  const riderChoices = useMemo(
-    () => (dynamicConfig ? enabledRiderOptions(dynamicConfig) : []),
+  const travelChoices = useMemo(
+    () => (dynamicConfig ? enabledTravelOptions(dynamicConfig) : []),
     [dynamicConfig]
   );
-  const [riderOption, setRiderOption] = useState<RiderOptionKey | "">(
-    () => (dynamicConfig ? enabledRiderOptions(dynamicConfig)[0] : "") ?? ""
+  const [travelOption, setTravelOption] = useState<TravelOptionKey | "">(
+    () => (dynamicConfig ? enabledTravelOptions(dynamicConfig)[0] : "") ?? ""
   );
   const roomChoices = useMemo(
     () =>
       dynamicConfig
-        ? enabledRoomOptions(dynamicConfig, riderOption || null)
+        ? enabledRoomOptions(dynamicConfig, travelOption || null)
         : [],
-    [dynamicConfig, riderOption]
+    [dynamicConfig, travelOption]
   );
   const [roomOption, setRoomOption] = useState<RoomOptionKey | "">("");
 
   useEffect(() => {
-    if (riderChoices.length && !riderChoices.includes(riderOption as RiderOptionKey)) {
-      setRiderOption(riderChoices[0] ?? "");
+    if (travelChoices.length && !travelChoices.includes(travelOption as TravelOptionKey)) {
+      setTravelOption(travelChoices[0] ?? "");
     }
-  }, [riderChoices, riderOption]);
+  }, [travelChoices, travelOption]);
 
   useEffect(() => {
     if (roomChoices.length && !roomChoices.includes(roomOption as RoomOptionKey)) {
@@ -138,7 +139,7 @@ export function TripDetailView({
   const optionUnitPrice =
     dynamicConfig?.enabled
       ? resolveDynamicUnitPrice(dynamicConfig, {
-          rider: riderOption || null,
+          travel: travelOption || null,
           room: roomOption || null,
         })
       : null;
@@ -147,7 +148,7 @@ export function TripDetailView({
     ...(selectedBatch ? { departure: selectedBatch } : {}),
     adults: String(adults),
     children: String(children),
-    ...(riderOption ? { rider: riderOption } : {}),
+    ...(travelOption ? { travel: travelOption } : {}),
     ...(roomOption ? { room: roomOption } : {}),
   });
   const bookHref = `/book/${trip.slug}?${qs.toString()}`;
@@ -155,7 +156,9 @@ export function TripDetailView({
     Boolean(selectedBatchData) && selectedBatchData?.status !== "sold_out";
   const pax = adults + children;
   const estimatedTotal = unitPrice * pax;
-  const showDynamic = Boolean(dynamicConfig?.enabled && (riderChoices.length || roomChoices.length));
+  const showDynamic = Boolean(
+    dynamicConfig?.enabled && (travelChoices.length || roomChoices.length)
+  );
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -593,25 +596,25 @@ export function TripDetailView({
                   </select>
                 </div>
 
-                {showDynamic && riderChoices.length > 0 ? (
+                {showDynamic && travelChoices.length > 0 ? (
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Rider option
+                      Travel option
                     </label>
                     <div className="grid grid-cols-2 gap-2">
-                      {riderChoices.map((key) => (
+                      {travelChoices.map((key) => (
                         <button
                           key={key}
                           type="button"
-                          onClick={() => setRiderOption(key)}
+                          onClick={() => setTravelOption(key)}
                           className={cn(
                             "rounded-xl border px-3 py-2.5 text-sm font-semibold transition",
-                            riderOption === key
+                            travelOption === key
                               ? "border-[#F58220] bg-[#FFF7ED] text-[#F58220]"
                               : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                           )}
                         >
-                          {RIDER_OPTION_LABELS[key]}
+                          {TRAVEL_OPTION_LABELS[key]}
                         </button>
                       ))}
                     </div>
@@ -626,7 +629,7 @@ export function TripDetailView({
                     <div className="grid gap-2">
                       {roomChoices.map((key) => {
                         const price = resolveDynamicUnitPrice(dynamicConfig!, {
-                          rider: riderOption || null,
+                          travel: travelOption || null,
                           room: key,
                         });
                         return (

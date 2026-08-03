@@ -1,42 +1,96 @@
 import type {
   DynamicPricingConfig,
-  RiderOptionKey,
+  TravelOptionKey,
   RoomOptionKey,
   TripPricing,
 } from "@/types/travel";
 
-export const RIDER_OPTION_LABELS: Record<RiderOptionKey, string> = {
+export const TRAVEL_OPTION_LABELS: Record<TravelOptionKey, string> = {
+  own_bike: "Own Bike",
   solo: "Solo Rider",
   dual: "Dual Rider",
+  coach: "Seat in Coach",
 };
+
+/** @deprecated use TRAVEL_OPTION_LABELS */
+export const RIDER_OPTION_LABELS = TRAVEL_OPTION_LABELS;
 
 export const ROOM_OPTION_LABELS: Record<RoomOptionKey, string> = {
-  triple: "Triple Sharing",
-  double: "Double Sharing",
   single: "Single Sharing",
+  double: "Double Sharing",
+  triple: "Triple Sharing",
 };
 
-export const RIDER_OPTION_KEYS: RiderOptionKey[] = ["solo", "dual"];
-export const ROOM_OPTION_KEYS: RoomOptionKey[] = ["triple", "double", "single"];
+export const TRAVEL_OPTION_KEYS: TravelOptionKey[] = [
+  "own_bike",
+  "solo",
+  "dual",
+  "coach",
+];
+
+/** @deprecated use TRAVEL_OPTION_KEYS */
+export const RIDER_OPTION_KEYS = TRAVEL_OPTION_KEYS;
+
+export const ROOM_OPTION_KEYS: RoomOptionKey[] = ["single", "double", "triple"];
 
 export function emptyRoomPrices(): DynamicPricingConfig["rooms"] {
-  return { triple: null, double: null, single: null };
+  return { single: null, double: null, triple: null };
+}
+
+function emptyTravelPrices(
+  seed: number | null = null
+): Record<TravelOptionKey, number | null> {
+  return {
+    own_bike: seed,
+    solo: seed,
+    dual: seed,
+    coach: seed,
+  };
+}
+
+function emptyMatrix(
+  seed: number | null = null
+): Record<TravelOptionKey, DynamicPricingConfig["rooms"]> {
+  return {
+    own_bike: { single: seed, double: seed, triple: seed },
+    solo: { single: seed, double: seed, triple: seed },
+    dual: { single: seed, double: seed, triple: seed },
+    coach: { single: seed, double: seed, triple: seed },
+  };
 }
 
 export function defaultDynamicPricing(
-  basePrice = 0
+  basePrice = 0,
+  opts?: { forBike?: boolean }
 ): DynamicPricingConfig {
   const seed = basePrice > 0 ? basePrice : null;
+  const forBike = opts?.forBike ?? true;
   return {
     enabled: false,
-    riderEnabled: true,
+    travelEnabled: forBike,
     roomEnabled: true,
-    riders: { solo: seed, dual: seed },
+    travel: emptyTravelPrices(seed),
     rooms: emptyRoomPrices(),
-    matrix: {
-      solo: { triple: seed, double: seed, single: seed },
-      dual: { triple: seed, double: seed, single: seed },
-    },
+    matrix: emptyMatrix(seed),
+  };
+}
+
+export function defaultDynamicPricingForTripType(
+  tripType: string | undefined,
+  basePrice = 0
+): DynamicPricingConfig {
+  const isBike = (tripType ?? "").toLowerCase() === "bike";
+  return defaultDynamicPricing(basePrice, { forBike: isBike });
+}
+
+function roomFrom(
+  obj: Record<string, unknown> | undefined,
+  num: (v: unknown) => number | null
+) {
+  return {
+    single: num(obj?.single),
+    double: num(obj?.double),
+    triple: num(obj?.triple),
   };
 }
 
@@ -47,7 +101,8 @@ export function normalizeDynamicPricing(
   const fallback = defaultDynamicPricing(basePrice);
   if (!raw || typeof raw !== "object") return fallback;
   const d = raw as Record<string, unknown>;
-  const ridersRaw = (d.riders ?? {}) as Record<string, unknown>;
+
+  const travelRaw = (d.travel ?? d.riders ?? {}) as Record<string, unknown>;
   const roomsRaw = (d.rooms ?? {}) as Record<string, unknown>;
   const matrixRaw = (d.matrix ?? {}) as Record<string, unknown>;
 
@@ -57,93 +112,97 @@ export function normalizeDynamicPricing(
     return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
   };
 
-  const roomFrom = (obj: Record<string, unknown> | undefined) => ({
-    triple: num(obj?.triple),
-    double: num(obj?.double),
-    single: num(obj?.single),
-  });
+  const matrix: DynamicPricingConfig["matrix"] = emptyMatrix(null);
+  for (const key of TRAVEL_OPTION_KEYS) {
+    matrix[key] = roomFrom(
+      (matrixRaw[key] ?? {}) as Record<string, unknown>,
+      num
+    );
+  }
 
-  const soloMatrix = roomFrom(
-    (matrixRaw.solo ?? {}) as Record<string, unknown>
-  );
-  const dualMatrix = roomFrom(
-    (matrixRaw.dual ?? {}) as Record<string, unknown>
-  );
+  // Legacy solo/dual-only matrix → keep values on solo/dual rows
+  if (!matrixRaw.own_bike && !matrixRaw.coach) {
+    // already read solo/dual above if present
+  }
+
+  const travelEnabled =
+    d.travelEnabled !== undefined
+      ? Boolean(d.travelEnabled)
+      : d.riderEnabled !== false;
 
   return {
     enabled: Boolean(d.enabled),
-    riderEnabled: d.riderEnabled !== false,
+    travelEnabled,
     roomEnabled: d.roomEnabled !== false,
-    riders: {
-      solo: num(ridersRaw.solo) ?? soloMatrix.triple ?? fallback.riders.solo,
-      dual: num(ridersRaw.dual) ?? dualMatrix.triple ?? fallback.riders.dual,
+    travel: {
+      own_bike:
+        num(travelRaw.own_bike) ??
+        matrix.own_bike.triple ??
+        fallback.travel.own_bike,
+      solo: num(travelRaw.solo) ?? matrix.solo.triple ?? fallback.travel.solo,
+      dual: num(travelRaw.dual) ?? matrix.dual.triple ?? fallback.travel.dual,
+      coach: num(travelRaw.coach) ?? matrix.coach.triple ?? fallback.travel.coach,
     },
     rooms: {
-      triple: num(roomsRaw.triple) ?? soloMatrix.triple,
-      double: num(roomsRaw.double) ?? soloMatrix.double,
-      single: num(roomsRaw.single) ?? soloMatrix.single,
+      single: num(roomsRaw.single) ?? matrix.solo.single,
+      double: num(roomsRaw.double) ?? matrix.solo.double,
+      triple: num(roomsRaw.triple) ?? matrix.solo.triple,
     },
-    matrix: {
-      solo: {
-        triple: soloMatrix.triple ?? num(ridersRaw.solo),
-        double: soloMatrix.double ?? num(ridersRaw.solo),
-        single: soloMatrix.single ?? num(ridersRaw.solo),
-      },
-      dual: {
-        triple: dualMatrix.triple ?? num(ridersRaw.dual),
-        double: dualMatrix.double ?? num(ridersRaw.dual),
-        single: dualMatrix.single ?? num(ridersRaw.dual),
-      },
-    },
+    matrix,
   };
 }
 
-export function enabledRiderOptions(
+export function enabledTravelOptions(
   config: DynamicPricingConfig
-): RiderOptionKey[] {
-  if (!config.enabled || !config.riderEnabled) return [];
+): TravelOptionKey[] {
+  if (!config.enabled || !config.travelEnabled) return [];
   if (config.roomEnabled) {
-    return RIDER_OPTION_KEYS.filter((rider) =>
-      ROOM_OPTION_KEYS.some((room) => (config.matrix[rider][room] ?? 0) > 0)
+    return TRAVEL_OPTION_KEYS.filter((travel) =>
+      ROOM_OPTION_KEYS.some((room) => (config.matrix[travel][room] ?? 0) > 0)
     );
   }
-  return RIDER_OPTION_KEYS.filter((rider) => (config.riders[rider] ?? 0) > 0);
+  return TRAVEL_OPTION_KEYS.filter((travel) => (config.travel[travel] ?? 0) > 0);
 }
+
+/** @deprecated use enabledTravelOptions */
+export const enabledRiderOptions = enabledTravelOptions;
 
 export function enabledRoomOptions(
   config: DynamicPricingConfig,
-  rider?: RiderOptionKey | null
+  travel?: TravelOptionKey | null
 ): RoomOptionKey[] {
   if (!config.enabled || !config.roomEnabled) return [];
-  if (config.riderEnabled) {
-    const r = rider && enabledRiderOptions(config).includes(rider) ? rider : null;
-    if (!r) {
+  if (config.travelEnabled) {
+    const t =
+      travel && enabledTravelOptions(config).includes(travel) ? travel : null;
+    if (!t) {
       return ROOM_OPTION_KEYS.filter((room) =>
-        RIDER_OPTION_KEYS.some((rk) => (config.matrix[rk][room] ?? 0) > 0)
+        TRAVEL_OPTION_KEYS.some((tk) => (config.matrix[tk][room] ?? 0) > 0)
       );
     }
-    return ROOM_OPTION_KEYS.filter((room) => (config.matrix[r][room] ?? 0) > 0);
+    return ROOM_OPTION_KEYS.filter((room) => (config.matrix[t][room] ?? 0) > 0);
   }
   return ROOM_OPTION_KEYS.filter((room) => (config.rooms[room] ?? 0) > 0);
 }
 
 export function resolveDynamicUnitPrice(
   config: DynamicPricingConfig | null | undefined,
-  selection: { rider?: RiderOptionKey | null; room?: RoomOptionKey | null }
+  selection: { travel?: TravelOptionKey | null; room?: RoomOptionKey | null; rider?: TravelOptionKey | null }
 ): number | null {
   if (!config?.enabled) return null;
 
-  const { rider, room } = selection;
+  const travel = selection.travel ?? selection.rider ?? null;
+  const { room } = selection;
 
-  if (config.riderEnabled && config.roomEnabled) {
-    if (!rider || !room) return null;
-    const price = config.matrix[rider]?.[room] ?? null;
+  if (config.travelEnabled && config.roomEnabled) {
+    if (!travel || !room) return null;
+    const price = config.matrix[travel]?.[room] ?? null;
     return price && price > 0 ? price : null;
   }
 
-  if (config.riderEnabled) {
-    if (!rider) return null;
-    const price = config.riders[rider] ?? null;
+  if (config.travelEnabled) {
+    if (!travel) return null;
+    const price = config.travel[travel] ?? null;
     return price && price > 0 ? price : null;
   }
 
@@ -156,23 +215,22 @@ export function resolveDynamicUnitPrice(
   return null;
 }
 
-/** Lowest configured package price for "starting from" cards */
 export function minDynamicPrice(
   config: DynamicPricingConfig | null | undefined
 ): number | null {
   if (!config?.enabled) return null;
   const prices: number[] = [];
 
-  if (config.riderEnabled && config.roomEnabled) {
-    for (const rider of RIDER_OPTION_KEYS) {
+  if (config.travelEnabled && config.roomEnabled) {
+    for (const travel of TRAVEL_OPTION_KEYS) {
       for (const room of ROOM_OPTION_KEYS) {
-        const p = config.matrix[rider][room];
+        const p = config.matrix[travel][room];
         if (p && p > 0) prices.push(p);
       }
     }
-  } else if (config.riderEnabled) {
-    for (const rider of RIDER_OPTION_KEYS) {
-      const p = config.riders[rider];
+  } else if (config.travelEnabled) {
+    for (const travel of TRAVEL_OPTION_KEYS) {
+      const p = config.travel[travel];
       if (p && p > 0) prices.push(p);
     }
   } else if (config.roomEnabled) {
@@ -188,7 +246,11 @@ export function minDynamicPrice(
 
 export function resolveTripUnitPrice(
   pricing: TripPricing,
-  selection?: { rider?: RiderOptionKey | null; room?: RoomOptionKey | null }
+  selection?: {
+    travel?: TravelOptionKey | null;
+    room?: RoomOptionKey | null;
+    rider?: TravelOptionKey | null;
+  }
 ): number {
   const dynamic = normalizeDynamicPricing(
     pricing.dynamicPricing,

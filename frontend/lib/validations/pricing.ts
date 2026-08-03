@@ -1,23 +1,29 @@
 import { z } from "zod";
 
 const roomPricesSchema = z.object({
-  triple: z.number().nullable(),
-  double: z.number().nullable(),
   single: z.number().nullable(),
+  double: z.number().nullable(),
+  triple: z.number().nullable(),
+});
+
+const travelPricesSchema = z.object({
+  own_bike: z.number().nullable(),
+  solo: z.number().nullable(),
+  dual: z.number().nullable(),
+  coach: z.number().nullable(),
 });
 
 export const dynamicPricingSchema = z.object({
   enabled: z.boolean(),
-  riderEnabled: z.boolean(),
+  travelEnabled: z.boolean(),
   roomEnabled: z.boolean(),
-  riders: z.object({
-    solo: z.number().nullable(),
-    dual: z.number().nullable(),
-  }),
+  travel: travelPricesSchema,
   rooms: roomPricesSchema,
   matrix: z.object({
+    own_bike: roomPricesSchema,
     solo: roomPricesSchema,
     dual: roomPricesSchema,
+    coach: roomPricesSchema,
   }),
 });
 
