@@ -33,6 +33,7 @@ export interface AdminTrip {
   maxAltitude: string | null;
   summary: string;
   coverImageId: string | null;
+  brochureMediaId?: string | null;
   gallery: string[];
   overview: TripOverview;
   itinerary: ItineraryDay[];

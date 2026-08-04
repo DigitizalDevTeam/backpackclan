@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Clock,
   Download,
+  FileText,
   MapPin,
   Mountain,
   Share2,
@@ -17,14 +18,9 @@ import {
   X,
 } from "lucide-react";
 import type { PublicTrip, TripDetailContent, TripBatch } from "@/types/trip";
-import type { TravelOptionKey, RoomOptionKey } from "@/types/travel";
 import {
-  enabledTravelOptions,
-  enabledRoomOptions,
   normalizeDynamicPricing,
-  resolveDynamicUnitPrice,
-  TRAVEL_OPTION_LABELS,
-  ROOM_OPTION_LABELS,
+  minDynamicPrice,
 } from "@/lib/pricing/dynamic-options";
 import { formatInr } from "@/lib/site/format";
 import { TripCard } from "@/components/homepage/homepage-parts";
@@ -92,39 +88,13 @@ export function TripDetailView({
     [pricingOptions]
   );
 
-  const travelChoices = useMemo(
-    () => (dynamicConfig ? enabledTravelOptions(dynamicConfig) : []),
-    [dynamicConfig]
-  );
-  const [travelOption, setTravelOption] = useState<TravelOptionKey | "">(
-    () => (dynamicConfig ? enabledTravelOptions(dynamicConfig)[0] : "") ?? ""
-  );
-  const roomChoices = useMemo(
-    () =>
-      dynamicConfig
-        ? enabledRoomOptions(dynamicConfig, travelOption || null)
-        : [],
-    [dynamicConfig, travelOption]
-  );
-  const [roomOption, setRoomOption] = useState<RoomOptionKey | "">("");
-
-  useEffect(() => {
-    if (travelChoices.length && !travelChoices.includes(travelOption as TravelOptionKey)) {
-      setTravelOption(travelChoices[0] ?? "");
-    }
-  }, [travelChoices, travelOption]);
-
-  useEffect(() => {
-    if (roomChoices.length && !roomChoices.includes(roomOption as RoomOptionKey)) {
-      setRoomOption(roomChoices[0] ?? "");
-    }
-    if (!roomChoices.length) setRoomOption("");
-  }, [roomChoices, roomOption]);
-
   const galleryUrls = detail.galleryImageIds
     .map((id) => mediaMap[id])
     .filter(Boolean) as string[];
   const mainImage = galleryUrls[0] ?? mediaMap[trip.imageId] ?? null;
+  const brochureUrl = detail.brochureMediaId
+    ? mediaMap[detail.brochureMediaId] ?? null
+    : null;
   const galleryPool = (
     galleryUrls.length > 0
       ? galleryUrls
@@ -136,29 +106,21 @@ export function TripDetailView({
       ? Array.from({ length: 4 }, (_, i) => galleryPool[i % galleryPool.length])
       : [];
   const selectedBatchData = detail.batches.find((b) => b.id === selectedBatch);
-  const optionUnitPrice =
-    dynamicConfig?.enabled
-      ? resolveDynamicUnitPrice(dynamicConfig, {
-          travel: travelOption || null,
-          room: roomOption || null,
-        })
-      : null;
-  const unitPrice = optionUnitPrice ?? selectedBatchData?.price ?? trip.price;
+  const unitPrice =
+    minDynamicPrice(dynamicConfig) ??
+    selectedBatchData?.price ??
+    trip.price;
   const qs = new URLSearchParams({
     ...(selectedBatch ? { departure: selectedBatch } : {}),
     adults: String(adults),
     children: String(children),
-    ...(travelOption ? { travel: travelOption } : {}),
-    ...(roomOption ? { room: roomOption } : {}),
   });
   const bookHref = `/book/${trip.slug}?${qs.toString()}`;
   const canBook =
     Boolean(selectedBatchData) && selectedBatchData?.status !== "sold_out";
   const pax = adults + children;
   const estimatedTotal = unitPrice * pax;
-  const showDynamic = Boolean(
-    dynamicConfig?.enabled && (travelChoices.length || roomChoices.length)
-  );
+  const showDynamic = Boolean(dynamicConfig?.enabled);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -241,10 +203,20 @@ export function TripDetailView({
                 </span>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="shrink-0 gap-2">
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              {brochureUrl ? (
+                <Button variant="outline" size="sm" className="gap-2" asChild>
+                  <a href={brochureUrl} target="_blank" rel="noopener noreferrer" download>
+                    <FileText className="h-4 w-4" />
+                    Download brochure
+                  </a>
+                </Button>
+              ) : null}
+              <Button variant="outline" size="sm" className="gap-2">
+                <Share2 className="h-4 w-4" />
+                Share
+              </Button>
+            </div>
           </div>
 
           {/* Quick facts */}
@@ -327,10 +299,14 @@ export function TripDetailView({
             <section id="section-itinerary" className="scroll-mt-44">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold">Day-wise Itinerary</h2>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Download PDF
-                </Button>
+                {brochureUrl ? (
+                  <Button variant="outline" size="sm" className="gap-2" asChild>
+                    <a href={brochureUrl} target="_blank" rel="noopener noreferrer" download>
+                      <Download className="h-4 w-4" />
+                      Download PDF
+                    </a>
+                  </Button>
+                ) : null}
               </div>
               <div className="space-y-2">
                 {detail.itinerary.map((day) => (
@@ -562,9 +538,7 @@ export function TripDetailView({
           {/* Sticky booking sidebar */}
           <aside className="lg:sticky lg:top-36 lg:self-start">
             <div className="rounded-2xl border bg-white p-6 shadow-xl ring-1 ring-slate-100">
-              <p className="text-sm text-muted-foreground">
-                {showDynamic ? "Your price" : "Starting from"}
-              </p>
+              <p className="text-sm text-muted-foreground">Starting from</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold">{formatInr(unitPrice)}</span>
                 <span className="text-sm text-muted-foreground">/ person</span>
@@ -572,6 +546,11 @@ export function TripDetailView({
               {!showDynamic && trip.originalPrice ? (
                 <p className="mt-1 text-sm text-red-500 line-through">
                   {formatInr(trip.originalPrice)}
+                </p>
+              ) : null}
+              {showDynamic ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Final price depends on each traveler&apos;s options at checkout.
                 </p>
               ) : null}
 
@@ -595,67 +574,6 @@ export function TripDetailView({
                       ))}
                   </select>
                 </div>
-
-                {showDynamic && travelChoices.length > 0 ? (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Travel option
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {travelChoices.map((key) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setTravelOption(key)}
-                          className={cn(
-                            "rounded-xl border px-3 py-2.5 text-sm font-semibold transition",
-                            travelOption === key
-                              ? "border-[#F58220] bg-[#FFF7ED] text-[#F58220]"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                          )}
-                        >
-                          {TRAVEL_OPTION_LABELS[key]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {showDynamic && roomChoices.length > 0 ? (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Room sharing
-                    </label>
-                    <div className="grid gap-2">
-                      {roomChoices.map((key) => {
-                        const price = resolveDynamicUnitPrice(dynamicConfig!, {
-                          travel: travelOption || null,
-                          room: key,
-                        });
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => setRoomOption(key)}
-                            className={cn(
-                              "flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-semibold transition",
-                              roomOption === key
-                                ? "border-[#F58220] bg-[#FFF7ED] text-[#F58220]"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                            )}
-                          >
-                            <span>{ROOM_OPTION_LABELS[key]}</span>
-                            {price ? (
-                              <span className="text-xs font-medium opacity-80">
-                                {formatInr(price)}
-                              </span>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
@@ -692,7 +610,7 @@ export function TripDetailView({
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Est. total{" "}
+                  Est. from{" "}
                   <span className="font-semibold text-foreground">
                     {formatInr(estimatedTotal)}
                   </span>{" "}

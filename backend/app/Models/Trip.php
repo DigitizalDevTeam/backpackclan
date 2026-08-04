@@ -26,6 +26,7 @@ class Trip extends Model
         'max_altitude',
         'summary',
         'cover_image_id',
+        'brochure_media_id',
         'gallery',
         'overview',
         'itinerary',
@@ -108,6 +109,7 @@ class Trip extends Model
             'min_age' => $this->min_age,
             'summary' => $this->summary ?? '',
             'cover_image_id' => $this->cover_image_id,
+            'brochure_media_id' => $this->brochure_media_id,
             'gallery' => $this->gallery ?? [],
             'overview' => $this->overview ?? [
                 'content' => '',

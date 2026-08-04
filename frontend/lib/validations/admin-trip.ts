@@ -96,6 +96,7 @@ export const adminTripFormSchema = z.object({
   maxAltitude: z.string().nullable().optional(),
   summary: z.string().min(1, "Summary is required"),
   coverImageId: z.string().nullable(),
+  brochureMediaId: z.string().nullable(),
   gallery: z.array(z.string()),
   overview: z.object({
     content: z.string(),
@@ -173,6 +174,7 @@ export function defaultAdminTripFormValues(): AdminTripFormValues {
     maxAltitude: null,
     summary: "",
     coverImageId: null,
+    brochureMediaId: null,
     gallery: [],
     overview: {
       content: "",

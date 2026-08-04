@@ -80,6 +80,8 @@ export interface TripDetailContent {
   overview: string;
   overviewExtended: string;
   galleryImageIds: string[];
+  /** Media library id for downloadable PDF brochure */
+  brochureMediaId?: string | null;
   quickFacts: TripQuickFact[];
   startPoint: string;
   endPoint: string;

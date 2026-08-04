@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -43,13 +43,21 @@ const STEPS = [
   { id: 3, label: "Extras" },
 ] as const;
 
-function emptyTraveler(seedName = ""): BookingTraveler {
+function emptyTraveler(
+  seedName = "",
+  defaults?: {
+    travelOption?: TravelOptionKey | "" | null;
+    roomOption?: RoomOptionKey | "" | null;
+  }
+): BookingTraveler {
   return {
     fullName: seedName,
     age: 25,
     gender: "male",
     idType: "aadhaar",
     idNumber: "",
+    travelOption: defaults?.travelOption || null,
+    roomOption: defaults?.roomOption || null,
   };
 }
 
@@ -105,21 +113,6 @@ export function BookingCheckoutWizard({
   );
   const [adults, setAdults] = useState(Math.max(1, Math.min(12, initialAdults)));
   const [children, setChildren] = useState(Math.max(0, Math.min(6, initialChildren)));
-  const [travelOption, setTravelOption] = useState<TravelOptionKey | "">(
-    initialTravelOption && travelChoices.includes(initialTravelOption)
-      ? initialTravelOption
-      : travelChoices[0] ?? ""
-  );
-  const roomChoices = useMemo(
-    () =>
-      dynamicConfig
-        ? enabledRoomOptions(dynamicConfig, travelOption || null)
-        : [],
-    [dynamicConfig, travelOption]
-  );
-  const [roomOption, setRoomOption] = useState<RoomOptionKey | "">(
-    initialRoomOption ?? ""
-  );
   const [contactPhone, setContactPhone] = useState(user.phone ?? "");
   const [contactEmail, setContactEmail] = useState(user.email);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -130,27 +123,24 @@ export function BookingCheckoutWizard({
   const [couponLoading, setCouponLoading] = useState(false);
   const [travelers, setTravelers] = useState<BookingTraveler[]>(() => {
     const pax = Math.max(1, initialAdults) + Math.max(0, initialChildren);
+    const seedTravel =
+      initialTravelOption && travelChoices.includes(initialTravelOption)
+        ? initialTravelOption
+        : travelChoices[0] ?? null;
+    const seedRooms = dynamicConfig
+      ? enabledRoomOptions(dynamicConfig, seedTravel)
+      : [];
+    const seedRoom =
+      initialRoomOption && seedRooms.includes(initialRoomOption)
+        ? initialRoomOption
+        : seedRooms[0] ?? null;
     return Array.from({ length: pax }, (_, i) =>
-      emptyTraveler(i === 0 ? user.name : "")
+      emptyTraveler(i === 0 ? user.name : "", {
+        travelOption: seedTravel,
+        roomOption: seedRoom,
+      })
     );
   });
-
-  useEffect(() => {
-    if (travelChoices.length && !travelChoices.includes(travelOption as TravelOptionKey)) {
-      setTravelOption(travelChoices[0] ?? "");
-    }
-  }, [travelChoices, travelOption]);
-
-  useEffect(() => {
-    if (roomChoices.length && !roomChoices.includes(roomOption as RoomOptionKey)) {
-      setRoomOption(
-        initialRoomOption && roomChoices.includes(initialRoomOption)
-          ? initialRoomOption
-          : roomChoices[0] ?? ""
-      );
-    }
-    if (!roomChoices.length) setRoomOption("");
-  }, [roomChoices, roomOption, initialRoomOption]);
 
   const addons = detail.addons?.length ? detail.addons : DEFAULT_TRIP_ADDONS;
 
@@ -158,15 +148,35 @@ export function BookingCheckoutWizard({
     (b) => b.id === departureId
   );
   const pax = adults + children;
-  const optionUnitPrice =
-    dynamicConfig?.enabled
-      ? resolveDynamicUnitPrice(dynamicConfig, {
-          travel: travelOption || null,
-          room: roomOption || null,
-        })
+  const baseUnitPrice = selectedBatch?.price ?? trip.price;
+
+  const travelerLinePrices = useMemo(() => {
+    return travelers.map((t) => {
+      if (!dynamicConfig?.enabled) return baseUnitPrice;
+      return resolveDynamicUnitPrice(dynamicConfig, {
+        travel: t.travelOption ?? null,
+        room: t.roomOption ?? null,
+      });
+    });
+  }, [travelers, dynamicConfig, baseUnitPrice]);
+
+  const tripSubtotal = travelerLinePrices.reduce<number>(
+    (sum, price) => sum + (price ?? 0),
+    0
+  );
+  const mixedPricing =
+    Boolean(dynamicConfig?.enabled) &&
+    new Set(travelerLinePrices.filter((p): p is number => p != null)).size > 1;
+  const sharedTravel =
+    travelers.length > 0 &&
+    travelers.every((t) => t.travelOption === travelers[0]?.travelOption)
+      ? travelers[0]?.travelOption ?? null
       : null;
-  const unitPrice = optionUnitPrice ?? selectedBatch?.price ?? trip.price;
-  const tripSubtotal = unitPrice * pax;
+  const sharedRoom =
+    travelers.length > 0 &&
+    travelers.every((t) => t.roomOption === travelers[0]?.roomOption)
+      ? travelers[0]?.roomOption ?? null
+      : null;
   const addonsTotal = addons
     .filter((a) => selectedAddonIds.includes(a.id))
     .reduce((sum, a) => {
@@ -183,32 +193,30 @@ export function BookingCheckoutWizard({
     const issues: string[] = [];
     if (!selectedBatch) issues.push("Select a departure batch");
     if (!seatsOk) issues.push("Not enough seats for this party size");
-    if (dynamicConfig?.enabled && dynamicConfig.travelEnabled && !travelOption) {
-      issues.push("Select a travel option");
-    }
-    if (dynamicConfig?.enabled && dynamicConfig.roomEnabled && !roomOption) {
-      issues.push("Select a room sharing option");
-    }
-    if (dynamicConfig?.enabled && optionUnitPrice == null) {
-      issues.push("Selected pricing option is not available");
-    }
     return issues;
-  }, [
-    selectedBatch,
-    seatsOk,
-    dynamicConfig,
-    travelOption,
-    roomOption,
-    optionUnitPrice,
-  ]);
+  }, [selectedBatch, seatsOk]);
 
   function syncTravelerCount(nextAdults: number, nextChildren: number) {
     const nextPax = nextAdults + nextChildren;
     setTravelers((prev) => {
       if (prev.length === nextPax) return prev;
       if (prev.length < nextPax) {
+        const fromExisting = prev[0];
+        const travel =
+          fromExisting?.travelOption ?? travelChoices[0] ?? null;
+        const rooms = dynamicConfig
+          ? enabledRoomOptions(dynamicConfig, travel)
+          : [];
+        const room =
+          fromExisting?.roomOption &&
+          (!rooms.length || rooms.includes(fromExisting.roomOption))
+            ? fromExisting.roomOption
+            : rooms[0] ?? null;
         const extras = Array.from({ length: nextPax - prev.length }, (_, i) =>
-          emptyTraveler(prev.length + i === 0 ? user.name : "")
+          emptyTraveler(prev.length + i === 0 ? user.name : "", {
+            travelOption: travel,
+            roomOption: room,
+          })
         );
         return [...prev, ...extras];
       }
@@ -222,8 +230,22 @@ export function BookingCheckoutWizard({
     value: BookingTraveler[K]
   ) {
     setTravelers((prev) =>
-      prev.map((t, i) => (i === index ? { ...t, [key]: value } : t))
+      prev.map((t, i) => {
+        if (i !== index) return t;
+        const next = { ...t, [key]: value };
+        if (key === "travelOption" && dynamicConfig) {
+          const rooms = enabledRoomOptions(
+            dynamicConfig,
+            (value as TravelOptionKey | null) ?? null
+          );
+          if (next.roomOption && !rooms.includes(next.roomOption)) {
+            next.roomOption = rooms[0] ?? null;
+          }
+        }
+        return next;
+      })
     );
+    setAppliedCoupon(null);
   }
 
   function validateTravelers(): string | null {
@@ -232,6 +254,17 @@ export function BookingCheckoutWizard({
       if (!t.fullName.trim()) return `Enter full name for traveler ${i + 1}`;
       if (!t.age || t.age < 1) return `Enter a valid age for traveler ${i + 1}`;
       if (!t.idNumber.trim()) return `Enter ID number for traveler ${i + 1}`;
+      if (dynamicConfig?.enabled) {
+        if (dynamicConfig.travelEnabled && !t.travelOption) {
+          return `Select a travel option for traveler ${i + 1}`;
+        }
+        if (dynamicConfig.roomEnabled && !t.roomOption) {
+          return `Select a room sharing option for traveler ${i + 1}`;
+        }
+        if (travelerLinePrices[i] == null) {
+          return `Pricing not available for traveler ${i + 1}'s options`;
+        }
+      }
     }
     if (!contactPhone.trim()) return "Enter a contact phone number";
     if (!contactEmail.trim()) return "Enter a contact email";
@@ -298,9 +331,16 @@ export function BookingCheckoutWizard({
           departureId,
           adults,
           children,
-          travelOption: travelOption || undefined,
-          roomOption: roomOption || undefined,
-          travelers,
+          travelers: travelers.map((t, i) => ({
+            fullName: t.fullName,
+            age: t.age,
+            gender: t.gender,
+            idType: t.idType,
+            idNumber: t.idNumber,
+            travelOption: t.travelOption || undefined,
+            roomOption: t.roomOption || undefined,
+            unitPrice: travelerLinePrices[i] ?? undefined,
+          })),
           contactPhone: contactPhone.trim(),
           contactEmail: contactEmail.trim(),
           acceptedTerms: true,
@@ -374,7 +414,10 @@ export function BookingCheckoutWizard({
           <section className="rounded-2xl border bg-white p-5 sm:p-6">
             <h1 className="text-xl font-bold sm:text-2xl">Review your trip</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Confirm batch and travelers before adding guest details.
+              Confirm batch and party size before adding guest details
+              {dynamicConfig?.enabled
+                ? ". Travel and room options are chosen per person next."
+                : "."}
             </p>
 
             <div className="mt-6 space-y-5">
@@ -395,63 +438,6 @@ export function BookingCheckoutWizard({
                   ))}
                 </select>
               </div>
-
-              {travelChoices.length > 0 ? (
-                <div>
-                  <Label>Travel option</Label>
-                  <div className="mt-1.5 grid grid-cols-2 gap-2">
-                    {travelChoices.map((key) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setTravelOption(key)}
-                        className={cn(
-                          "rounded-xl border px-3 py-2.5 text-sm font-semibold transition",
-                          travelOption === key
-                            ? "border-primary bg-primary/5 text-primary"
-                            : "border-slate-200 hover:border-slate-300"
-                        )}
-                      >
-                        {TRAVEL_OPTION_LABELS[key]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {roomChoices.length > 0 ? (
-                <div>
-                  <Label>Room sharing</Label>
-                  <div className="mt-1.5 grid gap-2">
-                    {roomChoices.map((key) => {
-                      const price = dynamicConfig
-                        ? resolveDynamicUnitPrice(dynamicConfig, {
-                            travel: travelOption || null,
-                            room: key,
-                          })
-                        : null;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setRoomOption(key)}
-                          className={cn(
-                            "flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-semibold transition",
-                            roomOption === key
-                              ? "border-primary bg-primary/5 text-primary"
-                              : "border-slate-200 hover:border-slate-300"
-                          )}
-                        >
-                          <span>{ROOM_OPTION_LABELS[key]}</span>
-                          {price ? (
-                            <span className="text-xs opacity-80">{formatInr(price)}</span>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -535,16 +521,24 @@ export function BookingCheckoutWizard({
             <h1 className="text-xl font-bold sm:text-2xl">Traveler details</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Add details for all {pax} traveler{pax > 1 ? "s" : ""}. Lead traveler
-              will be the primary contact.
+              will be the primary contact
+              {dynamicConfig?.enabled
+                ? ". Each person can choose their own travel and room option."
+                : "."}
             </p>
 
             <div className="mt-6 space-y-6">
-              {travelers.map((traveler, index) => (
+              {travelers.map((traveler, index) => {
+                const travelerRooms = dynamicConfig
+                  ? enabledRoomOptions(dynamicConfig, traveler.travelOption ?? null)
+                  : [];
+                const linePrice = travelerLinePrices[index];
+                return (
                 <div
                   key={index}
                   className="rounded-xl border border-slate-200 p-4 sm:p-5"
                 >
-                  <div className="mb-4 flex items-center justify-between">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                     <h2 className="font-semibold">
                       Traveler {index + 1}
                       {index === 0 ? (
@@ -553,6 +547,11 @@ export function BookingCheckoutWizard({
                         </span>
                       ) : null}
                     </h2>
+                    {dynamicConfig?.enabled && linePrice != null ? (
+                      <span className="text-sm font-semibold text-primary">
+                        {formatInr(linePrice)}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2">
@@ -627,9 +626,71 @@ export function BookingCheckoutWizard({
                         placeholder="ID number"
                       />
                     </div>
+                    {travelChoices.length > 0 ? (
+                      <div className="sm:col-span-2">
+                        <Label>Travel option</Label>
+                        <div className="mt-1.5 grid grid-cols-2 gap-2">
+                          {travelChoices.map((key) => (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() =>
+                                updateTraveler(index, "travelOption", key)
+                              }
+                              className={cn(
+                                "rounded-xl border px-3 py-2 text-sm font-semibold transition",
+                                traveler.travelOption === key
+                                  ? "border-primary bg-primary/5 text-primary"
+                                  : "border-slate-200 hover:border-slate-300"
+                              )}
+                            >
+                              {TRAVEL_OPTION_LABELS[key]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    {travelerRooms.length > 0 ? (
+                      <div className="sm:col-span-2">
+                        <Label>Room sharing</Label>
+                        <div className="mt-1.5 grid gap-2 sm:grid-cols-3">
+                          {travelerRooms.map((key) => {
+                            const price = dynamicConfig
+                              ? resolveDynamicUnitPrice(dynamicConfig, {
+                                  travel: traveler.travelOption ?? null,
+                                  room: key,
+                                })
+                              : null;
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() =>
+                                  updateTraveler(index, "roomOption", key)
+                                }
+                                className={cn(
+                                  "flex flex-col items-start rounded-xl border px-3 py-2 text-left text-sm font-semibold transition",
+                                  traveler.roomOption === key
+                                    ? "border-primary bg-primary/5 text-primary"
+                                    : "border-slate-200 hover:border-slate-300"
+                                )}
+                              >
+                                <span>{ROOM_OPTION_LABELS[key]}</span>
+                                {price ? (
+                                  <span className="mt-0.5 text-xs font-normal opacity-80">
+                                    {formatInr(price)}
+                                  </span>
+                                ) : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
-              ))}
+                );
+              })}
 
               <div className="rounded-xl border border-slate-200 p-4 sm:p-5">
                 <h2 className="mb-4 font-semibold">Lead contact</h2>
@@ -835,20 +896,29 @@ export function BookingCheckoutWizard({
                 <MapPin className="h-4 w-4 text-primary" />
                 {trip.destination}
               </p>
-              {travelOption ? (
+              {mixedPricing ? (
+                <p className="text-xs text-muted-foreground">
+                  Mixed options — price is the sum of each traveler&apos;s package.
+                </p>
+              ) : sharedTravel ? (
                 <p className="text-xs">
                   Travel:{" "}
                   <span className="font-medium text-foreground">
-                    {TRAVEL_OPTION_LABELS[travelOption]}
+                    {TRAVEL_OPTION_LABELS[sharedTravel]}
                   </span>
+                  {sharedRoom ? (
+                    <>
+                      {" · "}
+                      Room:{" "}
+                      <span className="font-medium text-foreground">
+                        {ROOM_OPTION_LABELS[sharedRoom]}
+                      </span>
+                    </>
+                  ) : null}
                 </p>
-              ) : null}
-              {roomOption ? (
-                <p className="text-xs">
-                  Room:{" "}
-                  <span className="font-medium text-foreground">
-                    {ROOM_OPTION_LABELS[roomOption]}
-                  </span>
+              ) : dynamicConfig?.enabled ? (
+                <p className="text-xs text-muted-foreground">
+                  Travel &amp; room options are chosen per person on the Travelers step.
                 </p>
               ) : null}
               <p className="flex items-center gap-2">
@@ -864,10 +934,34 @@ export function BookingCheckoutWizard({
             <div className="space-y-2 border-t pt-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
-                  Trip ({formatInr(unitPrice)} × {pax})
+                  {mixedPricing || dynamicConfig?.enabled
+                    ? `Trip package (${pax} traveler${pax > 1 ? "s" : ""})`
+                    : `Trip (${formatInr(baseUnitPrice)} × ${pax})`}
                 </span>
                 <span className="font-medium">{formatInr(tripSubtotal)}</span>
               </div>
+              {dynamicConfig?.enabled && travelers.length > 1 ? (
+                <ul className="space-y-1 border-l-2 border-slate-100 pl-3 text-xs text-muted-foreground">
+                  {travelers.map((t, i) => (
+                    <li key={i} className="flex justify-between gap-2">
+                      <span className="truncate">
+                        T{i + 1}
+                        {t.travelOption
+                          ? ` · ${TRAVEL_OPTION_LABELS[t.travelOption]}`
+                          : ""}
+                        {t.roomOption
+                          ? ` / ${ROOM_OPTION_LABELS[t.roomOption]}`
+                          : ""}
+                      </span>
+                      <span className="shrink-0 font-medium text-foreground">
+                        {travelerLinePrices[i] != null
+                          ? formatInr(travelerLinePrices[i]!)
+                          : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               {addonsTotal > 0 ? (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Add-ons</span>

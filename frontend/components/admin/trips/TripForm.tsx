@@ -91,6 +91,12 @@ function normalizeTrip(data: Record<string, unknown>): AdminTripFormValues {
         : data.cover_image_id != null
           ? String(data.cover_image_id)
           : null,
+    brochureMediaId:
+      data.brochureMediaId != null
+        ? String(data.brochureMediaId)
+        : data.brochure_media_id != null
+          ? String(data.brochure_media_id)
+          : null,
     gallery: asStringArray(data.gallery),
     overview: {
       content: String(overview.content ?? ""),
@@ -534,6 +540,22 @@ export function TripForm({ tripId, user }: TripFormProps) {
               {errors.coverImageId && (
                 <p className="text-sm text-destructive">{errors.coverImageId.message}</p>
               )}
+              <Controller
+                control={control}
+                name="brochureMediaId"
+                render={({ field }) => (
+                  <MediaPicker
+                    value={field.value}
+                    onChange={(m) => field.onChange(m?.id ?? null)}
+                    accept="document"
+                    label="Trip brochure (PDF)"
+                    disabled={readOnly}
+                  />
+                )}
+              />
+              <p className="-mt-2 text-xs text-muted-foreground">
+                Upload a PDF brochure for this package. Guests can download it from the trip page.
+              </p>
               <div className="space-y-2 border-t pt-4">
                 <Controller
                   control={control}

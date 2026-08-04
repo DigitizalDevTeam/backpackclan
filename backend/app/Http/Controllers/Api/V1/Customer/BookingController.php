@@ -46,6 +46,10 @@ class BookingController extends Controller
             'travelers.*.gender' => ['required', 'in:male,female,other'],
             'travelers.*.idType' => ['required', 'in:aadhaar,passport,dl,other'],
             'travelers.*.idNumber' => ['required', 'string', 'max:50'],
+            'travelers.*.travelOption' => ['nullable', 'in:own_bike,solo,dual,coach'],
+            'travelers.*.riderOption' => ['nullable', 'in:own_bike,solo,dual,coach'],
+            'travelers.*.roomOption' => ['nullable', 'in:triple,double,single'],
+            'travelers.*.unitPrice' => ['nullable', 'integer', 'min:0'],
             'contactPhone' => ['nullable', 'string', 'max:20'],
             'contactEmail' => ['nullable', 'email', 'max:255'],
             'acceptedTerms' => ['accepted'],
@@ -108,34 +112,60 @@ class BookingController extends Controller
 
                 $pricing = CamelCase::convert($trip->pricing ?? []);
                 $dynamic = \App\Support\DynamicPricing::normalize($pricing);
-                $travelOption = $data['travelOption'] ?? $data['riderOption'] ?? null;
-                $roomOption = $data['roomOption'] ?? null;
+                $fallbackTravel = $data['travelOption'] ?? $data['riderOption'] ?? null;
+                $fallbackRoom = $data['roomOption'] ?? null;
+
+                $enrichedTravelers = [];
+                $unitPrices = [];
+                $tripSubtotal = 0;
 
                 if (! empty($dynamic['enabled'])) {
                     $travelEnabled = ($dynamic['travelEnabled'] ?? true) !== false;
                     $roomEnabled = ($dynamic['roomEnabled'] ?? true) !== false;
-                    if ($travelEnabled && empty($travelOption)) {
-                        return response()->json([
-                            'success' => false,
-                            'errors' => ['form' => 'Please select a travel option'],
-                        ], 422);
-                    }
-                    if ($roomEnabled && empty($roomOption)) {
-                        return response()->json([
-                            'success' => false,
-                            'errors' => ['form' => 'Please select a room sharing option'],
-                        ], 422);
-                    }
-                    $unitPrice = \App\Support\DynamicPricing::resolveUnitPrice(
-                        $dynamic,
-                        $travelOption,
-                        $roomOption
-                    );
-                    if ($unitPrice === null || $unitPrice <= 0) {
-                        return response()->json([
-                            'success' => false,
-                            'errors' => ['form' => 'Selected pricing option is not available'],
-                        ], 422);
+
+                    foreach ($data['travelers'] as $index => $traveler) {
+                        $travelOption = $traveler['travelOption']
+                            ?? $traveler['riderOption']
+                            ?? $fallbackTravel;
+                        $roomOption = $traveler['roomOption'] ?? $fallbackRoom;
+
+                        if ($travelEnabled && empty($travelOption)) {
+                            return response()->json([
+                                'success' => false,
+                                'errors' => ['form' => 'Please select a travel option for traveler '.($index + 1)],
+                            ], 422);
+                        }
+                        if ($roomEnabled && empty($roomOption)) {
+                            return response()->json([
+                                'success' => false,
+                                'errors' => ['form' => 'Please select a room sharing option for traveler '.($index + 1)],
+                            ], 422);
+                        }
+
+                        $unitPrice = \App\Support\DynamicPricing::resolveUnitPrice(
+                            $dynamic,
+                            $travelOption,
+                            $roomOption
+                        );
+                        if ($unitPrice === null || $unitPrice <= 0) {
+                            return response()->json([
+                                'success' => false,
+                                'errors' => ['form' => 'Pricing option is not available for traveler '.($index + 1)],
+                            ], 422);
+                        }
+
+                        $unitPrices[] = $unitPrice;
+                        $tripSubtotal += $unitPrice;
+                        $enrichedTravelers[] = [
+                            'fullName' => $traveler['fullName'],
+                            'age' => (int) $traveler['age'],
+                            'gender' => $traveler['gender'],
+                            'idType' => $traveler['idType'],
+                            'idNumber' => $traveler['idNumber'],
+                            'travelOption' => $travelOption,
+                            'roomOption' => $roomOption,
+                            'unitPrice' => $unitPrice,
+                        ];
                     }
                 } else {
                     $basePrice = (int) ($pricing['salePrice'] ?? $pricing['basePrice'] ?? 0);
@@ -147,9 +177,30 @@ class BookingController extends Controller
                             'errors' => ['form' => 'Trip pricing is not configured'],
                         ], 422);
                     }
+
+                    $tripSubtotal = $unitPrice * $pax;
+                    foreach ($data['travelers'] as $traveler) {
+                        $unitPrices[] = $unitPrice;
+                        $enrichedTravelers[] = [
+                            'fullName' => $traveler['fullName'],
+                            'age' => (int) $traveler['age'],
+                            'gender' => $traveler['gender'],
+                            'idType' => $traveler['idType'],
+                            'idNumber' => $traveler['idNumber'],
+                            'travelOption' => null,
+                            'roomOption' => null,
+                            'unitPrice' => $unitPrice,
+                        ];
+                    }
                 }
 
-                $tripSubtotal = $unitPrice * $pax;
+                $travelOptions = array_values(array_unique(array_filter(array_column($enrichedTravelers, 'travelOption'))));
+                $roomOptions = array_values(array_unique(array_filter(array_column($enrichedTravelers, 'roomOption'))));
+                $uniqueUnitPrices = array_values(array_unique($unitPrices));
+                $bookingTravelOption = count($travelOptions) === 1 ? $travelOptions[0] : null;
+                $bookingRoomOption = count($roomOptions) === 1 ? $roomOptions[0] : null;
+                $bookingUnitPrice = count($uniqueUnitPrices) === 1 ? $uniqueUnitPrices[0] : null;
+
                 $catalog = \App\Support\TripAddons::normalize($trip->addons);
                 $addonSelection = \App\Support\TripAddons::resolveSelection(
                     $data['addonIds'] ?? [],
@@ -201,10 +252,10 @@ class BookingController extends Controller
                     'travelers' => $pax,
                     'adults' => (int) $data['adults'],
                     'children' => (int) $data['children'],
-                    'rider_option' => $data['travelOption'] ?? $data['riderOption'] ?? null,
-                    'room_option' => $data['roomOption'] ?? null,
-                    'unit_price' => $unitPrice,
-                    'traveler_details' => $data['travelers'],
+                    'rider_option' => $bookingTravelOption,
+                    'room_option' => $bookingRoomOption,
+                    'unit_price' => $bookingUnitPrice,
+                    'traveler_details' => $enrichedTravelers,
                     'contact_phone' => $data['contactPhone'] ?? $request->user()->phone,
                     'contact_email' => $data['contactEmail'] ?? $request->user()->email,
                     'status' => 'pending',

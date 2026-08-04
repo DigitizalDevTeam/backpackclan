@@ -31,6 +31,12 @@ export interface BookingTraveler {
   gender: TravelerGender;
   idType: TravelerIdType;
   idNumber: string;
+  /** Per-person travel option (biking) */
+  travelOption?: TravelOptionKey | null;
+  /** Per-person room sharing */
+  roomOption?: RoomOptionKey | null;
+  /** Resolved package price for this traveler */
+  unitPrice?: number | null;
 }
 
 export interface Booking {

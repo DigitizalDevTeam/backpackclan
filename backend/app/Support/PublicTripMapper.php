@@ -286,6 +286,9 @@ class PublicTripMapper
                 ? implode(' ', $highlights)
                 : ($trip->summary ?? ''),
             'galleryImageIds' => array_map('strval', $trip->gallery ?? []),
+            'brochureMediaId' => $trip->brochure_media_id
+                ? (string) $trip->brochure_media_id
+                : null,
             'quickFacts' => [
                 ['label' => 'Duration', 'value' => $card['duration']],
                 ['label' => 'Difficulty', 'value' => $difficulty],
