@@ -6,6 +6,7 @@ import { Loader2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { StripePaymentForm } from "@/components/booking/StripePaymentForm";
 import { RazorpayPaymentButton } from "@/components/booking/RazorpayPaymentButton";
+import { CashfreePaymentButton } from "@/components/booking/CashfreePaymentButton";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { formatInr } from "@/lib/site/format";
@@ -25,6 +26,12 @@ interface BookingPayPanelProps {
   heading?: string;
   onBookingUpdated?: (booking: Booking) => void;
 }
+
+const PROVIDER_HINTS: Record<PaymentProvider, string> = {
+  stripe: "Cards & wallets via Stripe",
+  razorpay: "UPI, cards & more via Razorpay",
+  cashfree: "UPI, cards & more via Cashfree",
+};
 
 export function BookingPayPanel({
   booking: initialBooking,
@@ -59,9 +66,11 @@ export function BookingPayPanel({
         : [
             ...(opts.stripeConfigured ? (["stripe"] as const) : []),
             ...(opts.razorpayConfigured ? (["razorpay"] as const) : []),
+            ...(opts.cashfreeConfigured ? (["cashfree"] as const) : []),
           ];
       if (providers.includes("stripe")) setProvider("stripe");
       else if (providers.includes("razorpay")) setProvider("razorpay");
+      else if (providers.includes("cashfree")) setProvider("cashfree");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load payment options");
     } finally {
@@ -81,6 +90,38 @@ export function BookingPayPanel({
     const params = new URLSearchParams(window.location.search);
     const paymentIntentId = params.get("payment_intent");
     const status = params.get("redirect_status");
+    const cashfreeOrderId = params.get("cashfree_order_id");
+
+    if (cashfreeOrderId) {
+      void (async () => {
+        setConfirming(true);
+        try {
+          const res = await fetch(`/api/customer/bookings/${booking.id}/payments/confirm`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              provider: "cashfree",
+              orderId: cashfreeOrderId,
+              cashfree_order_id: cashfreeOrderId,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.errors?.form || "Could not confirm payment");
+          }
+          setBooking(data.data.booking);
+          onBookingUpdated?.(data.data.booking);
+          toast.success("Payment successful");
+          router.replace(successHref);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Payment confirmation failed");
+        } finally {
+          setConfirming(false);
+        }
+      })();
+      return;
+    }
+
     if (!paymentIntentId || status !== "succeeded") return;
 
     void (async () => {
@@ -119,6 +160,7 @@ export function BookingPayPanel({
     const list: PaymentProvider[] = [];
     if (options.stripeConfigured) list.push("stripe");
     if (options.razorpayConfigured) list.push("razorpay");
+    if (options.cashfreeConfigured) list.push("cashfree");
     return list;
   }, [options]);
 
@@ -282,6 +324,10 @@ export function BookingPayPanel({
     "";
 
   const intentProvider = intent?.provider || provider;
+  const cashfreeMode =
+    intent?.mode === "production" || options.cashfreeMode === "production"
+      ? "production"
+      : "sandbox";
 
   return (
     <div className="space-y-6 rounded-2xl border bg-white p-5 sm:p-6">
@@ -355,9 +401,7 @@ export function BookingPayPanel({
                     )}
                   >
                     <p className="text-sm font-semibold">{p}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {p === "stripe" ? "Cards & wallets via Stripe" : "UPI, cards & more via Razorpay"}
-                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{PROVIDER_HINTS[p]}</p>
                   </button>
                 ))}
               </div>
@@ -405,6 +449,18 @@ export function BookingPayPanel({
           </Button>
           <Button variant="ghost" className="w-full" onClick={() => setIntent(null)}>
             Change amount
+          </Button>
+        </div>
+      ) : intentProvider === "cashfree" && intent.paymentSessionId ? (
+        <div className="space-y-4">
+          <CashfreePaymentButton
+            paymentSessionId={intent.paymentSessionId}
+            mode={cashfreeMode}
+            amount={intent.amount ?? intent.payment.amount}
+            onError={(message) => toast.error(message)}
+          />
+          <Button variant="ghost" className="w-full" onClick={() => setIntent(null)}>
+            Cancel / change amount
           </Button>
         </div>
       ) : intentProvider === "razorpay" && intent.orderId && intent.keyId ? (

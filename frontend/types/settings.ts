@@ -70,6 +70,14 @@ export interface PaymentSettings {
   razorpayWebhookSecret: string;
   razorpayWebhookSecretSet?: boolean;
   razorpayCurrency: string;
+  cashfreeEnabled: boolean;
+  cashfreeAppId: string;
+  cashfreeSecretKey: string;
+  cashfreeSecretKeySet?: boolean;
+  cashfreeWebhookSecret: string;
+  cashfreeWebhookSecretSet?: boolean;
+  cashfreeCurrency: string;
+  cashfreeEnv: "sandbox" | "production";
 }
 
 export interface NotificationSettings {

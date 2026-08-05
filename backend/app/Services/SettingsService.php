@@ -39,6 +39,8 @@ class SettingsService
         'payments.stripeWebhookSecret',
         'payments.razorpayKeySecret',
         'payments.razorpayWebhookSecret',
+        'payments.cashfreeSecretKey',
+        'payments.cashfreeWebhookSecret',
     ];
 
     /**
@@ -105,6 +107,12 @@ class SettingsService
                 'razorpayKeySecret' => '',
                 'razorpayWebhookSecret' => '',
                 'razorpayCurrency' => 'INR',
+                'cashfreeEnabled' => false,
+                'cashfreeAppId' => '',
+                'cashfreeSecretKey' => '',
+                'cashfreeWebhookSecret' => '',
+                'cashfreeCurrency' => 'INR',
+                'cashfreeEnv' => 'sandbox',
             ],
             'notifications' => [
                 'bookingCreated' => true,
@@ -190,6 +198,8 @@ class SettingsService
     public function updateGroup(string $group, array $data): array
     {
         $this->assertValidGroup($group);
+        $defaults = self::defaults()[$group] ?? [];
+        $data = array_merge($defaults, $data);
         $data = $this->mergeKeptSecrets($group, $data);
         $validated = $this->validateGroup($group, $data);
 
@@ -293,6 +303,27 @@ class SettingsService
             } else {
                 Config::set('razorpay.key_secret', '');
                 Config::set('razorpay.key_id', '');
+            }
+
+            if (($payments['cashfreeEnabled'] ?? false) === true) {
+                if (! empty($payments['cashfreeAppId'])) {
+                    Config::set('cashfree.app_id', $payments['cashfreeAppId']);
+                }
+                if (! empty($payments['cashfreeSecretKey'])) {
+                    Config::set('cashfree.secret_key', $payments['cashfreeSecretKey']);
+                }
+                if (! empty($payments['cashfreeWebhookSecret'])) {
+                    Config::set('cashfree.webhook_secret', $payments['cashfreeWebhookSecret']);
+                }
+                if (! empty($payments['cashfreeCurrency'])) {
+                    Config::set('cashfree.currency', strtoupper((string) $payments['cashfreeCurrency']));
+                }
+                if (! empty($payments['cashfreeEnv'])) {
+                    Config::set('cashfree.env', strtolower((string) $payments['cashfreeEnv']));
+                }
+            } else {
+                Config::set('cashfree.app_id', '');
+                Config::set('cashfree.secret_key', '');
             }
         } catch (\Throwable) {
             // Database may be unavailable during early bootstrap / migrations.
@@ -445,6 +476,12 @@ class SettingsService
                 'razorpayKeySecret' => ['nullable', 'string', 'max:255'],
                 'razorpayWebhookSecret' => ['nullable', 'string', 'max:255'],
                 'razorpayCurrency' => ['required', 'string', 'max:10'],
+                'cashfreeEnabled' => ['required', 'boolean'],
+                'cashfreeAppId' => ['nullable', 'string', 'max:255'],
+                'cashfreeSecretKey' => ['nullable', 'string', 'max:255'],
+                'cashfreeWebhookSecret' => ['nullable', 'string', 'max:255'],
+                'cashfreeCurrency' => ['nullable', 'string', 'max:10'],
+                'cashfreeEnv' => ['nullable', Rule::in(['sandbox', 'production'])],
             ],
             'notifications' => [
                 'bookingCreated' => ['required', 'boolean'],
@@ -483,6 +520,17 @@ class SettingsService
         }
 
         $validated = $validator->validate();
+
+        if ($group === 'payments') {
+            $validated['cashfreeEnabled'] = (bool) ($validated['cashfreeEnabled'] ?? false);
+            $validated['cashfreeAppId'] = (string) ($validated['cashfreeAppId'] ?? '');
+            $validated['cashfreeSecretKey'] = (string) ($validated['cashfreeSecretKey'] ?? '');
+            $validated['cashfreeWebhookSecret'] = (string) ($validated['cashfreeWebhookSecret'] ?? '');
+            $validated['cashfreeCurrency'] = strtoupper((string) ($validated['cashfreeCurrency'] ?? 'INR')) ?: 'INR';
+            $validated['cashfreeEnv'] = (($validated['cashfreeEnv'] ?? 'sandbox') === 'production')
+                ? 'production'
+                : 'sandbox';
+        }
 
         if ($group === 'integrations') {
             $validated['gtmId'] = strtoupper(trim((string) ($validated['gtmId'] ?? '')));

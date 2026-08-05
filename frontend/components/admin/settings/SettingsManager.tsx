@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, Controller, type FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -151,12 +151,43 @@ function SettingsTabForm({
 }) {
   const [submitting, setSubmitting] = useState(false);
 
+  const defaultValues = useMemo(() => {
+    if (group !== "payments") return data as FieldValues;
+    const payments = data as SiteSettings["payments"];
+    return {
+      ...payments,
+      stripeEnabled: !!payments.stripeEnabled,
+      stripeKey: payments.stripeKey ?? "",
+      stripeSecret: payments.stripeSecret ?? "",
+      stripeWebhookSecret: payments.stripeWebhookSecret ?? "",
+      stripeCurrency: payments.stripeCurrency || "inr",
+      depositPercent: payments.depositPercent ?? 30,
+      razorpayEnabled: !!payments.razorpayEnabled,
+      razorpayKeyId: payments.razorpayKeyId ?? "",
+      razorpayKeySecret: payments.razorpayKeySecret ?? "",
+      razorpayWebhookSecret: payments.razorpayWebhookSecret ?? "",
+      razorpayCurrency: payments.razorpayCurrency || "INR",
+      cashfreeEnabled: !!payments.cashfreeEnabled,
+      cashfreeAppId: payments.cashfreeAppId ?? "",
+      cashfreeSecretKey: payments.cashfreeSecretKey ?? "",
+      cashfreeWebhookSecret: payments.cashfreeWebhookSecret ?? "",
+      cashfreeCurrency: payments.cashfreeCurrency || "INR",
+      cashfreeEnv: payments.cashfreeEnv === "production" ? "production" : "sandbox",
+    } as FieldValues;
+  }, [group, data]);
+
   const form = useForm<FieldValues>({
     resolver: zodResolver(schemaMap[group]) as never,
-    defaultValues: data as FieldValues,
+    defaultValues,
   });
 
-  const { register, handleSubmit, control, watch, formState: { isDirty } } = form;
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { isDirty, errors },
+  } = form;
 
   useUnsavedChanges(isDirty);
 
@@ -164,6 +195,7 @@ function SettingsTabForm({
   const secondaryColor = watch("secondaryColor" as never) as unknown as string | undefined;
   const stripeEnabled = watch("stripeEnabled" as never) as unknown as boolean | undefined;
   const razorpayEnabled = watch("razorpayEnabled" as never) as unknown as boolean | undefined;
+  const cashfreeEnabled = watch("cashfreeEnabled" as never) as unknown as boolean | undefined;
   const whatsappWidget = watch("whatsappWidget" as never) as unknown as boolean | undefined;
   const tawkToEnabled = watch("tawkToEnabled" as never) as unknown as boolean | undefined;
 
@@ -179,7 +211,12 @@ function SettingsTabForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form
+      onSubmit={handleSubmit(onSubmit, () => {
+        toast.error("Please fix the highlighted fields");
+      })}
+      className="space-y-5"
+    >
       {group === "general" && (
         <>
           <Field label="Site name" name="siteName" register={register} />
@@ -380,8 +417,8 @@ function SettingsTabForm({
               render={({ field }) => (
                 <input
                   type="checkbox"
-                  checked={field.value}
-                  onChange={field.onChange}
+                  checked={!!field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
                   className="h-4 w-4 accent-primary"
                 />
               )}
@@ -402,7 +439,15 @@ function SettingsTabForm({
               <Field label="Currency" name="stripeCurrency" register={register} placeholder="inr" />
               <Field label="Deposit percent" name="depositPercent" type="number" register={register} />
             </div>
-          ) : null}
+          ) : (
+            <>
+              <input type="hidden" {...register("stripeCurrency")} />
+              <input type="hidden" {...register("depositPercent")} />
+              <input type="hidden" {...register("stripeKey")} />
+              <input type="hidden" {...register("stripeSecret")} />
+              <input type="hidden" {...register("stripeWebhookSecret")} />
+            </>
+          )}
 
           <label className="flex items-center justify-between rounded-lg border p-4">
             <div>
@@ -415,8 +460,8 @@ function SettingsTabForm({
               render={({ field }) => (
                 <input
                   type="checkbox"
-                  checked={field.value}
-                  onChange={field.onChange}
+                  checked={!!field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
                   className="h-4 w-4 accent-primary"
                 />
               )}
@@ -436,6 +481,83 @@ function SettingsTabForm({
               </div>
               <Field label="Currency" name="razorpayCurrency" register={register} placeholder="INR" />
             </div>
+          ) : (
+            <>
+              <input type="hidden" {...register("razorpayCurrency")} />
+              <input type="hidden" {...register("razorpayKeyId")} />
+              <input type="hidden" {...register("razorpayKeySecret")} />
+              <input type="hidden" {...register("razorpayWebhookSecret")} />
+            </>
+          )}
+
+          <label className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Enable Cashfree</p>
+              <p className="text-xs text-muted-foreground">Hosted checkout via Cashfree</p>
+            </div>
+            <Controller
+              name="cashfreeEnabled"
+              control={control}
+              render={({ field }) => (
+                <input
+                  type="checkbox"
+                  checked={!!field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+              )}
+            />
+          </label>
+
+          {/* Keep required Cashfree fields registered even when the gateway is disabled */}
+          {!cashfreeEnabled ? (
+            <>
+              <input type="hidden" {...register("cashfreeCurrency")} />
+              <input type="hidden" {...register("cashfreeEnv")} />
+              <input type="hidden" {...register("cashfreeAppId")} />
+              <input type="hidden" {...register("cashfreeSecretKey")} />
+              <input type="hidden" {...register("cashfreeWebhookSecret")} />
+            </>
+          ) : null}
+
+          {cashfreeEnabled ? (
+            <div className="space-y-4 rounded-lg border bg-slate-50 p-4">
+              <Field label="App ID" name="cashfreeAppId" register={register} placeholder="TEST… or prod App ID" />
+              <div className="space-y-2">
+                <Label>Secret key</Label>
+                <Input type="password" placeholder={(data as SiteSettings["payments"]).cashfreeSecretKeySet ? "•••••••• (leave blank to keep)" : "Secret key"} {...register("cashfreeSecretKey")} />
+              </div>
+              <div className="space-y-2">
+                <Label>Webhook secret</Label>
+                <Input type="password" placeholder={(data as SiteSettings["payments"]).cashfreeWebhookSecretSet ? "•••••••• (leave blank to keep)" : "Optional — defaults to secret key"} {...register("cashfreeWebhookSecret")} />
+              </div>
+              <Field label="Currency" name="cashfreeCurrency" register={register} placeholder="INR" />
+              <div className="space-y-2">
+                <Label>Environment</Label>
+                <Controller
+                  name="cashfreeEnv"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value || "sandbox"}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      <option value="sandbox">Sandbox</option>
+                      <option value="production">Production</option>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {Object.keys(errors).length > 0 ? (
+            <p className="text-sm text-destructive">
+              {Object.entries(errors)
+                .slice(0, 3)
+                .map(([key, err]) => `${key}: ${(err as { message?: string })?.message ?? "invalid"}`)
+                .join(" · ")}
+            </p>
           ) : null}
         </>
       )}

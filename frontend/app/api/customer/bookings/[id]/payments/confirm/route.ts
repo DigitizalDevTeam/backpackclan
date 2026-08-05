@@ -3,7 +3,7 @@ import { requireCustomer } from "@/lib/auth/guards";
 import { laravelFetch, useLaravelApi } from "@/lib/api/backend";
 import { confirmMockPayment } from "@/lib/mock/payment-store";
 import type { Booking } from "@/types/booking";
-import type { BookingPayment } from "@/types/payment";
+import type { BookingPayment, PaymentProvider } from "@/types/payment";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -15,7 +15,12 @@ export async function POST(request: Request, context: RouteContext) {
 
   const { id } = await context.params;
   let body: {
+    provider?: PaymentProvider;
     paymentIntentId?: string;
+    orderId?: string;
+    paymentId?: string;
+    signature?: string;
+    cashfree_order_id?: string;
     mockAmount?: number;
     mock?: boolean;
   };
@@ -29,9 +34,21 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   if (useLaravelApi() && !body.mock) {
-    if (!body.paymentIntentId) {
+    const payload: Record<string, string> = {};
+    if (body.provider) payload.provider = body.provider;
+    if (body.paymentIntentId) payload.paymentIntentId = body.paymentIntentId;
+    if (body.orderId) payload.orderId = body.orderId;
+    if (body.paymentId) payload.paymentId = body.paymentId;
+    if (body.signature) payload.signature = body.signature;
+    if (body.cashfree_order_id) payload.cashfree_order_id = body.cashfree_order_id;
+
+    if (
+      !payload.paymentIntentId &&
+      !payload.orderId &&
+      !payload.cashfree_order_id
+    ) {
       return NextResponse.json(
-        { success: false, errors: { form: "paymentIntentId is required" } },
+        { success: false, errors: { form: "Payment confirmation details are required" } },
         { status: 422 }
       );
     }
@@ -43,7 +60,7 @@ export async function POST(request: Request, context: RouteContext) {
     }>(`/v1/customer/bookings/${id}/payments/confirm`, {
       method: "POST",
       token: auth.session!.token,
-      body: JSON.stringify({ paymentIntentId: body.paymentIntentId }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok || !data.success || !data.data) {

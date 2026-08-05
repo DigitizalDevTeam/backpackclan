@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\V1\Customer\BookingPaymentController as CustomerBoo
 use App\Http\Controllers\Api\V1\Customer\TripReviewController as CustomerTripReviewController;
 use App\Http\Controllers\Api\V1\Webhooks\StripeWebhookController;
 use App\Http\Controllers\Api\V1\Webhooks\RazorpayWebhookController;
+use App\Http\Controllers\Api\V1\Webhooks\CashfreeWebhookController;
 use App\Http\Controllers\Api\V1\Public\BlogController as PublicBlogController;
 use App\Http\Controllers\Api\V1\Public\CategoryController as PublicCategoryController;
 use App\Http\Controllers\Api\V1\Public\DestinationController as PublicDestinationController;
@@ -46,6 +47,7 @@ Route::prefix('v1')->group(function () {
 
     Route::post('webhooks/stripe', [StripeWebhookController::class, 'handle']);
     Route::post('webhooks/razorpay', [RazorpayWebhookController::class, 'handle']);
+    Route::post('webhooks/cashfree', [CashfreeWebhookController::class, 'handle']);
 
     Route::get('blogs', [PublicBlogController::class, 'index']);
     Route::get('blogs/slugs', [PublicBlogController::class, 'slugs']);

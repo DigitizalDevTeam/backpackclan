@@ -63,6 +63,12 @@ const DEFAULT_SETTINGS: SiteSettings = {
     razorpayKeySecret: "",
     razorpayWebhookSecret: "",
     razorpayCurrency: "INR",
+    cashfreeEnabled: false,
+    cashfreeAppId: "",
+    cashfreeSecretKey: "",
+    cashfreeWebhookSecret: "",
+    cashfreeCurrency: "INR",
+    cashfreeEnv: "sandbox",
   },
   notifications: {
     bookingCreated: true,

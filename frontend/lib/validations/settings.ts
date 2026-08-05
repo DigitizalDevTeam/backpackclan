@@ -95,22 +95,37 @@ export const mailSettingsSchema = z.object({
   fromName: z.string().min(1, "From name is required"),
 });
 
+/** Zod 4 rejects null for z.string(); API/settings often send null for empty keys. */
+const str = z.preprocess((v) => (v == null ? "" : String(v)), z.string());
+const bool = z.preprocess((v) => v === true || v === "true" || v === 1 || v === "1", z.boolean());
+
 export const paymentSettingsSchema = z.object({
-  stripeEnabled: z.boolean(),
-  stripeKey: z.string(),
-  stripeSecret: z.string(),
+  stripeEnabled: bool,
+  stripeKey: str,
+  stripeSecret: str,
   stripeSecretSet: z.boolean().optional(),
-  stripeWebhookSecret: z.string(),
+  stripeWebhookSecret: str,
   stripeWebhookSecretSet: z.boolean().optional(),
-  stripeCurrency: z.string().min(1),
+  stripeCurrency: z.preprocess((v) => (v == null || v === "" ? "inr" : String(v)), z.string().min(1)),
   depositPercent: z.coerce.number().int().min(1).max(100),
-  razorpayEnabled: z.boolean(),
-  razorpayKeyId: z.string(),
-  razorpayKeySecret: z.string(),
+  razorpayEnabled: bool,
+  razorpayKeyId: str,
+  razorpayKeySecret: str,
   razorpayKeySecretSet: z.boolean().optional(),
-  razorpayWebhookSecret: z.string(),
+  razorpayWebhookSecret: str,
   razorpayWebhookSecretSet: z.boolean().optional(),
-  razorpayCurrency: z.string().min(1),
+  razorpayCurrency: z.preprocess((v) => (v == null || v === "" ? "INR" : String(v)), z.string().min(1)),
+  cashfreeEnabled: bool,
+  cashfreeAppId: str,
+  cashfreeSecretKey: str,
+  cashfreeSecretKeySet: z.boolean().optional(),
+  cashfreeWebhookSecret: str,
+  cashfreeWebhookSecretSet: z.boolean().optional(),
+  cashfreeCurrency: z.preprocess((v) => (v == null || v === "" ? "INR" : String(v)), z.string().min(1)),
+  cashfreeEnv: z.preprocess(
+    (v) => (v === "production" ? "production" : "sandbox"),
+    z.enum(["sandbox", "production"])
+  ),
 });
 
 export const notificationSettingsSchema = z.object({

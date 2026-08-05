@@ -7,6 +7,7 @@ use App\Http\Resources\BookingResource;
 use App\Http\Resources\PaymentResource;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Services\CashfreePaymentService;
 use App\Services\RazorpayPaymentService;
 use App\Services\StripePaymentService;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +19,8 @@ class BookingPaymentController extends Controller
 {
     public function __construct(
         private StripePaymentService $stripe,
-        private RazorpayPaymentService $razorpay
+        private RazorpayPaymentService $razorpay,
+        private CashfreePaymentService $cashfree
     ) {
     }
 
@@ -40,12 +42,16 @@ class BookingPaymentController extends Controller
 
         $stripeConfigured = $this->stripe->isConfigured();
         $razorpayConfigured = $this->razorpay->isConfigured();
+        $cashfreeConfigured = $this->cashfree->isConfigured();
         $providers = [];
         if ($stripeConfigured) {
             $providers[] = 'stripe';
         }
         if ($razorpayConfigured) {
             $providers[] = 'razorpay';
+        }
+        if ($cashfreeConfigured) {
+            $providers[] = 'cashfree';
         }
 
         return response()->json([
@@ -54,9 +60,11 @@ class BookingPaymentController extends Controller
                 'currency' => config('stripe.currency', 'inr'),
                 'stripeConfigured' => $stripeConfigured,
                 'razorpayConfigured' => $razorpayConfigured,
+                'cashfreeConfigured' => $cashfreeConfigured,
                 'providers' => $providers,
                 'publishableKey' => config('stripe.key'),
                 'razorpayKeyId' => config('razorpay.key_id'),
+                'cashfreeMode' => $this->cashfree->mode(),
                 'depositPercent' => $depositPercent,
                 'depositAmount' => $depositAmount,
                 'balanceDue' => (int) $booking->balance_due,
@@ -78,7 +86,7 @@ class BookingPaymentController extends Controller
 
         $data = $request->validate([
             'mode' => ['required', 'in:deposit,full,balance'],
-            'provider' => ['nullable', Rule::in(['stripe', 'razorpay'])],
+            'provider' => ['nullable', Rule::in(['stripe', 'razorpay', 'cashfree'])],
         ]);
 
         $provider = $data['provider'] ?? null;
@@ -87,6 +95,8 @@ class BookingPaymentController extends Controller
                 $provider = 'stripe';
             } elseif ($this->razorpay->isConfigured()) {
                 $provider = 'razorpay';
+            } elseif ($this->cashfree->isConfigured()) {
+                $provider = 'cashfree';
             } else {
                 return response()->json([
                     'success' => false,
@@ -112,6 +122,29 @@ class BookingPaymentController extends Controller
                         'amount' => $result['amount'],
                         'currency' => $result['currency'],
                         'keyId' => $result['keyId'],
+                        'payment' => new PaymentResource($result['payment']),
+                        'booking' => new BookingResource($booking->fresh('documents')),
+                    ],
+                ], 201);
+            }
+
+            if ($provider === 'cashfree') {
+                $result = $this->cashfree->createOrder(
+                    $booking,
+                    (int) $request->user()->id,
+                    $data['mode']
+                );
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'provider' => 'cashfree',
+                        'clientSecret' => null,
+                        'orderId' => $result['orderId'],
+                        'paymentSessionId' => $result['paymentSessionId'],
+                        'amount' => $result['amount'],
+                        'currency' => $result['currency'],
+                        'mode' => $result['mode'],
                         'payment' => new PaymentResource($result['payment']),
                         'booking' => new BookingResource($booking->fresh('documents')),
                     ],
@@ -154,7 +187,7 @@ class BookingPaymentController extends Controller
         }
 
         $data = $request->validate([
-            'provider' => ['nullable', Rule::in(['stripe', 'razorpay'])],
+            'provider' => ['nullable', Rule::in(['stripe', 'razorpay', 'cashfree'])],
             'paymentIntentId' => ['nullable', 'string'],
             'razorpay_order_id' => ['nullable', 'string'],
             'razorpay_payment_id' => ['nullable', 'string'],
@@ -162,17 +195,45 @@ class BookingPaymentController extends Controller
             'orderId' => ['nullable', 'string'],
             'paymentId' => ['nullable', 'string'],
             'signature' => ['nullable', 'string'],
+            'cashfree_order_id' => ['nullable', 'string'],
         ]);
 
         $provider = $data['provider'] ?? null;
         if (! $provider) {
-            $provider = ! empty($data['razorpay_order_id']) || ! empty($data['orderId'])
-                ? 'razorpay'
-                : 'stripe';
+            if (! empty($data['cashfree_order_id'])) {
+                $provider = 'cashfree';
+            } elseif (! empty($data['razorpay_order_id']) || ! empty($data['orderId'])) {
+                $provider = 'razorpay';
+            } else {
+                $provider = 'stripe';
+            }
         }
 
         try {
-            if ($provider === 'razorpay') {
+            if ($provider === 'cashfree') {
+                $orderId = $data['cashfree_order_id'] ?? $data['orderId'] ?? null;
+
+                if (! $orderId) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['form' => 'Cashfree order id is required'],
+                    ], 422);
+                }
+
+                $owns = Payment::query()
+                    ->where('booking_id', $booking->id)
+                    ->where('cashfree_order_id', $orderId)
+                    ->exists();
+
+                if (! $owns) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['form' => 'Payment not found for this booking'],
+                    ], 404);
+                }
+
+                $updated = $this->cashfree->confirmCheckout($booking, $orderId);
+            } elseif ($provider === 'razorpay') {
                 $orderId = $data['razorpay_order_id'] ?? $data['orderId'] ?? null;
                 $paymentId = $data['razorpay_payment_id'] ?? $data['paymentId'] ?? null;
                 $signature = $data['razorpay_signature'] ?? $data['signature'] ?? null;

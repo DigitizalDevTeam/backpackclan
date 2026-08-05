@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/guards";
 import { laravelFetch, useLaravelApi } from "@/lib/api/backend";
 import { createMockPaymentIntent } from "@/lib/mock/payment-store";
-import type { PaymentIntentResponse, PaymentMode } from "@/types/payment";
+import type { PaymentIntentResponse, PaymentMode, PaymentProvider } from "@/types/payment";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -13,9 +13,9 @@ export async function POST(request: Request, context: RouteContext) {
   if (auth.error) return auth.error;
 
   const { id } = await context.params;
-  let body: { mode?: PaymentMode };
+  let body: { mode?: PaymentMode; provider?: PaymentProvider };
   try {
-    body = (await request.json()) as { mode?: PaymentMode };
+    body = (await request.json()) as { mode?: PaymentMode; provider?: PaymentProvider };
   } catch {
     return NextResponse.json(
       { success: false, errors: { form: "Invalid request body" } },
@@ -24,6 +24,7 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const mode = body.mode ?? "balance";
+  const provider = body.provider;
 
   if (useLaravelApi()) {
     const { res, data } = await laravelFetch<{
@@ -33,14 +34,14 @@ export async function POST(request: Request, context: RouteContext) {
     }>(`/v1/customer/bookings/${id}/payments/intent`, {
       method: "POST",
       token: auth.session!.token,
-      body: JSON.stringify({ mode }),
+      body: JSON.stringify({ mode, provider }),
     });
 
     if (!res.ok || !data.success || !data.data) {
       return NextResponse.json(
         {
           success: false,
-          errors: { form: data.errors?.form || "Could not start Stripe payment" },
+          errors: { form: data.errors?.form || "Could not start payment" },
         },
         { status: res.status >= 400 ? res.status : 500 }
       );

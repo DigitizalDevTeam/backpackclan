@@ -26,7 +26,7 @@ export async function POST(request: Request, context: RouteContext) {
           {
             success: false,
             errors: {
-              form: "Demo payment is disabled. Configure Stripe or Razorpay in admin settings.",
+              form: "Demo payment is disabled. Configure Stripe, Razorpay, or Cashfree in admin settings.",
             },
           },
           { status: 403 }
