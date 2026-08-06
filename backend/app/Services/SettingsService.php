@@ -508,13 +508,11 @@ class SettingsService
                     $v->errors()->add('gtmId', 'Use a valid GTM container ID (e.g. GTM-XXXXXXX)');
                 }
 
-                $tawk = trim((string) ($data['tawkToId'] ?? ''));
                 $tawkEnabled = (bool) ($data['tawkToEnabled'] ?? false);
+                $tawkRaw = trim((string) ($data['tawkToId'] ?? ''));
 
-                if ($tawkEnabled && $tawk === '') {
+                if ($tawkEnabled && $tawkRaw === '') {
                     $v->errors()->add('tawkToId', 'Tawk.to Property/Widget ID is required when live chat is enabled');
-                } elseif ($tawk !== '' && ! preg_match('/^[a-f0-9]{20,32}\/[a-f0-9]{1,32}$/i', $tawk)) {
-                    $v->errors()->add('tawkToId', 'Use format propertyId/widgetId from your Tawk.to embed code');
                 }
             });
         }
@@ -534,7 +532,7 @@ class SettingsService
 
         if ($group === 'integrations') {
             $validated['gtmId'] = strtoupper(trim((string) ($validated['gtmId'] ?? '')));
-            $validated['tawkToId'] = strtolower(trim((string) ($validated['tawkToId'] ?? '')));
+            $validated['tawkToId'] = $this->normalizeTawkToId((string) ($validated['tawkToId'] ?? '')) ?? '';
         }
 
         // Strip ephemeral *Set flags if present
@@ -545,5 +543,26 @@ class SettingsService
         }
 
         return $validated;
+    }
+
+    /**
+     * Normalize Tawk ID: extract from embed URL when pasted, otherwise keep trimmed value.
+     */
+    private function normalizeTawkToId(string $value): ?string
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (preg_match(
+            '/(?:embed\.tawk\.to|tawk\.to\/chat)\/([^\/\s?#]+)\/([^\/\s?#]+)/i',
+            $trimmed,
+            $matches
+        )) {
+            return $matches[1].'/'.$matches[2];
+        }
+
+        return trim($trimmed, '/');
     }
 }

@@ -18,7 +18,7 @@ class IntegrationSettingsTest extends TestCase
         $all = $service->updateGroup('integrations', [
             'whatsappWidget' => true,
             'tawkToEnabled' => true,
-            'tawkToId' => '5f1a2b3c4d5e6f7a8b9c0d1e/1a2b3c4d',
+            'tawkToId' => '633605c554f06e12d8979f6c/1ge5gd3ld',
             'gtmId' => 'gtm-abc123',
         ]);
 
@@ -26,7 +26,21 @@ class IntegrationSettingsTest extends TestCase
 
         $this->assertTrue($integrations['whatsappWidget']);
         $this->assertSame('GTM-ABC123', $integrations['gtmId']);
-        $this->assertSame('5f1a2b3c4d5e6f7a8b9c0d1e/1a2b3c4d', $integrations['tawkToId']);
+        $this->assertSame('633605c554f06e12d8979f6c/1ge5gd3ld', $integrations['tawkToId']);
+    }
+
+    public function test_tawk_embed_url_is_normalized(): void
+    {
+        $service = app(SettingsService::class);
+
+        $all = $service->updateGroup('integrations', [
+            'whatsappWidget' => false,
+            'tawkToEnabled' => true,
+            'tawkToId' => 'https://embed.tawk.to/633605c554f06e12d8979f6c/1ge5gd3ld',
+            'gtmId' => '',
+        ]);
+
+        $this->assertSame('633605c554f06e12d8979f6c/1ge5gd3ld', $all['integrations']['tawkToId']);
     }
 
     public function test_invalid_gtm_id_is_rejected(): void

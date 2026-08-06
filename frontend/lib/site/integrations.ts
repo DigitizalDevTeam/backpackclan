@@ -1,5 +1,4 @@
 const GTM_ID_PATTERN = /^GTM-[A-Z0-9]+$/i;
-const TAWK_TO_ID_PATTERN = /^[a-f0-9]{20,32}\/[a-f0-9]{1,32}$/i;
 
 export function sanitizeGtmId(value: string | null | undefined): string | null {
   const trimmed = (value ?? "").trim();
@@ -10,13 +9,21 @@ export function sanitizeGtmId(value: string | null | undefined): string | null {
   return trimmed.toUpperCase();
 }
 
+/** Normalize Tawk ID: extract from embed URL when pasted, otherwise keep as-is. */
 export function sanitizeTawkToId(value: string | null | undefined): string | null {
   const trimmed = (value ?? "").trim();
-  if (!trimmed || !TAWK_TO_ID_PATTERN.test(trimmed)) {
+  if (!trimmed) {
     return null;
   }
 
-  return trimmed.toLowerCase();
+  const fromUrl = trimmed.match(
+    /(?:embed\.tawk\.to|tawk\.to\/chat)\/([^/\s?#]+)\/([^/\s?#]+)/i
+  );
+  if (fromUrl) {
+    return `${fromUrl[1]}/${fromUrl[2]}`;
+  }
+
+  return trimmed.replace(/^\/+|\/+$/g, "");
 }
 
 export function isValidGtmId(value: string): boolean {

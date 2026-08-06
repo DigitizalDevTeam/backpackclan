@@ -152,6 +152,15 @@ function SettingsTabForm({
   const [submitting, setSubmitting] = useState(false);
 
   const defaultValues = useMemo(() => {
+    if (group === "integrations") {
+      const integrations = data as SiteSettings["integrations"];
+      return {
+        whatsappWidget: !!integrations.whatsappWidget,
+        tawkToEnabled: !!integrations.tawkToEnabled,
+        tawkToId: integrations.tawkToId ?? "",
+        gtmId: integrations.gtmId ?? "",
+      } as FieldValues;
+    }
     if (group !== "payments") return data as FieldValues;
     const payments = data as SiteSettings["payments"];
     return {
@@ -189,6 +198,16 @@ function SettingsTabForm({
     formState: { isDirty, errors },
   } = form;
 
+  function firstErrorMessage(fieldErrors: typeof errors): string | null {
+    for (const err of Object.values(fieldErrors)) {
+      if (!err) continue;
+      if (typeof err === "object" && "message" in err && err.message) {
+        return String(err.message);
+      }
+    }
+    return null;
+  }
+
   useUnsavedChanges(isDirty);
 
   const primaryColor = watch("primaryColor" as never) as unknown as string | undefined;
@@ -212,8 +231,8 @@ function SettingsTabForm({
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit, () => {
-        toast.error("Please fix the highlighted fields");
+      onSubmit={handleSubmit(onSubmit, (fieldErrors) => {
+        toast.error(firstErrorMessage(fieldErrors) ?? "Please fix the highlighted fields");
       })}
       className="space-y-5"
     >
@@ -679,12 +698,13 @@ function SettingsTabForm({
             label="Tawk.to Property / Widget ID"
             name="tawkToId"
             register={register}
-            placeholder="5f1a2b3c4d5e6f7a8b9c0d1e/1a2b3c4d"
+            placeholder="633605c554f06e12d8979f6c/1ge5gd3ld"
             disabled={!tawkToEnabled}
+            error={errors.tawkToId?.message as string | undefined}
           />
           <p className="-mt-2 text-xs text-muted-foreground">
-            Copy the two IDs from your Tawk.to embed snippet:
-            <code className="mx-1 rounded bg-muted px-1">embed.tawk.to/PROPERTY_ID/WIDGET_ID</code>
+            Paste <code className="mx-1 rounded bg-muted px-1">propertyId/widgetId</code>
+            or the full embed URL.
           </p>
 
           <Field
@@ -692,6 +712,7 @@ function SettingsTabForm({
             name="gtmId"
             register={register}
             placeholder="GTM-XXXXXXX"
+            error={errors.gtmId?.message as string | undefined}
           />
           <p className="-mt-2 text-xs text-muted-foreground">
             Leave blank to disable GTM. Configure GA4, Meta Pixel, and other tags inside GTM.
@@ -771,6 +792,7 @@ function Field({
   type = "text",
   placeholder,
   disabled = false,
+  error,
 }: {
   label: string;
   name: string;
@@ -778,6 +800,7 @@ function Field({
   type?: string;
   placeholder?: string;
   disabled?: boolean;
+  error?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -786,8 +809,11 @@ function Field({
         type={type}
         placeholder={placeholder}
         disabled={disabled}
+        aria-invalid={!!error}
+        className={error ? "border-destructive focus-visible:ring-destructive" : undefined}
         {...register(name as never)}
       />
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isValidGtmId, isValidTawkToId } from "@/lib/site/integrations";
+import { isValidGtmId, sanitizeGtmId, sanitizeTawkToId } from "@/lib/site/integrations";
 
 export const generalSettingsSchema = z.object({
   siteName: z.string().min(1, "Site name is required"),
@@ -37,12 +37,16 @@ export const footerSettingsSchema = z.object({
   showPaymentIcons: z.boolean(),
 });
 
+/** Zod 4 rejects null for z.string(); API/settings often send null for empty keys. */
+const str = z.preprocess((v) => (v == null ? "" : String(v)), z.string());
+const bool = z.preprocess((v) => v === true || v === "true" || v === 1 || v === "1", z.boolean());
+
 export const integrationSettingsSchema = z
   .object({
-    whatsappWidget: z.boolean(),
-    tawkToEnabled: z.boolean(),
-    tawkToId: z.string(),
-    gtmId: z.string(),
+    whatsappWidget: bool,
+    tawkToEnabled: bool,
+    tawkToId: str,
+    gtmId: str,
   })
   .superRefine((data, ctx) => {
     const gtm = data.gtmId.trim();
@@ -54,29 +58,19 @@ export const integrationSettingsSchema = z
       });
     }
 
-    if (data.tawkToEnabled) {
-      const tawk = data.tawkToId.trim();
-      if (!tawk) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["tawkToId"],
-          message: "Tawk.to Property/Widget ID is required when live chat is enabled",
-        });
-      } else if (!isValidTawkToId(tawk)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["tawkToId"],
-          message: "Use format propertyId/widgetId from your Tawk.to embed code",
-        });
-      }
-    } else if (data.tawkToId.trim() && !isValidTawkToId(data.tawkToId.trim())) {
+    if (data.tawkToEnabled && !data.tawkToId.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["tawkToId"],
-        message: "Use format propertyId/widgetId from your Tawk.to embed code",
+        message: "Tawk.to Property/Widget ID is required when live chat is enabled",
       });
     }
-  });
+  })
+  .transform((data) => ({
+    ...data,
+    gtmId: sanitizeGtmId(data.gtmId) ?? "",
+    tawkToId: sanitizeTawkToId(data.tawkToId) ?? "",
+  }));
 
 export const maintenanceSettingsSchema = z.object({
   enabled: z.boolean(),
@@ -94,10 +88,6 @@ export const mailSettingsSchema = z.object({
   fromAddress: z.string().email("Valid from address required"),
   fromName: z.string().min(1, "From name is required"),
 });
-
-/** Zod 4 rejects null for z.string(); API/settings often send null for empty keys. */
-const str = z.preprocess((v) => (v == null ? "" : String(v)), z.string());
-const bool = z.preprocess((v) => v === true || v === "true" || v === 1 || v === "1", z.boolean());
 
 export const paymentSettingsSchema = z.object({
   stripeEnabled: bool,
