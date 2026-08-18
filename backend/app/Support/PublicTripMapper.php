@@ -136,8 +136,10 @@ class PublicTripMapper
             $saleActive = false;
         }
 
+        // Treat "today" batches as upcoming for the frontend.
+        // Carbon's `isFuture()` excludes dates that are today (00:00) once "now" passes.
         $futureDepartures = $trip->departures
-            ->filter(fn (Departure $d) => ! $d->is_cancelled && $d->start_date && $d->start_date->isFuture())
+            ->filter(fn (Departure $d) => ! $d->is_cancelled && $d->start_date && $d->start_date->gte(now()->startOfDay()))
             ->sortBy('start_date')
             ->values();
 
@@ -254,8 +256,9 @@ class PublicTripMapper
             ->values()
             ->all();
 
+        // Treat "today" batches as upcoming for the frontend.
         $batches = $trip->departures
-            ->filter(fn (Departure $d) => ! $d->is_cancelled && $d->start_date && $d->start_date->isFuture())
+            ->filter(fn (Departure $d) => ! $d->is_cancelled && $d->start_date && $d->start_date->gte(now()->startOfDay()))
             ->sortBy('start_date')
             ->values()
             ->map(function (Departure $d) use ($card) {

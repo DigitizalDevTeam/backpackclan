@@ -11,8 +11,11 @@ class DepartureSeeder extends Seeder
 {
     public function run(): void
     {
+        // Seed upcoming departures for published trips.
+        // Using a fixed historical base date can leave newer trips with no "upcoming"
+        // batches in the frontend. We generate dates relative to now instead.
         $trips = Trip::query()->where('status', 'published')->get();
-        $base = Carbon::parse('2026-07-01');
+        $base = now()->startOfDay();
         $profiles = [
             ['total' => 12, 'booked' => 2],
             ['total' => 12, 'booked' => 8],
@@ -22,8 +25,9 @@ class DepartureSeeder extends Seeder
         ];
 
         $counter = 0;
-        foreach ($trips->take(5) as $trip) {
-            for ($week = 0; $week < 6; $week++) {
+        foreach ($trips as $trip) {
+            // Keep enough upcoming departures so the frontend dropdown isn't empty.
+            for ($week = 0; $week < 8; $week++) {
                 $profile = $profiles[$counter % count($profiles)];
                 $start = $base->copy()->addWeeks($week);
                 $end = $start->copy()->addDays($trip->duration_nights);
@@ -39,6 +43,7 @@ class DepartureSeeder extends Seeder
                         'booked_seats' => $profile['booked'],
                         'is_guaranteed' => $week % 4 === 0,
                         'cancellation_deadline' => $start->copy()->subDays(7)->format('Y-m-d'),
+                        'is_cancelled' => false,
                     ]
                 );
                 $counter++;
