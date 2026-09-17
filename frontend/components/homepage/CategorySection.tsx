@@ -84,6 +84,8 @@ export function CategorySection({
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   const tab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
   const destinations = tab?.destinations ?? [];
+  const tabTrips = useMemo(() => tab?.trips ?? [], [tab]);
+  const showcaseType = tab?.showcaseType ?? "destinations";
   const isMonthTab = tab?.id === "months";
   const lightBg = index % 2 === 1;
   const displayTitle = tab?.title?.trim() || category.title;
@@ -96,6 +98,10 @@ export function CategorySection({
   const bannerVideo = tab?.videoSrc || category.videoSrc;
 
   const departureTrips = useMemo(() => {
+    if (showcaseType === "destinations" && tabTrips.length > 0) {
+      return tabTrips.slice(0, 4);
+    }
+
     const pool =
       region === "international"
         ? internationalTrips
@@ -117,7 +123,15 @@ export function CategorySection({
     });
 
     return (matched.length > 0 ? matched : pool).slice(0, 4);
-  }, [region, internationalTrips, domesticTrips, category.slug, category.title]);
+  }, [
+    showcaseType,
+    tabTrips,
+    region,
+    internationalTrips,
+    domesticTrips,
+    category.slug,
+    category.title,
+  ]);
 
   const departureLabel =
     region === "international" ? "International departures" : "Domestic departures";
@@ -231,36 +245,48 @@ export function CategorySection({
           </div>
         ) : null}
 
-        <div className="scrollbar-hide -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 md:grid-cols-5">
-          {destinations.map((d) => (
-            <Link
-              key={`${d.name}-${d.href}`}
-              href={d.href}
-              className="group w-[70vw] shrink-0 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-100 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-full sm:shrink"
-            >
-              <div className="relative aspect-[3/4] overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={d.image}
-                  alt={d.name}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-4">
-                  <p className="font-display text-lg font-semibold text-white">{d.name}</p>
-                  {isMonthTab ? (
-                    <p className="mt-0.5 text-xs text-white/70">Season departures</p>
-                  ) : typeof d.trips === "number" ? (
-                    <p className="mt-0.5 text-xs text-white/70">{d.trips} trips available</p>
-                  ) : null}
-                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#FFD200] opacity-0 transition-opacity group-hover:opacity-100">
-                    Explore <ArrowRight className="h-3 w-3" />
-                  </span>
+        {showcaseType === "trips" && tabTrips.length > 0 ? (
+          <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {tabTrips.map((trip) => (
+              <TripCard
+                key={trip.id}
+                trip={trip}
+                imageUrl={mediaMap[trip.imageId] ?? null}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="scrollbar-hide -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 md:grid-cols-5">
+            {destinations.map((d) => (
+              <Link
+                key={`${d.name}-${d.href}`}
+                href={d.href}
+                className="group w-[70vw] shrink-0 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-100 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-full sm:shrink"
+              >
+                <div className="relative aspect-[3/4] overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={d.image}
+                    alt={d.name}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <p className="font-display text-lg font-semibold text-white">{d.name}</p>
+                    {isMonthTab ? (
+                      <p className="mt-0.5 text-xs text-white/70">Season departures</p>
+                    ) : typeof d.trips === "number" ? (
+                      <p className="mt-0.5 text-xs text-white/70">{d.trips} trips available</p>
+                    ) : null}
+                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#FFD200] opacity-0 transition-opacity group-hover:opacity-100">
+                      Explore <ArrowRight className="h-3 w-3" />
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {departureTrips.length > 0 ? (
           <div className="mt-3">

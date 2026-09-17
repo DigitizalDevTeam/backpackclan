@@ -217,6 +217,7 @@ Route::prefix('v1/admin')->group(function () {
         Route::middleware('permission:homepage.view')->get('homepage/sections/enabled', [HomepageSectionController::class, 'enabled']);
         Route::middleware('permission:homepage.view')->get('homepage/sections/{slug}', [HomepageSectionController::class, 'show']);
         Route::middleware('permission:homepage.update')->group(function () {
+            Route::post('homepage/sections', [HomepageSectionController::class, 'store']);
             Route::put('homepage/sections', [HomepageSectionController::class, 'reorder']);
             Route::put('homepage/sections/{slug}', [HomepageSectionController::class, 'update']);
             Route::patch('homepage/sections/{slug}', [HomepageSectionController::class, 'toggle']);

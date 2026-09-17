@@ -119,7 +119,7 @@ class SiteController extends Controller
         return Destination::query()
             ->where('status', 'published')
             ->orderBy('sort_order')
-            ->limit(8)
+            ->limit(20)
             ->get()
             ->map(fn (Destination $d) => [
                 'label' => $d->name,

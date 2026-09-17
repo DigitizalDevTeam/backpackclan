@@ -10,6 +10,7 @@ import { HomeReviewsSection } from "@/components/homepage/HomeReviewsSection";
 import { HomeVideosSection } from "@/components/homepage/HomeVideosSection";
 import { HomeMemoriesSection } from "@/components/homepage/HomeMemoriesSection";
 import { HomeInquiryCta } from "@/components/homepage/HomeInquiryCta";
+import { HomePopularTripsSection } from "@/components/homepage/HomePopularTripsSection";
 import { LoadingSkeleton } from "@/components/admin/LoadingSkeleton";
 import {
   buildMarketingHomepageView,
@@ -110,8 +111,17 @@ export function HomeMarketing({ view: initialView, fetchOnClient = false }: Home
           {index === 1 && view.offers.length > 0 ? (
             <HomePromoBanners offers={view.offers} />
           ) : null}
+          {index === 1 && view.popularTrips ? (
+            <HomePopularTripsSection
+              section={view.popularTrips}
+              mediaMap={view.mediaMap}
+            />
+          ) : null}
         </div>
       ))}
+      {view.categories.length <= 1 && view.popularTrips ? (
+        <HomePopularTripsSection section={view.popularTrips} mediaMap={view.mediaMap} />
+      ) : null}
       {view.accreditations ? (
         <HomeCertifications accreditations={view.accreditations} />
       ) : (

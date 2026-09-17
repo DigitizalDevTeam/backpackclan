@@ -140,13 +140,34 @@ export function resolveCategoryShowcase(
       resolveShowcaseItem(item, catalog.mediaMap)
     );
 
+    const fromTrips = (tab.tripIds ?? [])
+      .map((id) => {
+        const trip = catalog.trips.find((t) => String(t.id) === String(id));
+        if (!trip) return null;
+        return {
+          id: trip.id,
+          slug: trip.slug,
+          title: trip.title,
+          destination: trip.destination,
+          price: trip.price,
+          duration: trip.duration,
+          imageId: trip.imageId,
+        };
+      })
+      .filter((trip): trip is NonNullable<typeof trip> => trip != null);
+
+    const showcaseType = tab.showcaseType ?? "destinations";
+
     return {
       id: tab.id,
       label: tab.label,
       title: tab.title ?? "",
       subtitle: tab.subtitle ?? "",
       href: tab.href ?? "",
-      destinations: [...fromDestinations, ...fromItems],
+      showcaseType,
+      destinations:
+        showcaseType === "trips" ? [] : [...fromDestinations, ...fromItems],
+      trips: fromTrips,
       bannerImageId: tab.bannerImageId ?? null,
       bannerVideoId: tab.bannerVideoId ?? null,
     };

@@ -32,6 +32,7 @@ import type {
 import type { UserRole } from "@/types/auth";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { DestinationMultiSelect } from "@/components/admin/homepage/DestinationMultiSelect";
+import { TripMultiSelect } from "@/components/admin/homepage/TripMultiSelect";
 
 interface SectionEditorProps {
   slug: string;
@@ -101,7 +102,9 @@ export function SectionEditor({ slug, userRole }: SectionEditorProps) {
               title: t.title ?? "",
               subtitle: t.subtitle ?? "",
               href: t.href ?? "",
+              showcaseType: t.showcaseType ?? "destinations",
               destinationIds: t.destinationIds ?? [],
+              tripIds: t.tripIds ?? [],
               items: t.items ?? [],
               bannerImageId: t.bannerImageId ?? null,
               bannerVideoId: t.bannerVideoId ?? null,
@@ -299,7 +302,7 @@ function RepeaterHeader({
 function HeroForm({ register, control, watch, setValue, readOnly }: FormProps) {
   const { fields, append, remove } = useFieldArray({
     control: control as Control<HomepageSectionContent & { ctas: unknown[] }>,
-    name: "ctas" as "ctas",
+    name: "ctas" as const,
   });
   const mediaType = watch("mediaType" as never) as unknown as "image" | "video" | undefined;
 
@@ -390,25 +393,7 @@ function FeaturedDestinationsForm({ register, control, readOnly }: FormProps) {
 }
 
 function PopularTripsForm({ register, control, watch, readOnly }: FormProps) {
-  const [trips, setTrips] = useState<{ id: string; title: string; status: string }[]>([]);
   const mode = (watch() as import("@/types/homepage").PopularTripsContent).mode ?? "featured";
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/admin/trips");
-        const result = await res.json();
-        if (result.success) {
-          setTrips(
-            result.data.filter((t: { status: string }) => t.status === "published")
-          );
-        }
-      } catch {
-        // non-blocking
-      }
-    }
-    load();
-  }, []);
 
   return (
     <>
@@ -427,37 +412,19 @@ function PopularTripsForm({ register, control, watch, readOnly }: FormProps) {
         />
       </div>
       {mode === "manual" && (
-        <div className="space-y-2">
-          <Label>Trips to show</Label>
-          <Controller
-            control={control}
-            name={"tripIds" as never}
-            render={({ field }) => {
-              const selected = (field.value as string[]) ?? [];
-              return (
-                <div className="space-y-2 rounded-lg border p-4 max-h-64 overflow-y-auto">
-                  {trips.map((trip) => (
-                    <label key={trip.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(trip.id)}
-                        disabled={readOnly}
-                        onChange={(e) => {
-                          const next = e.target.checked
-                            ? [...selected, trip.id]
-                            : selected.filter((id) => id !== trip.id);
-                          field.onChange(next);
-                        }}
-                        className="rounded border-input"
-                      />
-                      {trip.title}
-                    </label>
-                  ))}
-                </div>
-              );
-            }}
-          />
-        </div>
+        <Controller
+          control={control}
+          name={"tripIds" as never}
+          render={({ field }) => (
+            <TripMultiSelect
+              value={(field.value as string[]) ?? []}
+              onChange={field.onChange}
+              disabled={readOnly}
+              label="Trips to show"
+              hint="Pick and order the trips shown in this homepage section."
+            />
+          )}
+        />
       )}
       <div className="space-y-2">
         <Label>Layout</Label>
@@ -788,7 +755,7 @@ function NewsletterForm({ register, control, readOnly }: FormProps) {
 function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: FormProps) {
   const { fields, append, remove } = useFieldArray({
     control: control as Control<HomepageSectionContent & { tabs: unknown[] }>,
-    name: "tabs" as "tabs",
+    name: "tabs" as const,
   });
 
   return (
@@ -839,7 +806,9 @@ function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: 
             title: "",
             subtitle: "",
             href: "",
+            showcaseType: "destinations",
             destinationIds: [],
+            tripIds: [],
             items: [],
             bannerImageId: null,
             bannerVideoId: null,
@@ -911,19 +880,75 @@ function CategoryShowcaseForm({ register, control, watch, setValue, readOnly }: 
             />
           </div>
 
-          <Controller
-            control={control}
-            name={`tabs.${i}.destinationIds` as never}
-            render={({ field: destField }) => (
-              <DestinationMultiSelect
-                value={(destField.value as string[]) ?? []}
-                onChange={destField.onChange}
-                disabled={readOnly}
-                label="Destinations"
-                hint="Pick published destinations for this tab — cards build automatically."
-              />
-            )}
-          />
+          <div className="space-y-2">
+            <Label>Main card row</Label>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={
+                (watch(`tabs.${i}.showcaseType` as never) as unknown as string) ??
+                "destinations"
+              }
+              disabled={readOnly}
+              onChange={(e) =>
+                setValue(
+                  `tabs.${i}.showcaseType` as never,
+                  e.target.value as never
+                )
+              }
+            >
+              <option value="destinations">Show destinations</option>
+              <option value="trips">Show specific trips</option>
+            </select>
+          </div>
+
+          {(watch(`tabs.${i}.showcaseType` as never) as unknown as string) !==
+          "trips" ? (
+            <Controller
+              control={control}
+              name={`tabs.${i}.destinationIds` as never}
+              render={({ field: destField }) => (
+                <DestinationMultiSelect
+                  value={(destField.value as string[]) ?? []}
+                  onChange={destField.onChange}
+                  disabled={readOnly}
+                  label="Destinations"
+                  hint="Pick published destinations for this tab — cards build automatically."
+                  reorderable
+                />
+              )}
+            />
+          ) : (
+            <Controller
+              control={control}
+              name={`tabs.${i}.tripIds` as never}
+              render={({ field: tripField }) => (
+                <TripMultiSelect
+                  value={(tripField.value as string[]) ?? []}
+                  onChange={tripField.onChange}
+                  disabled={readOnly}
+                  label="Trips"
+                  hint="Pick the trips shown as cards in this tab."
+                />
+              )}
+            />
+          )}
+
+          {(watch(`tabs.${i}.showcaseType` as never) as unknown as string) !==
+          "trips" ? (
+            <Controller
+              control={control}
+              name={`tabs.${i}.tripIds` as never}
+              render={({ field: tripField }) => (
+                <TripMultiSelect
+                  value={(tripField.value as string[]) ?? []}
+                  onChange={tripField.onChange}
+                  disabled={readOnly}
+                  label="Featured departures (optional)"
+                  hint="Optional trip cards shown below the destination row."
+                />
+              )}
+            />
+          ) : null}
         </div>
       ))}
     </>

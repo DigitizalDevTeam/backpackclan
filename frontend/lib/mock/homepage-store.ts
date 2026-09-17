@@ -459,6 +459,88 @@ export function toggleSectionEnabled(slug: string): HomepageSection {
   return updated;
 }
 
+function defaultContentForType(
+  type: HomepageSectionType,
+  title: string
+): HomepageSection["content"] {
+  switch (type) {
+    case "category_showcase":
+      return {
+        title,
+        subtitle: "",
+        href: "/trips",
+        layout: "banner-below",
+        categoryId: null,
+        videoMediaId: null,
+        posterMediaId: null,
+        tabs: [
+          {
+            id: "india",
+            label: "India",
+            showcaseType: "destinations",
+            destinationIds: [],
+            tripIds: [],
+            items: [],
+            bannerImageId: null,
+            bannerVideoId: null,
+          },
+          {
+            id: "international",
+            label: "International",
+            showcaseType: "destinations",
+            destinationIds: [],
+            tripIds: [],
+            items: [],
+            bannerImageId: null,
+            bannerVideoId: null,
+          },
+        ],
+      };
+    case "popular_trips":
+      return {
+        title,
+        layout: "carousel",
+        mode: "manual",
+        tripIds: [],
+        filterTags: [],
+      };
+    case "featured_destinations":
+      return {
+        title,
+        destinationIds: [],
+        cards: [],
+      };
+    default:
+      throw new Error("Unsupported section type for creation");
+  }
+}
+
+export function createSection(input: {
+  title: string;
+  slug: string;
+  type: HomepageSectionType;
+}): HomepageSection {
+  const existing = getAllSections();
+  if (existing.some((s) => s.slug === input.slug)) {
+    throw new Error("A section with this slug already exists");
+  }
+
+  const maxOrder = existing.reduce((max, s) => Math.max(max, s.sortOrder), -1);
+  const created = section(
+    `sec-${Date.now()}`,
+    input.slug,
+    input.title,
+    input.type,
+    maxOrder + 1,
+    true,
+    defaultContentForType(input.type, input.title)
+  );
+
+  sectionStore.replace((sections) => [...sections, created]);
+  logActivity(`${created.title} section created`, "homepage");
+  return created;
+}
+
 export function updateSectionContent(
   slug: string,
   content: HomepageSection["content"]

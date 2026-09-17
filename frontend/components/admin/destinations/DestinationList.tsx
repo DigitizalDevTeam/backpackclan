@@ -146,7 +146,7 @@ export function DestinationList({ user }: DestinationListProps) {
     <div className="space-y-6">
       <PageHeader
         title="Destinations"
-        description="Manage destination hub pages with overview, weather, FAQs, and linked trips."
+        description="Manage destination hub pages with overview, FAQs, and linked trips."
         action={
           canCreate ? (
             <Button asChild>

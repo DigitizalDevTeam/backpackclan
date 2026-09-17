@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -23,6 +23,12 @@ import type {
 import type { PublicTrip, TripBatch, TripDetailContent } from "@/types/trip";
 import type { TravelOptionKey, RoomOptionKey } from "@/types/travel";
 import { DEFAULT_TRIP_ADDONS, type CouponValidation } from "@/lib/booking/pricing";
+import {
+  isInternationalTrip,
+  maxTravelersForBatch,
+  normalizeInternationalPax,
+  travelerCountOptions,
+} from "@/lib/booking/travelers";
 import {
   enabledTravelOptions,
   enabledRoomOptions,
@@ -85,6 +91,7 @@ export function BookingCheckoutWizard({
   imageUrl,
 }: BookingCheckoutWizardProps) {
   const router = useRouter();
+  const isInternational = isInternationalTrip(trip);
   const availableBatches = detail.batches.filter((b) => b.status !== "sold_out");
 
   const dynamicConfig = useMemo(() => {
@@ -111,8 +118,14 @@ export function BookingCheckoutWizard({
       ? initialDepartureId
       : availableBatches[0]?.id ?? ""
   );
-  const [adults, setAdults] = useState(Math.max(1, Math.min(12, initialAdults)));
-  const [children, setChildren] = useState(Math.max(0, Math.min(6, initialChildren)));
+  const initialPax = isInternational
+    ? normalizeInternationalPax(initialAdults, initialChildren)
+    : {
+        adults: Math.max(1, Math.min(12, initialAdults)),
+        children: Math.max(0, Math.min(6, initialChildren)),
+      };
+  const [adults, setAdults] = useState(initialPax.adults);
+  const [children, setChildren] = useState(initialPax.children);
   const [contactPhone, setContactPhone] = useState(user.phone ?? "");
   const [contactEmail, setContactEmail] = useState(user.email);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -147,6 +160,8 @@ export function BookingCheckoutWizard({
   const selectedBatch: TripBatch | undefined = availableBatches.find(
     (b) => b.id === departureId
   );
+  const maxTravelers = maxTravelersForBatch(selectedBatch?.seatsLeft);
+  const travelerOptions = travelerCountOptions(maxTravelers);
   const pax = adults + children;
   const baseUnitPrice = selectedBatch?.price ?? trip.price;
 
@@ -188,6 +203,16 @@ export function BookingCheckoutWizard({
   const totalAmount = Math.max(0, preDiscountTotal - discountAmount);
 
   const seatsOk = (selectedBatch?.seatsLeft ?? 0) >= pax;
+
+  useEffect(() => {
+    if (!isInternational) return;
+    const next = normalizeInternationalPax(Math.min(pax, maxTravelers), 0);
+    if (next.adults !== adults || next.children !== children) {
+      setAdults(next.adults);
+      setChildren(next.children);
+      syncTravelerCount(next.adults, next.children);
+    }
+  }, [isInternational, maxTravelers, departureId, pax, adults, children]);
 
   const reviewIssues = useMemo(() => {
     const issues: string[] = [];
@@ -439,46 +464,69 @@ export function BookingCheckoutWizard({
                 </select>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              {isInternational ? (
                 <div>
-                  <Label htmlFor="adults">Adults</Label>
+                  <Label htmlFor="travelers">Number of travellers</Label>
                   <select
-                    id="adults"
-                    value={adults}
+                    id="travelers"
+                    value={Math.min(pax, maxTravelers)}
                     onChange={(e) => {
-                      const next = Number(e.target.value);
-                      setAdults(next);
-                      syncTravelerCount(next, children);
+                      const next = normalizeInternationalPax(Number(e.target.value), 0);
+                      setAdults(next.adults);
+                      setChildren(next.children);
+                      syncTravelerCount(next.adults, next.children);
                     }}
                     className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm"
                   >
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                    {travelerOptions.map((n) => (
                       <option key={n} value={n}>
                         {n}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <Label htmlFor="children">Children</Label>
-                  <select
-                    id="children"
-                    value={children}
-                    onChange={(e) => {
-                      const next = Number(e.target.value);
-                      setChildren(next);
-                      syncTravelerCount(adults, next);
-                    }}
-                    className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm"
-                  >
-                    {[0, 1, 2, 3, 4].map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="adults">Adults</Label>
+                    <select
+                      id="adults"
+                      value={adults}
+                      onChange={(e) => {
+                        const next = Number(e.target.value);
+                        setAdults(next);
+                        syncTravelerCount(next, children);
+                      }}
+                      className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="children">Children</Label>
+                    <select
+                      id="children"
+                      value={children}
+                      onChange={(e) => {
+                        const next = Number(e.target.value);
+                        setChildren(next);
+                        syncTravelerCount(adults, next);
+                      }}
+                      className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm"
+                    >
+                      {[0, 1, 2, 3, 4].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {reviewIssues.length > 0 ? (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

@@ -7,6 +7,7 @@ use App\Models\HomepageSection;
 use App\Support\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class HomepageSectionController extends Controller
 {
@@ -42,6 +43,37 @@ class HomepageSectionController extends Controller
         }
 
         return response()->json(['success' => true, 'data' => $section->toApiArray()]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:120'],
+            'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('homepage_sections', 'slug')],
+            'type' => ['required', Rule::in([
+                'category_showcase',
+                'popular_trips',
+                'featured_destinations',
+            ])],
+        ]);
+
+        $sortOrder = (int) (HomepageSection::query()->max('sort_order') ?? -1) + 1;
+
+        $section = HomepageSection::query()->create([
+            'slug' => $data['slug'],
+            'title' => $data['title'],
+            'type' => $data['type'],
+            'sort_order' => $sortOrder,
+            'is_enabled' => true,
+            'content' => $this->defaultContentForType($data['type'], $data['title']),
+        ]);
+
+        ActivityLogger::log("{$section->title} section created", 'homepage');
+
+        return response()->json([
+            'success' => true,
+            'data' => $section->toApiArray(),
+        ], 201);
     }
 
     public function reorder(Request $request): JsonResponse
@@ -90,5 +122,64 @@ class HomepageSectionController extends Controller
         ActivityLogger::log("{$section->title} section {$status}", 'homepage');
 
         return response()->json(['success' => true, 'data' => $section->fresh()->toApiArray()]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function defaultContentForType(string $type, string $title): array
+    {
+        return match ($type) {
+            'category_showcase' => [
+                'title' => $title,
+                'subtitle' => '',
+                'href' => '/trips',
+                'layout' => 'banner-below',
+                'categoryId' => null,
+                'videoMediaId' => null,
+                'posterMediaId' => null,
+                'tabs' => [
+                    [
+                        'id' => 'india',
+                        'label' => 'India',
+                        'title' => '',
+                        'subtitle' => '',
+                        'href' => '',
+                        'showcaseType' => 'destinations',
+                        'destinationIds' => [],
+                        'tripIds' => [],
+                        'items' => [],
+                        'bannerImageId' => null,
+                        'bannerVideoId' => null,
+                    ],
+                    [
+                        'id' => 'international',
+                        'label' => 'International',
+                        'title' => '',
+                        'subtitle' => '',
+                        'href' => '',
+                        'showcaseType' => 'destinations',
+                        'destinationIds' => [],
+                        'tripIds' => [],
+                        'items' => [],
+                        'bannerImageId' => null,
+                        'bannerVideoId' => null,
+                    ],
+                ],
+            ],
+            'popular_trips' => [
+                'title' => $title,
+                'layout' => 'carousel',
+                'mode' => 'manual',
+                'tripIds' => [],
+                'filterTags' => [],
+            ],
+            'featured_destinations' => [
+                'title' => $title,
+                'destinationIds' => [],
+                'cards' => [],
+            ],
+            default => [],
+        };
     }
 }

@@ -22,15 +22,27 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   ExternalLink,
   GripVertical,
+  Loader2,
   Pencil,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { LoadingSkeleton } from "@/components/admin/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { HomepageSection } from "@/types/homepage";
+import type { HomepageSection, HomepageSectionType } from "@/types/homepage";
 import type { UserRole } from "@/types/auth";
 
 interface HomepageSectionListProps {
@@ -115,10 +127,23 @@ function SortableRow({
   );
 }
 
+function slugifyTitle(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function HomepageSectionList({ userRole }: HomepageSectionListProps) {
   const readOnly = userRole === "viewer";
   const [sections, setSections] = useState<HomepageSection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newSlug, setNewSlug] = useState("");
+  const [newType, setNewType] = useState<HomepageSectionType>("category_showcase");
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -173,6 +198,38 @@ export function HomepageSectionList({ userRole }: HomepageSectionListProps) {
     }
   }
 
+  async function handleCreateSection() {
+    const title = newTitle.trim();
+    const slug = (newSlug.trim() || slugifyTitle(title)).trim();
+    if (!title || !slug) {
+      toast.error("Enter a section title");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const res = await fetch("/api/admin/homepage/sections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, slug, type: newType }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.errors?.form ?? "Could not create section");
+      }
+      setSections((prev) => [...prev, result.data].sort((a, b) => a.sortOrder - b.sortOrder));
+      toast.success("Homepage section created");
+      setCreateOpen(false);
+      setNewTitle("");
+      setNewSlug("");
+      setNewType("category_showcase");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create section");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   async function handleToggle(slug: string) {
     try {
       const res = await fetch(`/api/admin/homepage/sections/${slug}`, {
@@ -208,6 +265,12 @@ export function HomepageSectionList({ userRole }: HomepageSectionListProps) {
             <Badge variant="secondary">
               {enabledCount}/{sections.length} enabled
             </Badge>
+            {!readOnly ? (
+              <Button type="button" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add section
+              </Button>
+            ) : null}
             <Button variant="outline" asChild>
               <Link href="/preview/homepage" target="_blank">
                 <ExternalLink className="h-4 w-4" />
@@ -217,6 +280,63 @@ export function HomepageSectionList({ userRole }: HomepageSectionListProps) {
           </div>
         }
       />
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add homepage section</DialogTitle>
+            <DialogDescription>
+              Create a new category row, featured trips block, or popular destinations section.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="section-type">Section type</Label>
+              <Select
+                id="section-type"
+                value={newType}
+                onChange={(e) => setNewType(e.target.value as HomepageSectionType)}
+              >
+                <option value="category_showcase">Category row (Motor Biking, Backpacking, etc.)</option>
+                <option value="popular_trips">Featured trips</option>
+                <option value="featured_destinations">Popular destinations</option>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="section-title">Title</Label>
+              <Input
+                id="section-title"
+                value={newTitle}
+                onChange={(e) => {
+                  setNewTitle(e.target.value);
+                  if (!newSlug.trim()) {
+                    setNewSlug(slugifyTitle(e.target.value));
+                  }
+                }}
+                placeholder="e.g. International Trips"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="section-slug">Slug</Label>
+              <Input
+                id="section-slug"
+                value={newSlug}
+                onChange={(e) => setNewSlug(slugifyTitle(e.target.value))}
+                placeholder="international-trips"
+              />
+            </div>
+            <Button
+              type="button"
+              className="w-full"
+              disabled={creating}
+              onClick={handleCreateSection}
+            >
+              {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Create section
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <DndContext
         sensors={sensors}

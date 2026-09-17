@@ -18,7 +18,6 @@ import {
   MediaGalleryPicker,
   RepeaterField,
   SlugField,
-  WeatherMonthGrid,
 } from "@/components/forms/travel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -271,7 +270,7 @@ export function DestinationForm({ destinationId, user }: DestinationFormProps) {
     <div className="space-y-6">
       <PageHeader
         title={isEdit ? "Edit Destination" : "New Destination"}
-        description="Build a destination hub page with overview, weather, FAQs, and linked packages."
+        description="Build a destination hub page with overview, FAQs, and linked packages."
         action={
           <div className="flex gap-2">
             {isEdit && previewSlug && (
@@ -620,24 +619,6 @@ export function DestinationForm({ destinationId, user }: DestinationFormProps) {
                   })}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === "weather" && (
-          <Card>
-            <CardContent className="pt-6">
-              <Controller
-                control={control}
-                name="weather"
-                render={({ field }) => (
-                  <WeatherMonthGrid
-                    months={field.value}
-                    onChange={field.onChange}
-                    disabled={readOnly}
-                  />
-                )}
-              />
             </CardContent>
           </Card>
         )}

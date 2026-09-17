@@ -158,7 +158,7 @@
     "is_enabled": true,
     "content": {
       "title": "Popular Destinations",
-      "destinationSlugs": ["leh-ladakh", "spiti", "kashmir", "bhutan", "nepal", "tawang", "thailand"],
+      "destinationSlugs": ["leh-ladakh", "spiti", "kashmir", "bhutan", "nepal", "tawang", "kerala", "andaman", "vietnam", "thailand", "bali", "sikkim", "meghalaya"],
       "cards": []
     }
   },
@@ -167,11 +167,11 @@
     "title": "Popular Trips",
     "type": "popular_trips",
     "sort_order": 6,
-    "is_enabled": false,
+    "is_enabled": true,
     "content": {
       "title": "Trending Adventures",
       "layout": "carousel",
-      "mode": "featured",
+      "mode": "manual",
       "tripIds": [],
       "filterTags": ["Motor Biking", "Trek", "Backpacking", "Custom"]
     }

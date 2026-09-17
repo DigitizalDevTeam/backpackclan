@@ -13,6 +13,9 @@ import type { Banner } from "@/types/banner";
 import type { Category } from "@/types/category";
 import type { Destination } from "@/types/destination";
 import type { PublicTrip } from "@/types/trip";
+import type { CategoryShowcaseType, PopularTripsContent } from "@/types/homepage";
+import { resolvePopularTrips } from "@/lib/homepage/resolve";
+import { POPULAR_DESTINATIONS_LIMIT } from "@/lib/site/constants";
 
 export type ResolvedDestination = {
   name: string;
@@ -37,9 +40,18 @@ export type ResolvedCategory = {
     subtitle?: string;
     href?: string;
     destinations: ResolvedDestination[];
+    showcaseType: CategoryShowcaseType;
+    trips: PublicTrip[];
     poster?: string;
     videoSrc?: string;
   }[];
+};
+
+export type ResolvedPopularTrips = {
+  title: string;
+  layout: "grid" | "carousel";
+  filterTags: string[];
+  trips: PublicTrip[];
 };
 
 export type ResolvedHero = {
@@ -135,6 +147,7 @@ export type MarketingHomepageView = {
   accreditations: ResolvedAccreditations | null;
   internationalTrips: PublicTrip[];
   domesticTrips: PublicTrip[];
+  popularTrips: ResolvedPopularTrips | null;
   mediaMap: Record<string, string>;
 };
 
@@ -223,6 +236,8 @@ function withMonthWiseTab(
         id: "months",
         label: "Month-wise",
         destinations: buildMonthWiseDestinations(categoryParam, mediaMap),
+        showcaseType: "destinations" as const,
+        trips: [] as PublicTrip[],
       },
     ],
   };
@@ -362,6 +377,8 @@ function categoriesFromCatalog(
             image: resolveMedia(mediaMap, d.heroImageId) ?? FALLBACK_POSTER,
             trips: d.tripCount,
           })),
+          showcaseType: "destinations" as const,
+          trips: [] as PublicTrip[],
         },
       ],
     };
@@ -403,7 +420,7 @@ export function buildMarketingHomepageView(
   };
 
   let categories: ResolvedCategory[] = sections
-    .filter((s) => s.type === "category_showcase")
+    .filter((s) => s.type === "category_showcase" && s.isEnabled)
     .map((s) => {
       const c = s.content as CategoryShowcaseContent;
       const tabs = (c.resolvedTabs ?? c.tabs ?? []).map((tab) => {
@@ -436,6 +453,17 @@ export function buildMarketingHomepageView(
         const tabHref =
           "href" in tab && typeof tab.href === "string" ? tab.href.trim() : "";
 
+        const showcaseType: CategoryShowcaseType =
+          "showcaseType" in tab && tab.showcaseType === "trips"
+            ? "trips"
+            : "destinations";
+        const tabTrips =
+          "trips" in tab && Array.isArray(tab.trips)
+            ? tab.trips
+                .map((trip) => catalog?.trips?.find((t) => t.id === trip.id))
+                .filter((trip): trip is PublicTrip => trip != null)
+            : [];
+
         return {
           id: tab.id,
           label: tab.label,
@@ -443,6 +471,8 @@ export function buildMarketingHomepageView(
           subtitle: tabSubtitle || undefined,
           href: tabHref || undefined,
           destinations,
+          showcaseType,
+          trips: tabTrips,
           poster: tabBannerImage ?? undefined,
           videoSrc: tabBannerVideo ?? undefined,
         };
@@ -483,13 +513,13 @@ export function buildMarketingHomepageView(
 
   const quickDestinations: ResolvedDestination[] =
     featuredCards.length > 0
-      ? featuredCards.slice(0, 8).map((card) => ({
+      ? featuredCards.slice(0, POPULAR_DESTINATIONS_LIMIT).map((card) => ({
           name: card.name,
           href: card.link,
           image: resolveMedia(mediaMap, card.imageId) ?? FALLBACK_POSTER,
           trips: card.tripCount,
         }))
-      : (catalog?.destinations ?? []).slice(0, 8).map((d) => ({
+      : (catalog?.destinations ?? []).slice(0, POPULAR_DESTINATIONS_LIMIT).map((d) => ({
           name: d.name,
           href: `/destinations/${d.slug}`,
           image: resolveMedia(mediaMap, d.heroImageId) ?? FALLBACK_POSTER,
@@ -583,6 +613,26 @@ export function buildMarketingHomepageView(
     .filter((t) => t.region !== "international")
     .slice(0, 8);
 
+  const popularTripsSection = sections.find(
+    (s) => s.type === "popular_trips" && s.isEnabled
+  );
+  const popularTripsContent = (popularTripsSection?.content ??
+    null) as PopularTripsContent | null;
+  const popularTrips: ResolvedPopularTrips | null =
+    popularTripsSection && popularTripsContent && catalog?.trips
+      ? {
+          title: popularTripsContent.title || "Trending Adventures",
+          layout: popularTripsContent.layout ?? "carousel",
+          filterTags: popularTripsContent.filterTags ?? [],
+          trips: resolvePopularTrips(popularTripsContent, {
+            destinations: catalog.destinations ?? [],
+            trips: catalog.trips,
+            blogs: [],
+            mediaMap,
+          }),
+        }
+      : null;
+
   const accreditations = resolveAccreditations(sections, mediaMap);
 
   const gallerySection = sections.find((s) => s.type === "gallery");
@@ -658,6 +708,7 @@ export function buildMarketingHomepageView(
     accreditations,
     internationalTrips,
     domesticTrips,
+    popularTrips,
     mediaMap,
   };
 }

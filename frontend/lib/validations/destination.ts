@@ -83,7 +83,6 @@ export const DESTINATION_TABS = [
   { id: "packages", label: "Packages" },
   { id: "faqs", label: "FAQs" },
   { id: "bestTime", label: "Best Time" },
-  { id: "weather", label: "Weather" },
   { id: "map", label: "Map" },
   { id: "seo", label: "SEO" },
 ] as const;
@@ -99,7 +98,6 @@ export const DESTINATION_TAB_FIELD_RULES: {
   { prefix: "linkedTripIds", tab: "packages" },
   { prefix: "faqs", tab: "faqs" },
   { prefix: "bestTime", tab: "bestTime" },
-  { prefix: "weather", tab: "weather" },
   { prefix: "map", tab: "map" },
   { prefix: "seo", tab: "seo" },
 ];

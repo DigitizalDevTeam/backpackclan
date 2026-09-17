@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/auth/session";
 import { isCustomerUser } from "@/lib/auth/user-kind";
 import { getSiteLayoutData } from "@/lib/site/public-data";
+import { normalizeInternationalPax } from "@/lib/booking/travelers";
 import { getPublicTripDetail } from "@/lib/site/trip-data";
 import type { TravelOptionKey, RoomOptionKey } from "@/types/travel";
 
@@ -78,8 +79,14 @@ export default async function BookTripPage({
 
   if (!data) notFound();
 
-  const adults = Math.max(1, Number.parseInt(query.adults ?? "1", 10) || 1);
-  const children = Math.max(0, Number.parseInt(query.children ?? "0", 10) || 0);
+  const parsedAdults = Math.max(1, Number.parseInt(query.adults ?? "1", 10) || 1);
+  const parsedChildren = Math.max(0, Number.parseInt(query.children ?? "0", 10) || 0);
+  const internationalPax =
+    data.trip.region === "international"
+      ? normalizeInternationalPax(parsedAdults, parsedChildren)
+      : null;
+  const adults = internationalPax?.adults ?? parsedAdults;
+  const children = internationalPax?.children ?? parsedChildren;
   const travel =
     travelParam && TRAVEL_KEYS.has(travelParam as TravelOptionKey)
       ? (travelParam as TravelOptionKey)

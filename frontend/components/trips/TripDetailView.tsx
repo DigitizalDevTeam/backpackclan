@@ -22,6 +22,13 @@ import {
   normalizeDynamicPricing,
   minDynamicPrice,
 } from "@/lib/pricing/dynamic-options";
+import {
+  groupSizeLabel,
+  isInternationalTrip,
+  maxTravelersForBatch,
+  normalizeInternationalPax,
+  travelerCountOptions,
+} from "@/lib/booking/travelers";
 import { formatInr } from "@/lib/site/format";
 import { TripCard } from "@/components/homepage/homepage-parts";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +73,7 @@ export function TripDetailView({
       detail.batches[0]?.id ??
       ""
   );
+  const isInternational = isInternationalTrip(trip);
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -106,6 +114,9 @@ export function TripDetailView({
       ? Array.from({ length: 4 }, (_, i) => galleryPool[i % galleryPool.length])
       : [];
   const selectedBatchData = detail.batches.find((b) => b.id === selectedBatch);
+  const maxTravelers = maxTravelersForBatch(selectedBatchData?.seatsLeft);
+  const travelerOptions = travelerCountOptions(maxTravelers);
+  const internationalTravelers = adults + children;
   const unitPrice =
     minDynamicPrice(dynamicConfig) ??
     selectedBatchData?.price ??
@@ -121,6 +132,18 @@ export function TripDetailView({
   const pax = adults + children;
   const estimatedTotal = unitPrice * pax;
   const showDynamic = Boolean(dynamicConfig?.enabled);
+
+  useEffect(() => {
+    if (!isInternational) return;
+    const next = normalizeInternationalPax(
+      Math.min(adults + children, maxTravelers),
+      0
+    );
+    if (next.adults !== adults || next.children !== children) {
+      setAdults(next.adults);
+      setChildren(next.children);
+    }
+  }, [isInternational, maxTravelers, selectedBatch, adults, children]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -289,7 +312,9 @@ export function TripDetailView({
                   <Users className="h-8 w-8 text-primary" />
                   <div>
                     <p className="text-xs text-muted-foreground">Group Size</p>
-                    <p className="font-semibold">12–18 travelers</p>
+                    <p className="font-semibold">
+                      {groupSizeLabel(detail.quickFacts, isInternational)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -575,40 +600,66 @@ export function TripDetailView({
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                {isInternational ? (
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                      Adults
+                      Number of travellers
                     </label>
                     <select
-                      value={adults}
-                      onChange={(e) => setAdults(Number(e.target.value))}
+                      value={Math.min(internationalTravelers, maxTravelers)}
+                      onChange={(e) => {
+                        const next = normalizeInternationalPax(
+                          Number(e.target.value),
+                          0
+                        );
+                        setAdults(next.adults);
+                        setChildren(next.children);
+                      }}
                       className="w-full rounded-xl border px-3 py-2.5 text-sm"
                     >
-                      {[1, 2, 3, 4, 5, 6].map((n) => (
+                      {travelerOptions.map((n) => (
                         <option key={n} value={n}>
                           {n}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                      Children
-                    </label>
-                    <select
-                      value={children}
-                      onChange={(e) => setChildren(Number(e.target.value))}
-                      className="w-full rounded-xl border px-3 py-2.5 text-sm"
-                    >
-                      {[0, 1, 2, 3, 4].map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                        Adults
+                      </label>
+                      <select
+                        value={adults}
+                        onChange={(e) => setAdults(Number(e.target.value))}
+                        className="w-full rounded-xl border px-3 py-2.5 text-sm"
+                      >
+                        {[1, 2, 3, 4, 5, 6].map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                        Children
+                      </label>
+                      <select
+                        value={children}
+                        onChange={(e) => setChildren(Number(e.target.value))}
+                        className="w-full rounded-xl border px-3 py-2.5 text-sm"
+                      >
+                        {[0, 1, 2, 3, 4].map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                </div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Est. from{" "}
                   <span className="font-semibold text-foreground">

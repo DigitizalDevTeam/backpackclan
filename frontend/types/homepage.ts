@@ -188,6 +188,8 @@ export interface FaqStripContent {
 }
 
 /** Manual card inside a category showcase tab (months, contact destinations, etc.) */
+export type CategoryShowcaseType = "destinations" | "trips";
+
 export interface CategoryShowcaseItem {
   id: string;
   name: string;
@@ -208,6 +210,10 @@ export interface CategoryShowcaseTab {
   href?: string;
   /** Prefer published destination IDs when available */
   destinationIds?: string[];
+  /** Published trip IDs — used when showcaseType is trips or for departure cards */
+  tripIds?: string[];
+  /** Main card row: destinations (default) or specific trips */
+  showcaseType?: CategoryShowcaseType;
   /** Freeform items (resolved alongside destinations) */
   items?: CategoryShowcaseItem[];
   /** Per-tab banner — falls back to section poster/video when empty */
@@ -237,6 +243,16 @@ export interface CategoryShowcaseContent {
       image: string | null;
       imageId: string | null;
       trips?: number;
+    }[];
+    showcaseType?: CategoryShowcaseType;
+    trips?: {
+      id: string;
+      slug: string;
+      title: string;
+      destination: string;
+      price: number;
+      duration: string;
+      imageId: string;
     }[];
     bannerImageId?: string | null;
     bannerVideoId?: string | null;

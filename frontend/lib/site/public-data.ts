@@ -12,6 +12,7 @@ import {
   hydrateHomepageSection,
   resolvePopularTrips,
 } from "@/lib/homepage/resolve";
+import { POPULAR_DESTINATIONS_LIMIT } from "@/lib/site/constants";
 import type { MenuItemNode } from "@/types/menu";
 import type { HomepageSection, PopularTripsContent } from "@/types/homepage";
 import type { PublicTrip } from "@/types/trip";
@@ -70,7 +71,7 @@ export function getActiveMenuTree(location: "header" | "footer" | "mobile"): Men
 function getDestinationFooterLinks(): FooterDestinationLink[] {
   return getPublishedDestinations()
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .slice(0, 8)
+    .slice(0, POPULAR_DESTINATIONS_LIMIT)
     .map((dest) => ({
       label: dest.name,
       href: `/destinations/${dest.slug}`,
