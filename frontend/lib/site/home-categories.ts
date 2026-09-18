@@ -172,20 +172,30 @@ const MONTH_WISE_QUARTERS = [
   { id: "q4", name: "Oct – Dec", month: "oct" },
 ] as const;
 
-/** Bike / Backpacking / Treks get month-wise nav; Custom Departures never do. */
+/** Month-wise navigation should remain available for fixed-departure categories,
+ * including custom and international offerings that still have a clear seasonal cadence. */
 export function categorySupportsMonthWise(slug: string, title = ""): boolean {
   const s = slug.toLowerCase();
   const t = title.toLowerCase();
-  if (s.includes("custom") || t.includes("custom")) return false;
-  return (
+
+  const isMonthWiseCategory =
     s.includes("bike") ||
     s.includes("motor") ||
     s.includes("backpack") ||
     s.includes("trek") ||
+    s.includes("custom") ||
+    s.includes("custom-departures") ||
+    s.includes("international") ||
+    s.includes("international-trips") ||
     t.includes("bike") ||
     t.includes("backpack") ||
-    t.includes("trek")
-  );
+    t.includes("trek") ||
+    t.includes("custom") ||
+    t.includes("custom departures") ||
+    t.includes("international") ||
+    t.includes("international trips");
+
+  return isMonthWiseCategory;
 }
 
 function categoryQueryParam(href: string, slug: string): string {

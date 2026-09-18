@@ -127,6 +127,29 @@ function buildTripQuery(params?: TripListParams): string {
   return query.toString();
 }
 
+function normalizeCategoryValue(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[_/\\]+/g, " ")
+    .replace(/[^a-z0-9\s]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function categoryMatchesFilter(trip: PublicTrip, filter: string): boolean {
+  const tripValue = normalizeCategoryValue(trip.category);
+  const filterValue = normalizeCategoryValue(filter);
+
+  if (!filterValue) return true;
+  if (tripValue === filterValue) return true;
+  if (tripValue.includes(filterValue) || filterValue.includes(tripValue)) return true;
+
+  if (filterValue.includes("international") && trip.region === "international") return true;
+  if (filterValue.includes("custom") && tripValue.includes("custom")) return true;
+
+  return false;
+}
+
 function mockFilterTrips(params?: TripListParams): PublicTrip[] {
   let trips = getMockTrips();
   if (params?.featured) trips = trips.filter((t) => t.isFeatured);
@@ -138,11 +161,7 @@ function mockFilterTrips(params?: TripListParams): PublicTrip[] {
     );
   }
   if (params?.category) {
-    trips = trips.filter(
-      (t) =>
-        t.category.toLowerCase() === params.category!.toLowerCase() ||
-        t.category.toLowerCase().includes(params.category!.toLowerCase())
-    );
+    trips = trips.filter((t) => categoryMatchesFilter(t, params.category!));
   }
   if (params?.region && params.region !== "all") {
     trips = trips.filter((t) => t.region === params.region);
